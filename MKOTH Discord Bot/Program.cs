@@ -10,16 +10,22 @@ using Discord.WebSocket;
 using Discord.Net.Providers.WS4Net;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using System.Timers;
 
 namespace MKOTH_Discord_Bot
 {
     class Program
     {
+        public enum StatusMessages { HELP, INFO };
         public bool TestMode = false;
+        public static bool ReplyToTestServer = true;
 
         private DiscordSocketClient _client;
         private CommandService _commands;
         private IServiceProvider _services;
+
+        private Timer timer;
+        private StatusMessages status = StatusMessages.HELP;
 
         public static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
@@ -69,13 +75,21 @@ namespace MKOTH_Discord_Bot
         {
             // Hook the MessageReceived Event into our Command Handler
             _client.MessageReceived += HandleCommandAsync;
+
+            timer = new Timer();
+            timer.Elapsed += HandleStatusUpdateAsync;
+            timer.Interval = 30000; // in miliseconds
+            timer.Start();
+
             // Discover all of the commands in this assembly and load them.
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
         }
 
         private Task Log(LogMessage msg)
         {
+            Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine(msg.ToString());
+            Console.ResetColor();
             return Task.CompletedTask;
         }
 
@@ -83,24 +97,55 @@ namespace MKOTH_Discord_Bot
         {
             // Don't process the command if it was a System Message
             var message = messageParam as SocketUserMessage;
+
             if (message.Author.Id == _client.CurrentUser.Id) return; //No reply to self
-            Console.WriteLine(message.Timestamp.ToLocalTime() + " User: " + message.Author.Username + "\t Message: " + message.Content);
             if (message == null) return;
+
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine(message.Timestamp.ToLocalTime() + "\tUser: " + message.Author.Username + "\nMessage: " + message.Content);
+            Console.ResetColor();
+
             // Create a number to track where the prefix ends and the command begins
             int argPos = 0;
             // Determine if the message is a command, based on if it starts with '!' or a mention prefix
             if (!(message.HasCharPrefix('.', ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))) return;
+
             // Create a Command Context
             var context = new SocketCommandContext(_client, message);
-            if (!TestMode && (context.Guild.Id == 270838709287387136L))
+
+            if (!ReplyToTestServer && message.Content == ".settest")
             {
+                ReplyToTestServer = !ReplyToTestServer;
+                await context.Channel.SendMessageAsync("Replying to test server");
                 return;
             }
+            if (!TestMode && !ReplyToTestServer && (context.Guild.Id == 270838709287387136L)) return;
+            else if (TestMode && (context.Guild.Id != 270838709287387136L)) return;
+
             // Execute the command. (result does not indicate a return value, 
             // rather an object stating if the command executed successfully)
             var result = await _commands.ExecuteAsync(context, argPos, _services);
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
+            {
                 await context.Channel.SendMessageAsync(result.ErrorReason);
+            }
+        }
+
+        private async void HandleStatusUpdateAsync(object sender, EventArgs e)
+        {
+            status = (int)status + 1 < (Enum.GetValues(typeof(StatusMessages)).Length) ? status + 1 : 0;
+            switch (status)
+            {
+                case StatusMessages.HELP:
+                    await _client.SetGameAsync("MKOTH | .mkothhelp for help");
+                    Console.WriteLine(status);
+                    break;
+
+                case StatusMessages.INFO:
+                    await _client.SetGameAsync("MKOTH | .info for information");
+                    Console.WriteLine(status);
+                    break;
+            }
         }
     }
 }
