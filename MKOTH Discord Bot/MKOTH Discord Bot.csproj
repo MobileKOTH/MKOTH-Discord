@@ -89,7 +89,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Components\Player.cs" />
-    <Compile Include="Modules\CommandParser.cs" />
+    <Compile Include="Modules\Information.cs" />
+    <Compile Include="Modules\Management.cs" />
+    <Compile Include="Modules\MKOTHHelp.cs" />
+    <Compile Include="Modules\Moderation.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

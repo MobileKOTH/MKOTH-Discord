@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using Discord;
@@ -16,7 +13,7 @@ namespace MKOTH_Discord_Bot
 {
     class Program
     {
-        public enum StatusMessages { HELP, INFO };
+        public enum StatusMessages { HELP, INFO , ENCOURAGE };
         public bool TestMode = false;
         public static bool ReplyToTestServer = true;
 
@@ -137,12 +134,17 @@ namespace MKOTH_Discord_Bot
             switch (status)
             {
                 case StatusMessages.HELP:
-                    await _client.SetGameAsync("MKOTH | .mkothhelp for help");
+                    await _client.SetGameAsync("Series | .mkothhelp for help");
                     Console.WriteLine(status);
                     break;
 
                 case StatusMessages.INFO:
                     await _client.SetGameAsync("MKOTH | .info for information");
+                    Console.WriteLine(status);
+                    break;
+
+                case StatusMessages.ENCOURAGE:
+                    await _client.SetGameAsync("Ranked Series for ELO Display!");
                     Console.WriteLine(status);
                     break;
             }

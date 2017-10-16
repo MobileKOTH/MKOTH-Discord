@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MKOTH_Discord_Bot
 {
@@ -66,7 +63,7 @@ namespace MKOTH_Discord_Bot
         public static void InitialiseList(string tsv)
         {
             List.Clear();
-            var lines = tsv.Split('\n');
+            var lines = tsv.Split(new string[] { "\r\n" }, StringSplitOptions.None);
             for (int i = 1; i < lines.Length; i++)
             {
                 var item = lines[i].Split('\t');
