@@ -110,19 +110,32 @@ namespace MKOTH_Discord_Bot
             {
                 var channel = _client.GetGuild(270838709287387136).GetChannel(360352712619065345) as ISocketMessageChannel;
                 var embed = new EmbedBuilder().WithAuthor(message.Author).WithDescription(message.Content).Build();
-                await channel.SendMessageAsync("DM Received: \n", embed: embed);
+                if (!(context.User.Id == _client.GetApplicationInfoAsync().GetAwaiter().GetResult().Owner.Id))
+                {
+                    await channel.SendMessageAsync("DM Received: \n", embed: embed);
+                }
                 Console.ForegroundColor = ConsoleColor.DarkBlue;
                 Console.WriteLine(message.Timestamp.ToLocalTime() + "\tUser: " + message.Author.Username + "\nMessage: " + message.Content);
                 Console.ResetColor();
             }
-            if(!message.Author.IsBot) new Chat(message.Content);
-
-            Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine(message.Timestamp.ToLocalTime() + "\tUser: " + message.Author.Username + "\nMessage: " + message.Content);
-            Console.ResetColor();
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine(message.Timestamp.ToLocalTime() + "\tUser: " + message.Author.Username + "\nMessage: " + message.Content);
+                Console.ResetColor();
+            }
 
             // Create a number to track where the prefix ends and the command begins
             int argPos = 0;
+
+            if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)))
+            {
+                string msg = message.Content;
+                await Chat.Reply(context, msg);
+            }
+
+            if (!message.Author.IsBot && !message.HasMentionPrefix(_client.CurrentUser, ref argPos)) new Chat(context);
+
             // Determine if the message is a command, based on if it starts with '!' or a mention prefix
             if (!(message.HasCharPrefix('.', ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))) return;
 
@@ -132,8 +145,11 @@ namespace MKOTH_Discord_Bot
                 await context.Channel.SendMessageAsync("Replying to test server");
                 return;
             }
-            if (!TestMode && !ReplyToTestServer && (context.Guild.Id == 270838709287387136L)) return;
-            else if (TestMode && (context.Guild.Id != 270838709287387136L)) return;
+            if (!context.IsPrivate)
+            {
+                if (!TestMode && !ReplyToTestServer && (context.Guild.Id == 270838709287387136UL)) return;
+                if (TestMode && (context.Guild.Id == 271109067261476866UL)) return;
+            }
 
             // Execute the command. (result does not indicate a return value, 
             // rather an object stating if the command executed successfully)
@@ -142,8 +158,9 @@ namespace MKOTH_Discord_Bot
             {
                 await context.Channel.SendMessageAsync(result.ErrorReason);
             }
+            Console.WriteLine("in DM");
 
-            if (message.HasMentionPrefix(_client.CurrentUser, ref argPos))
+            if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) && !context.IsPrivate) 
             {
                 //var embed = new EmbedBuilder();
                 //embed.WithTitle(argPos.ToString()).WithDescription(message.Content.Remove(0, argPos)).Build();

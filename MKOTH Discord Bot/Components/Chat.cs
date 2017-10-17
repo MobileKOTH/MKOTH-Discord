@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.IO;
 using Discord.Commands;
+using Discord.WebSocket;
 
 namespace MKOTH_Discord_Bot
 {
@@ -13,14 +14,32 @@ namespace MKOTH_Discord_Bot
     {
         public static List<string> History { get; set; } = new List<string>() ;
 
-        private string message;
+        private static List<int> executionTimeHistory = new List<int>();
 
-        public Chat(string message)
+        private string message;
+        private static SocketUser previousUser;
+
+        public Chat(SocketCommandContext context)
         {
-            this.message = message;
-            if (!(message.StartsWith(".") || message.StartsWith(">")))
+            if (context.IsPrivate) return;
+            if (context.User.IsWebhook) return;
+            if (context.Guild.Id != 271109067261476866UL) return;
+            if (context.Message.MentionedUsers.Count > 0) return;
+
+            message = context.Message.Content;
+            if (previousUser != null)
+            {
+                if (previousUser.Id == context.User.Id)
+                {
+                    History[History.Count - 1] = History[History.Count - 1] + " " + message;
+                    return;
+                }
+            }
+            
+            if (!(message.StartsWith(".") || message.StartsWith(">") || message.Equals("")))
             {
                 History.Add(message);
+                previousUser = context.User;
             }
         }
 
@@ -50,6 +69,7 @@ namespace MKOTH_Discord_Bot
                 if (nextispossible)
                 {
                     possiblereplies.Add(history.ToLower());
+                    nextispossible = false;
                     if (!istyping)
                     {
                         istyping = true;
@@ -67,13 +87,21 @@ namespace MKOTH_Discord_Bot
                 {
                     nextispossible = true;
                 }
+                matchcount = 0;
             }
+            if (possiblereplies.Count() == 0)
+            {
+                return;
+            }
+            string reply = possiblereplies[((int)(new Random().NextDouble() * possiblereplies.Count()))];
+            executionTimeHistory.Add((int)(DateTime.Now - starttime).TotalMilliseconds);
+            await context.Channel.SendMessageAsync(reply);
             foreach (var item in possiblereplies)
             {
                 Console.WriteLine(item);
             }
-            string reply = possiblereplies[((int)(new Random().NextDouble() * possiblereplies.Count()))];
-            await context.Channel.SendMessageAsync(reply);
+            var json = JsonConvert.SerializeObject(executionTimeHistory, Formatting.Indented);
+            File.WriteAllText("ExecutionTimeHistory.json", json);
         }
     }
 }

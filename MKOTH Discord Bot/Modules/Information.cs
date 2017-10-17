@@ -65,7 +65,7 @@ namespace MKOTH_Discord_Bot
             {
                 x.Content = "`Bot delay: " + (msg.Timestamp - Context.Message.Timestamp).TotalMilliseconds + " ms`\n";
                 x.Embed = new EmbedBuilder().
-                WithDescription("Pong!\n" + "Server ID: " + Context.Guild.Id).
+                WithDescription("Pong!").
                 WithColor(Color.Orange).Build();
             });
         }

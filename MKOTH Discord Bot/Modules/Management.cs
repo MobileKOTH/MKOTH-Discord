@@ -168,7 +168,22 @@ namespace MKOTH_Discord_Bot
         [Alias("myformid", "mysubmissionid", "mysubmissioncode")]
         public async Task MyID()
         {
-            var member = Context.Guild.Roles.FirstOrDefault(x => x.Name.Contains("MKOTH Members"));
+            var member = Context.Client.GetGuild(271109067261476866UL).Roles.FirstOrDefault(x => x.Name.Contains("MKOTH Members"));
+
+            if (Context.IsPrivate)
+            {
+                int code = PlayerCode.FetchCode(Context.User.Id, Context.Client);
+                if (code != 0)
+                {
+                    await Context.User.SendMessageAsync("Your Identification for submission form is below. Please keep the code secret.");
+                    await Context.User.SendMessageAsync(code.ToString());
+                }
+                else
+                {
+                    await Context.User.SendMessageAsync("Your Identification is not found, please dm an admin for assistance");
+                }
+                return;
+            }
 
             var user = (SocketGuildUser)Context.User;
             if (user.Roles.Contains(member) || Context.Guild.Id == 270838709287387136UL)
