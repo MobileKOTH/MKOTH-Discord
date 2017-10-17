@@ -7,6 +7,19 @@ namespace MKOTH_Discord_Bot
 {
     public class Information : ModuleBase<SocketCommandContext>
     {
+        /**
+        [Command("")]
+        [Alias("")]
+        [Summary("")]
+        public async Task Test([Remainder] string para)
+        {
+            EmbedBuilder embed = new EmbedBuilder();
+            IUserMessage msg;
+
+            msg = await ReplyAsync("Test");
+        }
+            **/
+
         [Command("info")]
         [Alias("stats")]
         [Summary ("Display bot information and statistics.")]

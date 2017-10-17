@@ -21,7 +21,6 @@ namespace MKOTH_Discord_Bot
         private CommandService _commands;
         private IServiceProvider _services;
 
-        private Timer timer;
         private StatusMessages status = StatusMessages.HELP;
 
         public static void Main(string[] args)
@@ -29,6 +28,7 @@ namespace MKOTH_Discord_Bot
 
         public async Task MainAsync()
         {
+            Chat.LoadHistory();
             string input;
             do
             {
@@ -73,10 +73,15 @@ namespace MKOTH_Discord_Bot
             // Hook the MessageReceived Event into our Command Handler
             _client.MessageReceived += HandleCommandAsync;
 
-            timer = new Timer();
-            timer.Elapsed += HandleStatusUpdateAsync;
-            timer.Interval = 30000; // in miliseconds
-            timer.Start();
+            Timer statustimer = new Timer();
+            statustimer.Elapsed += HandleStatusUpdateAsync;
+            statustimer.Interval = 30000; // in miliseconds
+            statustimer.Start();
+
+            Timer savechattimer = new Timer();
+            savechattimer.Elapsed += HandleChatSave;
+            savechattimer.Interval = 60000;
+            savechattimer.Start();
 
             // Discover all of the commands in this assembly and load them.
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
@@ -109,8 +114,8 @@ namespace MKOTH_Discord_Bot
                 Console.ForegroundColor = ConsoleColor.DarkBlue;
                 Console.WriteLine(message.Timestamp.ToLocalTime() + "\tUser: " + message.Author.Username + "\nMessage: " + message.Content);
                 Console.ResetColor();
-                return;
             }
+            if(!message.Author.IsBot) new Chat(message.Content);
 
             Console.ForegroundColor = ConsoleColor.DarkYellow;
             Console.WriteLine(message.Timestamp.ToLocalTime() + "\tUser: " + message.Author.Username + "\nMessage: " + message.Content);
@@ -137,6 +142,14 @@ namespace MKOTH_Discord_Bot
             {
                 await context.Channel.SendMessageAsync(result.ErrorReason);
             }
+
+            if (message.HasMentionPrefix(_client.CurrentUser, ref argPos))
+            {
+                //var embed = new EmbedBuilder();
+                //embed.WithTitle(argPos.ToString()).WithDescription(message.Content.Remove(0, argPos)).Build();
+                string msg = message.Content.Remove(0, argPos);
+                await Chat.Reply(context, msg);
+            }
         }
 
         private async void HandleStatusUpdateAsync(object sender, EventArgs e)
@@ -161,6 +174,11 @@ namespace MKOTH_Discord_Bot
                     await _client.SetGameAsync("Ranked Series for ELO Display!");
                     break;
             }
+        }
+
+        private void HandleChatSave(object sender, EventArgs e)
+        {
+            Chat.SaveHistory();
         }
     }
 }
