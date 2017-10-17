@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+using System;
 using System.Collections.Generic;
 
 namespace MKOTH_Discord_Bot
@@ -24,11 +27,11 @@ namespace MKOTH_Discord_Bot
 
     public class Player
     {
-        private string name = "";
-        private string playerclass = PlayerClass.SQUIRE ;
-        private ulong discordid = 0;
-        private bool isHoliday = false;
-        private bool isRemoved = false;
+        internal string name = "";
+        internal ulong discordid = 0;
+        string playerclass = PlayerClass.SQUIRE ;
+        bool isHoliday = false;
+        bool isRemoved = false;
 
         public static List<Player> List = new List<Player>();
 
@@ -48,11 +51,29 @@ namespace MKOTH_Discord_Bot
             List.Add(this);
         }
 
+        public Player(string name, ulong discordid)
+        {
+            this.name = name;
+            this.discordid = discordid;
+        }
+
         public static Player Fetch(ulong playerlid)
         {
             foreach (var item in List)
             {
                 if (item.discordid == playerlid)
+                {
+                    return item;
+                }
+            }
+            return new Player();
+        }
+
+        public static Player Fetch(string playername)
+        {
+            foreach (var item in List)
+            {
+                if (item.name == playername)
                 {
                     return item;
                 }
@@ -81,5 +102,56 @@ namespace MKOTH_Discord_Bot
         public ulong Discordid { get => discordid; set => discordid = value; }
         public bool IsHoliday { get => isHoliday; set => isHoliday = value; }
         public bool IsRemoved { get => isRemoved; set => isRemoved = value; }
+    }
+
+    public class PlayerCode : Player
+    {
+        int codeid;
+
+        public static List<PlayerCode> CodeList = new List<PlayerCode>();
+
+        public PlayerCode(string name, ulong discordid, int codeid) : base(name, discordid)
+        {
+            this.name = name;
+            this.discordid = discordid;
+            this.codeid = codeid;
+
+            CodeList.Add(this);
+        }
+
+        public static void Load(DiscordSocketClient client)
+        {
+            var response = new System.Net.WebClient().DownloadString("https://docs.google.com/spreadsheets/d/e/2PACX-1vSITdXPzQ_5eidATjL9j7uBicp4qvDuhx55IPvbMJ_jor8JU60UWCHwaHdXcR654W8Tp6VIjg-8V7g0/pub?gid=282944341&single=true&output=tsv");
+            Player.InitialiseList(response);
+            CodeList.Clear();
+            var channel = client.GetGuild(271109067261476866UL).GetChannel(357201006301282309UL) as ISocketMessageChannel;
+            var messages = channel.GetMessagesAsync(100, CacheMode.AllowDownload, null).Flatten().GetAwaiter().GetResult();
+            foreach (var msg in messages)
+            {
+                string[] codeliststrarr = msg.Content.Split('\n');
+                codeliststrarr[0] = codeliststrarr[0].Replace("**", "");
+                var player = Player.Fetch(codeliststrarr[0]);
+                PlayerCode playercode = new PlayerCode(codeliststrarr[0], player.discordid, int.Parse(codeliststrarr[1]));
+            }
+        }
+
+        public static int FetchCode(ulong discordid, DiscordSocketClient client)
+        {
+            int code = 0;
+            if (CodeList.Count < 1)
+            {
+                Load(client);
+            }
+            foreach (var item in CodeList)
+            {
+                if (item.discordid == discordid)
+                {
+                    return item.codeid;
+                }
+            }
+            return code;
+        }
+
+        public int Codeid { get => codeid; set => codeid = value; }
     }
 }

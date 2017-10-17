@@ -13,7 +13,7 @@ namespace MKOTH_Discord_Bot
 {
     class Program
     {
-        public enum StatusMessages { HELP, INFO , ENCOURAGE };
+        public enum StatusMessages { HELP, INVOLVE, INFO , ENCOURAGE };
         public bool TestMode = false;
         public static bool ReplyToTestServer = true;
 
@@ -98,6 +98,20 @@ namespace MKOTH_Discord_Bot
             if (message.Author.Id == _client.CurrentUser.Id) return; //No reply to self
             if (message == null) return;
 
+            // Create a Command Context
+            var context = new SocketCommandContext(_client, message);
+
+            if (context.IsPrivate)
+            {
+                var channel = _client.GetGuild(270838709287387136).GetChannel(360352712619065345) as ISocketMessageChannel;
+                var embed = new EmbedBuilder().WithAuthor(message.Author).WithDescription(message.Content).Build();
+                await channel.SendMessageAsync("DM Received: \n", embed: embed);
+                Console.ForegroundColor = ConsoleColor.DarkBlue;
+                Console.WriteLine(message.Timestamp.ToLocalTime() + "\tUser: " + message.Author.Username + "\nMessage: " + message.Content);
+                Console.ResetColor();
+                return;
+            }
+
             Console.ForegroundColor = ConsoleColor.DarkYellow;
             Console.WriteLine(message.Timestamp.ToLocalTime() + "\tUser: " + message.Author.Username + "\nMessage: " + message.Content);
             Console.ResetColor();
@@ -106,9 +120,6 @@ namespace MKOTH_Discord_Bot
             int argPos = 0;
             // Determine if the message is a command, based on if it starts with '!' or a mention prefix
             if (!(message.HasCharPrefix('.', ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))) return;
-
-            // Create a Command Context
-            var context = new SocketCommandContext(_client, message);
 
             if (!ReplyToTestServer && message.Content == ".settest")
             {
@@ -131,21 +142,23 @@ namespace MKOTH_Discord_Bot
         private async void HandleStatusUpdateAsync(object sender, EventArgs e)
         {
             status = (int)status + 1 < (Enum.GetValues(typeof(StatusMessages)).Length) ? status + 1 : 0;
+            Console.WriteLine(status);
             switch (status)
             {
                 case StatusMessages.HELP:
-                    await _client.SetGameAsync("Series | .mkothhelp for help");
-                    Console.WriteLine(status);
+                    await _client.SetGameAsync("a Series | .mkothhelp for help");
+                    break;
+
+                case StatusMessages.INVOLVE:
+                    await _client.SetGameAsync("with MKOTH Members!");
                     break;
 
                 case StatusMessages.INFO:
                     await _client.SetGameAsync("MKOTH | .info for information");
-                    Console.WriteLine(status);
                     break;
 
                 case StatusMessages.ENCOURAGE:
                     await _client.SetGameAsync("Ranked Series for ELO Display!");
-                    Console.WriteLine(status);
                     break;
             }
         }

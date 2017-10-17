@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,8 +23,8 @@ namespace MKOTH_Discord_Bot
             var squire = Context.Guild.Roles.FirstOrDefault(x => x.Name.Contains("MKOTH Squire"));
             var noble = Context.Guild.Roles.FirstOrDefault(x => x.Name.Contains("MKOTH Nobles"));
             var king = Context.Guild.Roles.FirstOrDefault(x => x.Name.Contains("MKOTH King"));
-            var user = Context.Message.Author as IGuildUser;
-            if (user.RoleIds.Contains(349945390193180674UL))
+            var user = (SocketGuildUser)Context.User;
+            if (user.Roles.Contains(chatmods))
             {
                 try
                 {
@@ -33,9 +34,10 @@ namespace MKOTH_Discord_Bot
                         chatmods.Name, member.Name,peasant.Name,vassal.Name,squire.Name,noble.Name,king.Name
                     }, Newtonsoft.Json.Formatting.Indented);
                     msg = await ReplyAsync("Updating Member Roles and Names", embed: embed.Build());
-                    var response = WebRequester.DownloadString("https://docs.google.com/spreadsheets/d/e/2PACX-1vSITdXPzQ_5eidATjL9j7uBicp4qvDuhx55IPvbMJ_jor8JU60UWCHwaHdXcR654W8Tp6VIjg-8V7g0/pub?gid=282944341&single=true&output=tsv");
-                    Player.InitialiseList(response);
+
+                    PlayerCode.Load(Context.Client);
                     Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(Player.List, Newtonsoft.Json.Formatting.Indented));
+
                     int count = 0;
                     foreach (var serveruser in Context.Guild.Users)
                     {
@@ -159,6 +161,34 @@ namespace MKOTH_Discord_Bot
                 {
                     await ReplyAsync("```" + e.StackTrace + "```");
                 }
+            }
+        }
+
+        [Command("myId")]
+        [Alias("myformid", "mysubmissionid", "mysubmissioncode")]
+        public async Task MyID()
+        {
+            var member = Context.Guild.Roles.FirstOrDefault(x => x.Name.Contains("MKOTH Members"));
+
+            var user = (SocketGuildUser)Context.User;
+            if (user.Roles.Contains(member) || Context.Guild.Id == 270838709287387136UL)
+            {
+                int code = PlayerCode.FetchCode(user.Id ,Context.Client);
+                if (code != 0)
+                {
+                    await user.SendMessageAsync("Your Identification for submission form is below. Please keep the code secret.");
+                    await user.SendMessageAsync(code.ToString());
+                    Console.WriteLine("Sent DM to " + user.Username + " (" + user.Nickname + ") " + "\n" +
+                        "Message: " + code);
+                }
+                else
+                {
+                    await user.SendMessageAsync("Your Identification is not found, please dm an admin for assistance");
+                }
+            }
+            else
+            {
+                await ReplyAsync("You are not a MKOTH Member!");
             }
         }
     }
