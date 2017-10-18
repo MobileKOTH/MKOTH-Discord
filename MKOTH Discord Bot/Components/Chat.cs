@@ -23,10 +23,28 @@ namespace MKOTH_Discord_Bot
         {
             if (context.IsPrivate) return;
             if (context.User.IsWebhook) return;
-            if (context.Guild.Id != 271109067261476866UL) return;
-            if (context.Message.MentionedUsers.Count > 0) return;
-
+            if (context.Channel.Id != 347258242277310465UL) return;
             message = context.Message.Content;
+            if (context.Message.MentionedUsers.Count > 0)
+            {
+                if (context.Message.MentionedUsers.Contains(context.Client.CurrentUser))
+                {
+                    return;
+                }
+                string CleanMessage = context.Message.Content;
+                for (int i = 0; i < context.Message.MentionedUsers.Count; i++)
+                {
+                    CleanMessage = CleanMessage.Replace("<@!" + context.Message.MentionedUsers.ElementAt(i).Id.ToString(), context.Message.MentionedUsers.ElementAt(i).Id.ToString());
+                    CleanMessage = CleanMessage.Replace(context.Message.MentionedUsers.ElementAt(i).Id.ToString() + ">", context.Message.MentionedUsers.ElementAt(i).Username);
+                }
+                message = CleanMessage.Trim();
+            }
+            message = message.Replace("@", "`@`");
+            if ((message.StartsWith(".") || message.StartsWith(">") || message.Equals("")))
+            {
+                return;
+            }
+
             if (previousUser != null)
             {
                 if (previousUser.Id == context.User.Id)
@@ -35,12 +53,8 @@ namespace MKOTH_Discord_Bot
                     return;
                 }
             }
-            
-            if (!(message.StartsWith(".") || message.StartsWith(">") || message.Equals("")))
-            {
-                History.Add(message);
-                previousUser = context.User;
-            }
+            History.Add(message);
+            previousUser = context.User;
         }
 
         public static void LoadHistory()
@@ -58,8 +72,30 @@ namespace MKOTH_Discord_Bot
         public static async Task Reply(SocketCommandContext context, string message)
         {
             DateTimeOffset starttime = DateTime.Now;
+            string reply = "";
             List<string> possiblereplies = new List<string>();
+            if (context.Channel.Id == 347258242277310465UL)
+            {
+                possiblereplies.Add(context.User.Mention + ", lets talk in #causal-chat shall we?");
+                possiblereplies.Add(context.User.Mention + ", we do not want to flood the prestigious official chat with our trash talks.");
+                possiblereplies.Add(context.User.Mention + ", no bot use in this channel :(");
+                possiblereplies.Add(context.User.Mention + ", don't talk to me here!");
+                reply = possiblereplies[((int)((new Random().NextDouble() * possiblereplies.Count())))];
+                await context.Channel.SendMessageAsync(reply);
+                return;
+            }
+            message = message.Replace(".", "");
+            message = message.Replace(",", "");
+            message = message.Replace("?", "");
+            message = message.Replace("!", "");
             string[] words = message.ToLower().Split(' ');
+            if (words.Length == 1)
+            {
+                if (words[0].Length < 2)
+                {
+                    return;
+                }
+            }
             int wordcount = words.Length;
             double matchcount = 0;
             bool istyping = false;
@@ -73,7 +109,9 @@ namespace MKOTH_Discord_Bot
                     if (!istyping)
                     {
                         istyping = true;
-                        await context.Channel.TriggerTypingAsync();
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                        context.Channel.TriggerTypingAsync();
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                     }
                 }
                 foreach (var word in words)
@@ -83,7 +121,7 @@ namespace MKOTH_Discord_Bot
                         matchcount++;
                     }
                 }
-                if (matchcount / wordcount > 0.8)
+                if (matchcount / wordcount >= 0.8)
                 {
                     nextispossible = true;
                 }
@@ -93,15 +131,21 @@ namespace MKOTH_Discord_Bot
             {
                 return;
             }
-            string reply = possiblereplies[((int)(new Random().NextDouble() * possiblereplies.Count()))];
+            reply = possiblereplies[((int)(new Random().NextDouble() * possiblereplies.Count()))];
             executionTimeHistory.Add((int)(DateTime.Now - starttime).TotalMilliseconds);
-            await context.Channel.SendMessageAsync(reply);
+            ChatReplyAsync(context, reply);
             foreach (var item in possiblereplies)
             {
                 Console.WriteLine(item);
             }
             var json = JsonConvert.SerializeObject(executionTimeHistory, Formatting.Indented);
             File.WriteAllText("ExecutionTimeHistory.json", json);
+        }
+
+        public static async void ChatReplyAsync(SocketCommandContext context, string reply)
+        {
+            await Task.Delay(500);
+            await context.Channel.SendMessageAsync(reply);
         }
     }
 }

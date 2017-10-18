@@ -158,7 +158,6 @@ namespace MKOTH_Discord_Bot
             {
                 await context.Channel.SendMessageAsync(result.ErrorReason);
             }
-            Console.WriteLine("in DM");
 
             if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) && !context.IsPrivate) 
             {
