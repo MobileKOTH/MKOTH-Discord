@@ -11,7 +11,7 @@ namespace MKOTH_Discord_Bot
     {
         System.Net.WebClient WebRequester = new System.Net.WebClient();
 
-        [Command("updatemkoth")]
+        [Command("updatemkoth", RunMode = RunMode.Async)]
         public async Task Updatemkoth()
         {
             EmbedBuilder embed = new EmbedBuilder();
@@ -48,7 +48,7 @@ namespace MKOTH_Discord_Bot
                             await serveruser.RemoveRoleAsync(member);
                             await msg.ModifyAsync(x =>
                             {
-                                x.Content = "Changing nicknames and roles " + count + " /" + Context.Guild.Users.Count;
+                                x.Content = "Changing nicknames and roles " + count + "/" + Context.Guild.Users.Count;
                                 embed.Description = embed.Description + "\n" + serveruser.Username + " Remove MKOTH Role ";
                                 x.Embed = embed.Build();
                             });
@@ -80,12 +80,7 @@ namespace MKOTH_Discord_Bot
                                     if (!serveruser.Roles.Contains(king))
                                     {
                                         await serveruser.AddRoleAsync(king);
-                                        await msg.ModifyAsync(x =>
-                                        {
-                                            x.Content = "Changing nicknames and roles " + count + " /" + Context.Guild.Users.Count;
-                                            embed.Description = embed.Description + "\n" + serveruser.Username + " Update Role ";
-                                            x.Embed = embed.Build();
-                                        });
+                                        updateRoleProgressStatus();
                                     }
                                     break;
 
@@ -95,12 +90,7 @@ namespace MKOTH_Discord_Bot
                                         await serveruser.AddRoleAsync(noble);
                                         await serveruser.RemoveRoleAsync(king);
                                         await serveruser.RemoveRoleAsync(squire);
-                                        await msg.ModifyAsync(x =>
-                                        {
-                                            x.Content = "Changing nicknames and roles " + count + " /" + Context.Guild.Users.Count;
-                                            embed.Description = embed.Description + "\n" + serveruser.Username + " Update Role ";
-                                            x.Embed = embed.Build();
-                                        });
+                                        updateRoleProgressStatus();
                                     }
                                     break;
 
@@ -110,12 +100,7 @@ namespace MKOTH_Discord_Bot
                                         await serveruser.AddRoleAsync(squire);
                                         await serveruser.RemoveRoleAsync(noble);
                                         await serveruser.RemoveRoleAsync(vassal);
-                                        await msg.ModifyAsync(x =>
-                                        {
-                                            x.Content = "Changing nicknames and roles " + count + " /" + Context.Guild.Users.Count;
-                                            embed.Description = embed.Description + "\n" + serveruser.Username + " Update Role ";
-                                            x.Embed = embed.Build();
-                                        });
+                                        updateRoleProgressStatus();
                                     }
                                     break;
 
@@ -125,12 +110,7 @@ namespace MKOTH_Discord_Bot
                                         await serveruser.AddRoleAsync(vassal);
                                         await serveruser.RemoveRoleAsync(squire);
                                         await serveruser.RemoveRoleAsync(peasant);
-                                        await msg.ModifyAsync(x =>
-                                        {
-                                            x.Content = "Changing nicknames and roles " + count + " /" + Context.Guild.Users.Count;
-                                            embed.Description = embed.Description + "\n" + serveruser.Username + " Update Role ";
-                                            x.Embed = embed.Build();
-                                        });
+                                        updateRoleProgressStatus();
                                     }
                                     break;
 
@@ -139,20 +119,25 @@ namespace MKOTH_Discord_Bot
                                     {
                                         await serveruser.AddRoleAsync(peasant);
                                         await serveruser.RemoveRoleAsync(vassal);
-                                        await msg.ModifyAsync(x =>
-                                        {
-                                            x.Content = "Changing nicknames and roles" + count + " /" + Context.Guild.Users.Count;
-                                            embed.Description = embed.Description + "\n" + serveruser.Username + " Update Role ";
-                                            x.Embed = embed.Build();
-                                        });
+                                        updateRoleProgressStatus();
                                     }
                                     break;
+                            }
+
+                            async void updateRoleProgressStatus()
+                            {
+                                await msg.ModifyAsync(x =>
+                                {
+                                    x.Content = "Changing nicknames and roles " + count + "/" + Context.Guild.Users.Count;
+                                    embed.Description = embed.Description + "\n" + serveruser.Username + " Update Role ";
+                                    x.Embed = embed.Build();
+                                });
                             }
                         }
                     }
                     await msg.ModifyAsync(x =>
                     {
-                        x.Content = "Changing nicknames and roles" + count + " /" + Context.Guild.Users.Count;
+                        x.Content = "Changing nicknames and roles " + "COMPLETED!";
                         embed.Description = embed.Description;
                         x.Embed = embed.Build();
                     });

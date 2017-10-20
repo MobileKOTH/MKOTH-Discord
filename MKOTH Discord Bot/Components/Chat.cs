@@ -59,14 +59,14 @@ namespace MKOTH_Discord_Bot
 
         public static void LoadHistory()
         {
-            string json = File.ReadAllText("ChatHistory.json");
+            string json = File.ReadAllText("Data\\ChatHistory.json");
             History = JsonConvert.DeserializeObject<List<string>>(json);
         }
 
         public static void SaveHistory()
         {
             var json = JsonConvert.SerializeObject(History, Formatting.Indented);
-            File.WriteAllText("ChatHistory.json", json);
+            File.WriteAllText("Data\\ChatHistory.json", json);
         }
 
         public static async Task Reply(SocketCommandContext context, string message)
@@ -76,10 +76,21 @@ namespace MKOTH_Discord_Bot
             List<string> possiblereplies = new List<string>();
             if (context.Channel.Id == 347258242277310465UL)
             {
-                possiblereplies.Add(context.User.Mention + ", lets talk in #causal-chat shall we?");
-                possiblereplies.Add(context.User.Mention + ", we do not want to flood the prestigious official chat with our trash talks.");
+                possiblereplies.Add(context.User.Mention + ", lets talk in <#347166773642133515> shall we?");
+                possiblereplies.Add(context.User.Mention + ", we do not want to flood the prestigious <#347258242277310465> with our trash talks.");
                 possiblereplies.Add(context.User.Mention + ", no bot use in this channel :(");
                 possiblereplies.Add(context.User.Mention + ", don't talk to me here!");
+                possiblereplies.Add(context.User.Mention + ", I will tell mods to mute if you keep pinging me here :rage:");
+                possiblereplies.Add(context.User.Mention + ", is'nt it no bot use in <#347258242277310465> :thinking: ");
+                possiblereplies.Add(context.User.Mention + ", why am I replying to you here in <#347258242277310465>");
+                reply = possiblereplies[((int)((new Random().NextDouble() * possiblereplies.Count())))];
+                await context.Channel.SendMessageAsync(reply);
+                return;
+            }
+            if (context.Channel.Id == 347272877134839810UL)
+            {
+                possiblereplies.Add(context.User.Mention + ", I don't think you will need to talk to me for giving suggestions <:monekeyfacepalm:352423604216135680>");
+                possiblereplies.Add(context.User.Mention + ", <:monkeyrage:352681458919407617><:monkeyrage:352681458919407617><:monkeyrage:352681458919407617><:monkeyrage:352681458919407617>, you are probably not giving a proper suggestion!");
                 reply = possiblereplies[((int)((new Random().NextDouble() * possiblereplies.Count())))];
                 await context.Channel.SendMessageAsync(reply);
                 return;
@@ -104,14 +115,12 @@ namespace MKOTH_Discord_Bot
             {
                 if (nextispossible)
                 {
-                    possiblereplies.Add(history.ToLower());
+                    possiblereplies.Add(history);
                     nextispossible = false;
                     if (!istyping)
                     {
                         istyping = true;
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                        context.Channel.TriggerTypingAsync();
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                        startTyping();
                     }
                 }
                 foreach (var word in words)
@@ -139,7 +148,12 @@ namespace MKOTH_Discord_Bot
                 Console.WriteLine(item);
             }
             var json = JsonConvert.SerializeObject(executionTimeHistory, Formatting.Indented);
-            File.WriteAllText("ExecutionTimeHistory.json", json);
+            File.WriteAllText("Data\\ExecutionTimeHistory.json", json);
+
+            async void startTyping()
+            {
+                await context.Channel.TriggerTypingAsync();
+            }
         }
 
         public static async void ChatReplyAsync(SocketCommandContext context, string reply)
@@ -147,5 +161,11 @@ namespace MKOTH_Discord_Bot
             await Task.Delay(500);
             await context.Channel.SendMessageAsync(reply);
         }
+    }
+
+    public class TrashReply
+    {
+        private string message = "";
+        private double matchrate = 0;
     }
 }

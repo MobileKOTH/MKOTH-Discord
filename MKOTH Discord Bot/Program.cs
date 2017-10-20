@@ -60,7 +60,7 @@ namespace MKOTH_Discord_Bot
 
             _client.Log += Log;
 
-            string token = File.ReadAllText("token.txt"); // Remember to keep this private!
+            string token = File.ReadAllText("Data\\token.txt"); // Remember to keep this private!
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
 

@@ -2,6 +2,8 @@
 using Discord;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Reflection;
+using System;
 
 namespace MKOTH_Discord_Bot
 {
@@ -43,6 +45,7 @@ namespace MKOTH_Discord_Bot
             embed.AddField("Help Command", "`.mkothhelp`", false);
             embed.AddField("Library", "Discord.Net v1.0.2", true);
             embed.AddField("Memory", string.Format("{0:N2} MB", ((double)(counter.RawValue / 1024)) / 1024), true);
+            embed.AddField("Bot Version", "0.1." + new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds(), true);
 
             embed.WithImageUrl("https://cdn.discordapp.com/attachments/271109067261476866/330727796647395330/Untitled12111.jpg");
 
