@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using MKOTH_Discord_Bot.Utilities;
 
 namespace MKOTH_Discord_Bot
 {
@@ -16,23 +17,20 @@ namespace MKOTH_Discord_Bot
         {
             EmbedBuilder embed = new EmbedBuilder();
             IUserMessage msg;
-            var chatmods = Context.Guild.Roles.FirstOrDefault(x => x.Name.Contains("Chat Mods"));
-            var member = Context.Guild.Roles.FirstOrDefault(x => x.Name.Contains("MKOTH Members"));
-            var peasant = Context.Guild.Roles.FirstOrDefault(x => x.Name.Contains("MKOTH Peasants"));
-            var vassal = Context.Guild.Roles.FirstOrDefault(x => x.Name.Contains("MKOTH Vassals"));
-            var squire = Context.Guild.Roles.FirstOrDefault(x => x.Name.Contains("MKOTH Squire"));
-            var noble = Context.Guild.Roles.FirstOrDefault(x => x.Name.Contains("MKOTH Nobles"));
-            var king = Context.Guild.Roles.FirstOrDefault(x => x.Name.Contains("MKOTH King"));
+            var chatmods = ContextPools.MKOTHGuild.ChatMods;
+            var member = ContextPools.MKOTHGuild.Member;
+            var peasant = ContextPools.MKOTHGuild.Peasant;
+            var vassal = ContextPools.MKOTHGuild.Vassal;
+            var squire = ContextPools.MKOTHGuild.Squire;
+            var noble = ContextPools.MKOTHGuild.Noble;
+            var king = ContextPools.MKOTHGuild.King;
             var user = (SocketGuildUser)Context.User;
             if (user.Roles.Contains(chatmods))
             {
                 try
                 {
                     embed.Title = "Role Pools";
-                    embed.Description = Newtonsoft.Json.JsonConvert.SerializeObject(new string[]
-                    {
-                        chatmods.Name, member.Name,peasant.Name,vassal.Name,squire.Name,noble.Name,king.Name
-                    }, Newtonsoft.Json.Formatting.Indented);
+                    embed.Description = $"{chatmods.Name}\n{member.Name}\n{peasant.Name}\n{vassal.Name}\n{squire.Name}\n{noble.Name}\n{king.Name}\n";
                     msg = await ReplyAsync("Updating Member Roles and Names", embed: embed.Build());
 
                     PlayerCode.Load(Context.Client);
@@ -48,31 +46,28 @@ namespace MKOTH_Discord_Bot
                             await serveruser.RemoveRoleAsync(member);
                             await msg.ModifyAsync(x =>
                             {
-                                x.Content = "Changing nicknames and roles " + count + "/" + Context.Guild.Users.Count;
-                                embed.Description = embed.Description + "\n" + serveruser.Username + " Remove MKOTH Role ";
+                                x.Content = $"Updating nicknames and roles {count}/{Context.Guild.Users.Count}";
+                                embed.Description = embed.Description.AddLine() + serveruser.Username + " Remove MKOTH Role ";
                                 x.Embed = embed.Build();
                             });
                         }
-                        else if
-                            (
+                        else if 
+                            ( 
                             player.Name != PlayerStatus.UNKNOWN && !
                             player.IsRemoved && !
                             player.Name.Equals("Naia Mizugaki") && !
-                            player.Name.Equals("Yt Shield"
-                            ))
+                            player.Name.Equals("Yt Shield")
+                            )
                         {
                             if (serveruser.Nickname != player.Name && serveruser.Username != player.Name && !serveruser.Roles.Contains(chatmods))
                             {
                                 await msg.ModifyAsync(x =>
                                 {
-                                    x.Content = "Changing nicknames and roles " + count + "/" + Context.Guild.Users.Count;
-                                    embed.Description = embed.Description + "\n" + serveruser.Username + " => " + player.Name;
+                                    x.Content = $"Updating nicknames and roles {count}/{Context.Guild.Users.Count}";
+                                    embed.Description = embed.Description.AddLine() + serveruser.Username + " => " + player.Name;
                                     x.Embed = embed.Build();
                                 });
-                                await serveruser.ModifyAsync(x =>
-                                {
-                                    x.Nickname = player.Name;
-                                });
+                                await serveruser.ModifyAsync(x => { x.Nickname = player.Name;});
                             }
                             switch (player.Playerclass)
                             {
@@ -128,8 +123,8 @@ namespace MKOTH_Discord_Bot
                             {
                                 await msg.ModifyAsync(x =>
                                 {
-                                    x.Content = "Changing nicknames and roles " + count + "/" + Context.Guild.Users.Count;
-                                    embed.Description = embed.Description + "\n" + serveruser.Username + " Update Role ";
+                                    x.Content = $"Updating nicknames and roles {count}/{Context.Guild.Users.Count}";
+                                    embed.Description = embed.Description.AddLine() + serveruser.Username + " Update Role";
                                     x.Embed = embed.Build();
                                 });
                             }
@@ -137,7 +132,7 @@ namespace MKOTH_Discord_Bot
                     }
                     await msg.ModifyAsync(x =>
                     {
-                        x.Content = "Changing nicknames and roles " + "COMPLETED!";
+                        x.Content = "Updating nicknames and roles COMPLETED!";
                         embed.Description = embed.Description;
                         x.Embed = embed.Build();
                     });
@@ -162,10 +157,12 @@ namespace MKOTH_Discord_Bot
                 {
                     await Context.User.SendMessageAsync("Your Identification for submission form is below. Please keep the code secret.");
                     await Context.User.SendMessageAsync(code.ToString());
+                    Logger.Log("Sent code to " + Context.User.Username.AddTab().AddLine() + code.ToString(), LogType.DIRECTMESSAGE);
                 }
                 else
                 {
                     await Context.User.SendMessageAsync("Your Identification is not found, please dm an admin for assistance");
+                    Logger.Log("Sent code to " + Context.User.Username.AddTab().AddLine() + "Code not found/not member", LogType.DIRECTMESSAGE);
                 }
                 return;
             }
@@ -176,19 +173,20 @@ namespace MKOTH_Discord_Bot
                 int code = PlayerCode.FetchCode(user.Id ,Context.Client);
                 if (code != 0)
                 {
-                    await user.SendMessageAsync("Your Identification for submission form is below. Please keep the code secret.");
-                    await user.SendMessageAsync(code.ToString());
-                    Console.WriteLine("Sent DM to " + user.Username + " (" + user.Nickname + ") " + "\n" +
-                        "Message: " + code);
+                    await Context.User.SendMessageAsync("Your Identification for submission form is below. Please keep the code secret.");
+                    await Context.User.SendMessageAsync(code.ToString());
+                    Logger.Log("Sent code to " + user.Nickname.AddTab().AddLine() + code.ToString(), LogType.DIRECTMESSAGE);
                 }
                 else
                 {
-                    await user.SendMessageAsync("Your Identification is not found, please dm an admin for assistance");
+                    await Context.User.SendMessageAsync("Your Identification is not found, please dm an admin for assistance");
+                    Logger.Log("Sent code to " + user.Nickname.AddTab().AddLine() + "Code not found", LogType.DIRECTMESSAGE);
                 }
             }
             else
             {
-                await ReplyAsync("You are not a MKOTH Member!");
+                await Context.User.SendMessageAsync("You are not a MKOTH Member!");
+                Logger.Log("Sent code to " + user.Nickname.AddTab().AddLine() + "Not Member", LogType.DIRECTMESSAGE);
             }
         }
     }

@@ -34,8 +34,7 @@ namespace MKOTH_Discord_Bot
                 string CleanMessage = context.Message.Content;
                 for (int i = 0; i < context.Message.MentionedUsers.Count; i++)
                 {
-                    CleanMessage = CleanMessage.Replace("<@!" + context.Message.MentionedUsers.ElementAt(i).Id.ToString(), context.Message.MentionedUsers.ElementAt(i).Id.ToString());
-                    CleanMessage = CleanMessage.Replace(context.Message.MentionedUsers.ElementAt(i).Id.ToString() + ">", context.Message.MentionedUsers.ElementAt(i).Username);
+                    CleanMessage = CleanMessage.Replace(context.Message.MentionedUsers.ElementAt(i).Mention, context.Message.MentionedUsers.ElementAt(i).Username);
                 }
                 message = CleanMessage.Trim();
             }
@@ -59,14 +58,14 @@ namespace MKOTH_Discord_Bot
 
         public static void LoadHistory()
         {
-            string json = File.ReadAllText("Data\\ChatHistory.json");
+            string json = File.ReadAllText(Directory.GetParent(Directory.GetCurrentDirectory()).FullName + "\\Data\\ChatHistory.json");
             History = JsonConvert.DeserializeObject<List<string>>(json);
         }
 
         public static void SaveHistory()
         {
             var json = JsonConvert.SerializeObject(History, Formatting.Indented);
-            File.WriteAllText("Data\\ChatHistory.json", json);
+            File.WriteAllText(Directory.GetParent(Directory.GetCurrentDirectory()).FullName + "\\Data\\ChatHistory.json", json);
         }
 
         public static async Task Reply(SocketCommandContext context, string message)
@@ -141,25 +140,19 @@ namespace MKOTH_Discord_Bot
                 return;
             }
             reply = possiblereplies[((int)(new Random().NextDouble() * possiblereplies.Count()))];
-            executionTimeHistory.Add((int)(DateTime.Now - starttime).TotalMilliseconds);
-            ChatReplyAsync(context, reply);
+            Utilities.Responder.SendToContext(context, reply);
+            Console.ForegroundColor = ConsoleColor.Yellow;
             foreach (var item in possiblereplies)
             {
                 Console.WriteLine(item);
             }
-            var json = JsonConvert.SerializeObject(executionTimeHistory, Formatting.Indented);
-            File.WriteAllText("Data\\ExecutionTimeHistory.json", json);
+            Console.ResetColor();
+            Logger.Log(((DateTime.Now - starttime).TotalMilliseconds).ToString().AddSpace() + "ms", LogType.TRASHREPLYTIME);
 
             async void startTyping()
             {
                 await context.Channel.TriggerTypingAsync();
             }
-        }
-
-        public static async void ChatReplyAsync(SocketCommandContext context, string reply)
-        {
-            await Task.Delay(500);
-            await context.Channel.SendMessageAsync(reply);
         }
     }
 

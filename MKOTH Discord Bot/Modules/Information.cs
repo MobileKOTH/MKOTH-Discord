@@ -79,21 +79,9 @@ namespace MKOTH_Discord_Bot
             EmbedBuilder embed = new EmbedBuilder();
             IUserMessage msg;
 
-            if (Context.Message.Author.Id != 234242692303814657L)
-            {
-                return;
-            }
-
-            Program.ReplyToTestServer = !Program.ReplyToTestServer;
-
-            if (Program.ReplyToTestServer)
-            {
-                msg = await ReplyAsync("Replying to test server");
-            }
-            else
-            {
-                msg = await ReplyAsync("Disabled replying to test server");
-            }
+            if (Context.Message.Author.Id != Program.OwnerID) return;
+            Program.ReplyToTestServer = false;
+            msg = await ReplyAsync("Disabled replying to test server");
         }
     }
 }

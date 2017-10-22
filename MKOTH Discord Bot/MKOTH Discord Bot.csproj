@@ -90,6 +90,10 @@
   <ItemGroup>
     <Compile Include="Components\Chat.cs" />
     <Compile Include="Components\Player.cs" />
+    <Compile Include="Utilities\ContextPools.cs" />
+    <Compile Include="Utilities\Extensions.cs" />
+    <Compile Include="Utilities\Logger.cs" />
+    <Compile Include="Utilities\Responder.cs" />
     <Compile Include="Modules\Help.cs" />
     <Compile Include="Modules\Information.cs" />
     <Compile Include="Modules\Management.cs" />
