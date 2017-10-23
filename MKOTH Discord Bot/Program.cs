@@ -9,15 +9,30 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using System.Timers;
 using MKOTH_Discord_Bot.Utilities;
+using System.Runtime.InteropServices;
 
 namespace MKOTH_Discord_Bot
 {
     class Program
     {
-        public static bool ReplyToTestServer = true;
-        public static ulong OwnerID = 0;
+        [DllImport("Kernel32")]
+        private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
+        private delegate bool EventHandler(CtrlType sig);
+        static EventHandler _handler;
 
-        public bool TestMode = false;
+
+        enum CtrlType
+        {
+            CTRL_C_EVENT = 0,
+            CTRL_BREAK_EVENT = 1,
+            CTRL_CLOSE_EVENT = 2,
+            CTRL_LOGOFF_EVENT = 5,
+            CTRL_SHUTDOWN_EVENT = 6
+        }
+
+        public static bool ReplyToTestServer = true;
+        public static bool TestMode = false;
+        public static ulong OwnerID = 0;
 
 
         private DiscordSocketClient _client;
@@ -49,7 +64,7 @@ namespace MKOTH_Discord_Bot
 
             _client.Log += Log;
 
-            await _client.LoginAsync(TokenType.Bot, Config.Token);
+            await _client.LoginAsync(TokenType.Bot, ContextPools.Config.Token);
             await _client.StartAsync();
             OwnerID = (await _client.GetApplicationInfoAsync()).Owner.Id;
             Console.WriteLine(OwnerID);
@@ -84,6 +99,9 @@ namespace MKOTH_Discord_Bot
             // Discover all of the commands in this assembly and load them.
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
 
+            _handler += new EventHandler(Handler);
+            SetConsoleCtrlHandler(_handler, true);
+
             Timer statustimer = new Timer();
             statustimer.Elapsed += HandleStatusUpdateAsync;
             statustimer.Interval = 30000; // in miliseconds
@@ -93,6 +111,21 @@ namespace MKOTH_Discord_Bot
             savechattimer.Elapsed += HandleChatSave;
             savechattimer.Interval = 60000;
             savechattimer.Start();
+        }
+
+        private static bool Handler(CtrlType sig)
+        {
+            switch (sig)
+            {
+                case CtrlType.CTRL_C_EVENT:
+                case CtrlType.CTRL_LOGOFF_EVENT:
+                case CtrlType.CTRL_SHUTDOWN_EVENT:
+                case CtrlType.CTRL_CLOSE_EVENT:
+                    ContextPools.ProgramConfiguration.Save();
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private Task LoadContext()

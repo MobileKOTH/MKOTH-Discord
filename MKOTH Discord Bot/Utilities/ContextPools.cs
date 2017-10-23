@@ -13,12 +13,14 @@ namespace MKOTH_Discord_Bot.Utilities
     //A data holder class to store global variables and discord context
     public static class ContextPools
     {
-        public static readonly string DataPath = Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\Data\";
-        public static readonly string AssemblyVersion = 
-            $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Major}." +
-            $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Minor}.";
+        public static readonly string DataPath = 
+            Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\Data\";
         public static readonly ProgramConfiguration Config = 
             Newtonsoft.Json.JsonConvert.DeserializeObject<ProgramConfiguration>(File.ReadAllText(ContextPools.DataPath + "Config.json"));
+        public static readonly string BuildVersion =
+            $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Major}." +
+            $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Minor}." +
+            Config.Buildnumber.ToString().PadLeft(4, '0');
 
         public static IUser BotOwner;
 
@@ -64,7 +66,7 @@ namespace MKOTH_Discord_Bot.Utilities
             //Owner
             BotOwner = (await client.GetApplicationInfoAsync()).Owner;
 
-            Logger.Debug(AssemblyVersion, nameof(AssemblyVersion));
+            Logger.Debug(BuildVersion, nameof(BuildVersion));
         }
 
         public class ProgramConfiguration
@@ -74,6 +76,16 @@ namespace MKOTH_Discord_Bot.Utilities
 
             public int Buildnumber { get => buildnumber; set => buildnumber = value; }
             public string Token { get => token; set => token = value; }
+
+            public static void Save()
+            {
+                if (Program.TestMode)
+                {
+                    Config.buildnumber += 1;
+                }
+                var json = Newtonsoft.Json.JsonConvert.SerializeObject(Config, Newtonsoft.Json.Formatting.Indented);
+                File.WriteAllText(DataPath + "Config.json", json);
+            }
         }
     }
 }
