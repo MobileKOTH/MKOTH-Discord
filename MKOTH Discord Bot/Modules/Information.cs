@@ -42,10 +42,11 @@ namespace MKOTH_Discord_Bot
             author.WithIconUrl("https://cdn.discordapp.com/avatars/234242692303814657/536e902dca1564f8f49afdc2113e7ce0.png");
             embed.WithAuthor(author);
 
-            embed.AddField("Help Command", "`.mkothhelp`", false);
-            embed.AddField("Library", "Discord.Net v1.0.2", true);
-            embed.AddField("Memory", string.Format("{0:N2} MB", ((double)(counter.RawValue / 1024)) / 1024), true);
-            embed.AddField("Bot Version", "0.1." + new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds(), true);
+            embed.AddField("Help Command", "```.MKOTHHelp```", false);
+            embed.AddField("Library", "```Discord.Net v1.0.2```", true);
+            embed.AddField("Memory", string.Format("```{0:N2} MB```", ((double)(counter.RawValue / 1024)) / 1024), true);
+            embed.AddField("Build", $"```v{Utilities.ContextPools.BuildVersion}```", true);
+            embed.AddField("Up Time", $"```{(DateTime.Now - Utilities.ContextPools.DeploymentTime)}```", true);
 
             embed.WithImageUrl("https://cdn.discordapp.com/attachments/271109067261476866/330727796647395330/Untitled12111.jpg");
 
@@ -79,6 +80,7 @@ namespace MKOTH_Discord_Bot
             EmbedBuilder embed = new EmbedBuilder();
             IUserMessage msg;
 
+            if (Program.TestMode) return;
             if (Context.Message.Author.Id != Program.OwnerID) return;
             Program.ReplyToTestServer = false;
             msg = await ReplyAsync("Disabled replying to test server");

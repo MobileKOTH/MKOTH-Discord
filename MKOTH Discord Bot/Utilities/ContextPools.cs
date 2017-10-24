@@ -7,6 +7,7 @@ using Discord.WebSocket;
 using Discord;
 using System.IO;
 using System.Diagnostics;
+using System.Timers;
 
 namespace MKOTH_Discord_Bot.Utilities
 {
@@ -21,8 +22,13 @@ namespace MKOTH_Discord_Bot.Utilities
             $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Major}." +
             $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Minor}." +
             Config.Buildnumber.ToString().PadLeft(4, '0');
+        public static readonly DateTime DeploymentTime = DateTime.Now;
+
+        public static int CurrentTypingSecond = 0;
 
         public static IUser BotOwner;
+
+        private static Timer SecondCounter = new Timer(1000);
 
         public static class MKOTHGuild
         {
@@ -39,6 +45,8 @@ namespace MKOTH_Discord_Bot.Utilities
 
         public static async void Load(DiscordSocketClient client)
         {
+            SecondCounter.Elapsed += HandleTimeCounter;
+
             SocketGuild guild;
 
             //MKOTH Discord Server
@@ -67,6 +75,11 @@ namespace MKOTH_Discord_Bot.Utilities
             BotOwner = (await client.GetApplicationInfoAsync()).Owner;
 
             Logger.Debug(BuildVersion, nameof(BuildVersion));
+        }
+
+        private static void HandleTimeCounter(object sender, ElapsedEventArgs e)
+        {
+            CurrentTypingSecond = CurrentTypingSecond > 0 ? CurrentTypingSecond - 1 : 0;
         }
 
         public class ProgramConfiguration

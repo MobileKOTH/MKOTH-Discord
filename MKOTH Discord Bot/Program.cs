@@ -19,16 +19,7 @@ namespace MKOTH_Discord_Bot
         private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
         private delegate bool EventHandler(CtrlType sig);
         static EventHandler _handler;
-
-
-        enum CtrlType
-        {
-            CTRL_C_EVENT = 0,
-            CTRL_BREAK_EVENT = 1,
-            CTRL_CLOSE_EVENT = 2,
-            CTRL_LOGOFF_EVENT = 5,
-            CTRL_SHUTDOWN_EVENT = 6
-        }
+        enum CtrlType { CTRL_C_EVENT = 0, CTRL_BREAK_EVENT = 1, CTRL_CLOSE_EVENT = 2, CTRL_LOGOFF_EVENT = 5, CTRL_SHUTDOWN_EVENT = 6}
 
         public static bool ReplyToTestServer = true;
         public static bool TestMode = false;
@@ -78,7 +69,8 @@ namespace MKOTH_Discord_Bot
                 {
                     Console.WriteLine("Is this a test mode? Y/N");
                     input = Console.ReadLine();
-                } while (input != "Y" && input != "N" && input != "");
+                }
+                while (input != "Y" && input != "N" && input != "");
                 if (input == "Y" || input == "")
                 {
                     TestMode = true;
@@ -189,11 +181,11 @@ namespace MKOTH_Discord_Bot
 
             if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
-                await Chat.Reply(context, message.Content);
+                Chat.Reply(context, message.Content);
             }
             else if ( context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
-                await Chat.Reply(context, message.Content.Remove(0, argPos));
+                Chat.Reply(context, message.Content.Remove(0, argPos));
             }
 
             if (!message.Author.IsBot && !message.HasMentionPrefix(_client.CurrentUser, ref argPos)) new Chat(context);
@@ -210,7 +202,7 @@ namespace MKOTH_Discord_Bot
             if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) && !context.IsPrivate) 
             {
                 string msg = message.Content.Remove(0, argPos);
-                await Chat.Reply(context, msg);
+                Chat.Reply(context, msg);
             }
         }
 

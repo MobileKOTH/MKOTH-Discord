@@ -7,7 +7,7 @@ using System.IO;
 
 namespace MKOTH_Discord_Bot
 {
-    public enum LogType { DIRECTMESSAGE, ERROR, TRASHREPLYTIME };
+    public enum LogType { DIRECTMESSAGE, ERROR, TRASHREPLYTIME , NOREPLYFOUND};
 
     public class Logger
     {

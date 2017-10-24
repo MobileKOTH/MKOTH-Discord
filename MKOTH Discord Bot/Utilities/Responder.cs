@@ -23,14 +23,28 @@ namespace MKOTH_Discord_Bot.Utilities
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.StackTrace);
+                Console.WriteLine(e.Message.AddLine() + e.StackTrace);
+                Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
             }
+        }
+
+        public static void TriggerTyping(SocketCommandContext context)
+        {
+            GlobalTryCatch(async () =>
+            {
+                if (ContextPools.CurrentTypingSecond == 0)
+                {
+                    ContextPools.CurrentTypingSecond = 10;
+                    await context.Channel.TriggerTypingAsync();
+                }
+            });
         }
 
         public static void SendToContext (SocketCommandContext context, string reply)
         {
             GlobalTryCatch(async () =>
             {
+                ContextPools.CurrentTypingSecond = 0;
                 await Task.Delay(500);
                 await context.Channel.SendMessageAsync(reply);
             });
@@ -40,8 +54,8 @@ namespace MKOTH_Discord_Bot.Utilities
         {
             GlobalTryCatch(async () =>
             {
-                Console.WriteLine("Sent DM to " + user.Username + " (" + user.Nickname + ") " + "\n" +
-                        "Message: " + message);
+                Logger.Log("Sent DM to " + user.Username + " (" + user.Nickname + ") " + "\n" +
+                        "Message: " + message, LogType.DIRECTMESSAGE);
                 await user.SendMessageAsync(message);
 
             });
@@ -51,8 +65,8 @@ namespace MKOTH_Discord_Bot.Utilities
         {
             GlobalTryCatch(async () =>
             {
-                Console.WriteLine("Sent DM to " + user.Username + user.Discriminator + "\n" +
-                        "Message: " + message);
+                Logger.Log("Sent DM to " + user.Username + user.Discriminator + "\n" +
+                        "Message: " + message, LogType.DIRECTMESSAGE);
                 await user.SendMessageAsync(message);
 
             });
