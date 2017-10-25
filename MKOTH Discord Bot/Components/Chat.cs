@@ -69,7 +69,7 @@ namespace MKOTH_Discord_Bot
             File.WriteAllText(Directory.GetParent(Directory.GetCurrentDirectory()).FullName + "\\Data\\ChatHistory.json", json);
         }
 
-        public static void Reply(SocketCommandContext context, string message)
+        public static async Task Reply(SocketCommandContext context, string message)
         {
             DateTimeOffset starttime = DateTime.Now;
             string reply = "";
@@ -85,7 +85,7 @@ namespace MKOTH_Discord_Bot
                 possiblereplies.Add(context.User.Mention + ", is'nt it no bot use in <#347258242277310465> :thinking: ");
                 possiblereplies.Add(context.User.Mention + ", why am I replying to you here in <#347258242277310465>");
                 reply = possiblereplies[((int)((new Random().NextDouble() * possiblereplies.Count())))];
-                Responder.SendToContext(context, reply);
+                await Responder.SendToContext(context, reply);
                 return;
             }
             if (context.Channel.Id == 347272877134839810UL)
@@ -93,7 +93,7 @@ namespace MKOTH_Discord_Bot
                 possiblereplies.Add(context.User.Mention + ", I don't think you will need to talk to me for giving suggestions <:monekeyfacepalm:352423604216135680>");
                 possiblereplies.Add(context.User.Mention + ", <:monkeyrage:352681458919407617><:monkeyrage:352681458919407617><:monkeyrage:352681458919407617><:monkeyrage:352681458919407617>, you are probably not giving a proper suggestion!");
                 reply = possiblereplies[((int)((new Random().NextDouble() * possiblereplies.Count())))];
-                Responder.SendToContext(context, reply);
+                await Responder.SendToContext(context, reply);
                 return;
             }
             message = message.Replace(".", "");
@@ -162,7 +162,7 @@ namespace MKOTH_Discord_Bot
             Logger.Log(((DateTime.Now - starttime).TotalMilliseconds).ToString().AddSpace() + "ms".AddLine() + "Chat Trigger: " + message.AddLine() + "Match Rate: " + (wordcountmatch - ((wordcount - 4) > 0 ? (wordcount - 4) : 0)) / wordcount, LogType.TRASHREPLYTIME);
 
             reply = possiblereplies[((int)(new Random().NextDouble() * possiblereplies.Count()))];
-            Responder.SendToContext(context, reply);
+            await Responder.SendToContext(context, reply);
         }
     }
 

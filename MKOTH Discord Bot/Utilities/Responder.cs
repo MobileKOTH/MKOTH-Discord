@@ -28,55 +28,54 @@ namespace MKOTH_Discord_Bot.Utilities
             }
         }
 
-        public static void TriggerTyping(SocketCommandContext context)
+        public static async Task TriggerTyping(SocketCommandContext context)
         {
-            GlobalTryCatch(async () =>
+            try
             {
                 if (ContextPools.CurrentTypingSecond == 0)
                 {
                     ContextPools.CurrentTypingSecond = 10;
                     await context.Channel.TriggerTypingAsync();
                 }
-            });
+                await Task.CompletedTask;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message.AddLine() + e.StackTrace);
+                Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
+            }
         }
 
-        public static void SendToContext (SocketCommandContext context, string reply)
+        public static async Task SendToContext (SocketCommandContext context, string reply)
         {
-            GlobalTryCatch(async () =>
+            try
             {
                 ContextPools.CurrentTypingSecond = 0;
                 await Task.Delay(500);
                 await context.Channel.SendMessageAsync(reply);
-            });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message.AddLine() + e.StackTrace);
+                Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
+            }
         }
 
         public static void SendToGuildUser(SocketGuildUser user, string message)
         {
-            GlobalTryCatch(async () =>
-            {
-                Logger.Log("Sent DM to " + user.Username + " (" + user.Nickname + ") " + "\n" +
-                        "Message: " + message, LogType.DIRECTMESSAGE);
-                await user.SendMessageAsync(message);
 
-            });
         }
 
         public static void SendToUser(SocketUser user, string message)
         {
-            GlobalTryCatch(async () =>
-            {
-                Logger.Log("Sent DM to " + user.Username + user.Discriminator + "\n" +
-                        "Message: " + message, LogType.DIRECTMESSAGE);
-                await user.SendMessageAsync(message);
 
-            });
         }
 
-        public static void ChangeStatus(StatusMessages status, DiscordSocketClient client)
+        public static async Task ChangeStatus(StatusMessages status, DiscordSocketClient client)
         {
-            status = (int)status + 1 < (Enum.GetValues(typeof(StatusMessages)).Length) ? status + 1 : 0;
-            GlobalTryCatch(async () =>
+            try
             {
+                status = (int)status + 1 < (Enum.GetValues(typeof(StatusMessages)).Length) ? status + 1 : 0;
                 Console.WriteLine(status);
                 switch (status)
                 {
@@ -96,7 +95,12 @@ namespace MKOTH_Discord_Bot.Utilities
                         await client.SetGameAsync("Ranked Series for ELO Display!");
                         break;
                 }
-            });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message.AddLine() + e.StackTrace);
+                Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
+            }
         }
 
 
