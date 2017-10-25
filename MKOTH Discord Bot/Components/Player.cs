@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MKOTH_Discord_Bot
 {
@@ -128,10 +129,12 @@ namespace MKOTH_Discord_Bot
             var messages = channel.GetMessagesAsync(100, CacheMode.AllowDownload, null).Flatten().GetAwaiter().GetResult();
             foreach (var msg in messages)
             {
-                string[] codeliststrarr = msg.Content.Split('\n');
-                codeliststrarr[0] = codeliststrarr[0].Replace("**", "");
-                var player = Player.Fetch(codeliststrarr[0]);
-                PlayerCode playercode = new PlayerCode(codeliststrarr[0], player.discordid, int.Parse(codeliststrarr[1]));
+                var embed = msg.Embeds.First();
+                foreach (var field in embed.Fields)
+                {
+                    var player = Player.Fetch(field.Name);
+                    PlayerCode playercode = new PlayerCode(field.Name, player.discordid, int.Parse(field.Value));
+                }
             }
         }
 

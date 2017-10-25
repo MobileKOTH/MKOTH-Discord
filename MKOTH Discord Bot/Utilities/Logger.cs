@@ -14,12 +14,28 @@ namespace MKOTH_Discord_Bot
 
         public static void Log(string log, LogType type)
         {
-            using (StreamWriter sw = File.AppendText(Utilities.ContextPools.DataPath + "Logs.txt"))
+            switch (type)
             {
-                sw.WriteLineAsync(DateTime.Now.ToLocalTime().ToString().AddTab() + type);
-                sw.WriteLineAsync(log);
-                sw.WriteLineAsync();
-                Console.WriteLine(DateTime.Now.ToLocalTime().ToString().AddTab() + type.ToString().AddLine() + log.AddLine());
+                case LogType.TRASHREPLYTIME:
+                case LogType.NOREPLYFOUND:
+                    using (StreamWriter sw = File.AppendText(Utilities.ContextPools.DataPath + "TrashLogs.txt"))
+                    {
+                        sw.WriteLineAsync(DateTime.Now.ToLocalTime().ToString().AddTab() + type);
+                        sw.WriteLineAsync(log);
+                        sw.WriteLineAsync();
+                        Console.WriteLine(DateTime.Now.ToLocalTime().ToString().AddTab() + type.ToString().AddLine() + log.AddLine());
+                    }
+                    break;
+
+                default:
+                    using (StreamWriter sw = File.AppendText(Utilities.ContextPools.DataPath + "Logs.txt"))
+                    {
+                        sw.WriteLineAsync(DateTime.Now.ToLocalTime().ToString().AddTab() + type);
+                        sw.WriteLineAsync(log);
+                        sw.WriteLineAsync();
+                        Console.WriteLine(DateTime.Now.ToLocalTime().ToString().AddTab() + type.ToString().AddLine() + log.AddLine());
+                    }
+                    break;
             }
         }
 

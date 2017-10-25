@@ -41,6 +41,16 @@ namespace MKOTH_Discord_Bot
                     {
                         count++;
                         var player = Player.Fetch(serveruser.Id);
+                        if (player.Name != PlayerStatus.UNKNOWN && !player.IsRemoved && !serveruser.Roles.Contains(member))
+                        {
+                            await serveruser.AddRoleAsync(member);
+                            await msg.ModifyAsync(x =>
+                            {
+                                x.Content = $"Updating nicknames and roles {count}/{Context.Guild.Users.Count}";
+                                embed.Description = embed.Description.AddLine() + serveruser.Username + " Add MKOTH Role ";
+                                x.Embed = embed.Build();
+                            });
+                        }
                         if (player.Name != PlayerStatus.UNKNOWN && player.IsRemoved && serveruser.Roles.Contains(member))
                         {
                             await serveruser.RemoveRoleAsync(member);
@@ -51,7 +61,8 @@ namespace MKOTH_Discord_Bot
                                 x.Embed = embed.Build();
                             });
                         }
-                        else if 
+                        else 
+                        if 
                             ( 
                             player.Name != PlayerStatus.UNKNOWN && !
                             player.IsRemoved && !
@@ -148,11 +159,15 @@ namespace MKOTH_Discord_Bot
         [Alias("myformid", "mysubmissionid", "mysubmissioncode")]
         public async Task MyID()
         {
-            var member = Context.Client.GetGuild(271109067261476866UL).Roles.FirstOrDefault(x => x.Name.Contains("MKOTH Members"));
+            int code = PlayerCode.FetchCode(Context.User.Id, Context.Client);
 
+            if (Player.Fetch(Context.User.Id).Name == PlayerStatus.UNKNOWN)
+            {
+                await ReplyAsync(Context.User.Mention + ", You are not a MKOTH Member!");
+                return;
+            }
             if (Context.IsPrivate)
             {
-                int code = PlayerCode.FetchCode(Context.User.Id, Context.Client);
                 if (code != 0)
                 {
                     await Context.User.SendMessageAsync("Your Identification for submission form is below. Please keep the code secret.");
@@ -168,25 +183,17 @@ namespace MKOTH_Discord_Bot
             }
 
             var user = (SocketGuildUser)Context.User;
-            if (user.Roles.Contains(member) || Context.Guild.Id == 270838709287387136UL)
+            await ReplyAsync(Context.User.Mention + ", your code will now be sent to your direct message.");
+            if (code != 0)
             {
-                int code = PlayerCode.FetchCode(user.Id ,Context.Client);
-                if (code != 0)
-                {
-                    await Context.User.SendMessageAsync("Your Identification for submission form is below. Please keep the code secret.");
-                    await Context.User.SendMessageAsync(code.ToString());
-                    Logger.Log("Sent code to " + user.Nickname.AddTab().AddLine() + code.ToString(), LogType.DIRECTMESSAGE);
-                }
-                else
-                {
-                    await Context.User.SendMessageAsync("Your Identification is not found, please dm an admin for assistance");
-                    Logger.Log("Sent code to " + user.Nickname.AddTab().AddLine() + "Code not found", LogType.DIRECTMESSAGE);
-                }
+                await Context.User.SendMessageAsync("Your Identification for submission form is below. Please keep the code secret.");
+                await Context.User.SendMessageAsync(code.ToString());
+                Logger.Log("Sent code to " + user.Nickname.AddTab().AddLine() + code.ToString(), LogType.DIRECTMESSAGE);
             }
             else
             {
-                await Context.User.SendMessageAsync("You are not a MKOTH Member!");
-                Logger.Log("Sent code to " + user.Nickname.AddTab().AddLine() + "Not Member", LogType.DIRECTMESSAGE);
+                await Context.User.SendMessageAsync("Your Identification is not found, please dm an admin for assistance");
+                Logger.Log("Sent code to " + user.Nickname.AddTab().AddLine() + "Code not found", LogType.DIRECTMESSAGE);
             }
         }
     }

@@ -17,7 +17,7 @@ namespace MKOTH_Discord_Bot.Utilities
         public static readonly string DataPath = 
             Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\Data\";
         public static readonly ProgramConfiguration Config = 
-            Newtonsoft.Json.JsonConvert.DeserializeObject<ProgramConfiguration>(File.ReadAllText(ContextPools.DataPath + "Config.json"));
+            Newtonsoft.Json.JsonConvert.DeserializeObject<ProgramConfiguration>(File.ReadAllText(Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\Config.json"));
         public static readonly string BuildVersion =
             $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Major}." +
             $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Minor}." +
@@ -97,7 +97,7 @@ namespace MKOTH_Discord_Bot.Utilities
                     Config.buildnumber += 1;
                 }
                 var json = Newtonsoft.Json.JsonConvert.SerializeObject(Config, Newtonsoft.Json.Formatting.Indented);
-                File.WriteAllText(DataPath + "Config.json", json);
+                File.WriteAllText(Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\Config.json", json);
             }
         }
     }

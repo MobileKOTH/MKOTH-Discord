@@ -74,7 +74,9 @@ namespace MKOTH_Discord_Bot
             DateTimeOffset starttime = DateTime.Now;
             string reply = "";
             List<string> possiblereplies = new List<string>();
+            List<TrashReply> rephrasepool = new List<TrashReply>();
             List<TrashReply> replypool = new List<TrashReply>();
+            List<TrashReply> responsepool = new List<TrashReply>();
             if (context.Channel.Id == 347258242277310465UL)
             {
                 possiblereplies.Add(context.User.Mention + ", lets talk in <#347166773642133515> shall we?");
@@ -96,10 +98,10 @@ namespace MKOTH_Discord_Bot
                 await Responder.SendToContext(context, reply);
                 return;
             }
-            message = message.Replace(".", "");
-            message = message.Replace(",", "");
-            message = message.Replace("?", "");
-            message = message.Replace("!", "");
+
+            var typetask = Responder.TriggerTyping(context);
+
+            ProcessResponses(ref message, ref rephrasepool, ref replypool);
             string[] words = message.ToLower().Split(' ');
             if (words.Length == 1)
             {
@@ -109,32 +111,37 @@ namespace MKOTH_Discord_Bot
                 }
             }
 
-            Responder.TriggerTyping(context);
-
             int wordcount = words.Length;
-            double matchcount = 0;
-
-            foreach (var history in History)
+            string poollog = "";
+            double randomsource = new Random().NextDouble();
+            switch (wordcount)
             {
-                if (history.Split(' ').Length > wordcount * 4) continue;
-                foreach (var word in words)
-                {
-                    if (history.ToLower().Contains(word))
-                    {
-                        matchcount++;
-                    }
-                }
-                replypool.Add(new TrashReply(history, matchcount / wordcount));
-                matchcount = 0;
+                case 1:
+                case 2:
+                    responsepool = (randomsource > 0.2) ? rephrasepool : replypool;
+                    poollog = (randomsource > 0.2) ? nameof(rephrasepool) : nameof(replypool);
+                    break;
+
+                case 3:
+                    responsepool = (randomsource > 0.66) ? rephrasepool : replypool;
+                    poollog = (randomsource > 0.66) ? nameof(rephrasepool) : nameof(replypool);
+                    break;
+
+                default:
+                    responsepool = replypool;
+                    poollog = nameof(replypool);
+                    break;
             }
-            if (replypool.Count() == 0) return;
+
             bool foundreply = false;
             double wordcountmatch = wordcount;
+            double matchrate = 1;
             do
             {
-                foreach (var trashreply in replypool)
+                matchrate = (wordcountmatch - ((wordcount - 4) > 0 ? (wordcount - 4) : 0)) / wordcount;
+                foreach (var trashreply in responsepool)
                 {
-                    if (trashreply.Matchrate >= (wordcountmatch - ((wordcount - 4) > 0 ? (wordcount - 4) : 0)) / wordcount)
+                    if (trashreply.Matchrate >= matchrate)
                     {
                         possiblereplies.Add(trashreply.Message);
                         foundreply = true;
@@ -159,10 +166,45 @@ namespace MKOTH_Discord_Bot
             {
                 possiblereplies.AddRange(History);
             };
-            Logger.Log(((DateTime.Now - starttime).TotalMilliseconds).ToString().AddSpace() + "ms".AddLine() + "Chat Trigger: " + message.AddLine() + "Match Rate: " + (wordcountmatch - ((wordcount - 4) > 0 ? (wordcount - 4) : 0)) / wordcount, LogType.TRASHREPLYTIME);
+            Logger.Log(((
+                DateTime.Now - starttime).TotalMilliseconds).ToString().AddSpace() + "ms".AddLine() + 
+                "Chat Trigger: " + message.AddLine() + "Match Rate: " + matchrate.ToString().AddLine() + "Pool: " + poollog, LogType.TRASHREPLYTIME);
 
             reply = possiblereplies[((int)(new Random().NextDouble() * possiblereplies.Count()))];
             await Responder.SendToContext(context, reply);
+        }
+
+        private static string TrimMessage(string message)
+        {
+            message = message.Replace(".", "");
+            message = message.Replace(",", "");
+            message = message.Replace("?", "");
+            message = message.Replace("!", "");
+            return message;
+        }
+
+        public static void ProcessResponses (ref string message, ref List<TrashReply> triggers, ref List<TrashReply> replies)
+        {
+            message = TrimMessage(message);
+            string[] words = message.ToLower().Split(' ');
+
+            int wordcount = words.Length;
+            double matchcount = 0;
+
+            foreach (var history in History)
+            {
+                replies.Add(new TrashReply(history, matchcount / wordcount));
+                matchcount = 0;
+                if (history.Split(' ').Length > wordcount * 4) continue;
+                foreach (var word in words)
+                {
+                    if (history.ToLower().Contains(word))
+                    {
+                        matchcount++;
+                    }
+                }
+                triggers.Add(new TrashReply(history, matchcount / wordcount));
+            }
         }
     }
 
