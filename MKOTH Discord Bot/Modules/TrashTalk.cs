@@ -15,6 +15,7 @@ namespace MKOTH_Discord_Bot
         [Alias("ti")]
         public async Task TrashInfo([Remainder] string message)
         {
+            DateTime start = DateTime.Now;
             EmbedBuilder embed = new EmbedBuilder();
             IUserMessage msg;
 
@@ -39,12 +40,12 @@ namespace MKOTH_Discord_Bot
             int wordcount = words.Length;
             bool foundreply = false;
             double wordcountmatch = wordcount;
-            double matchrate = 0.8;
+            double matchrate = 0.9;
             do
             {
                 if (wordcount > 4)
                 {
-                    matchrate -= 0.2;
+                    matchrate -= 0.15;
                 }
                 else
                 {
@@ -58,7 +59,7 @@ namespace MKOTH_Discord_Bot
                         foundreply = true;
                     }
                 }
-                if (wordcountmatch <= 0)
+                if (matchrate <= 0)
                 {
                     msg = await ReplyAsync("No trigger key found for: \n" + message);
                     return;
@@ -79,7 +80,7 @@ namespace MKOTH_Discord_Bot
                 embed.AddField(string.Format("{0:N2}%", possiblereplies[i].Matchrate * 100), $"`#{index - 1}` {trigger}\n`#{index}` {rephrase}\n`#{index + 1}` {response}");
             }
             embed.Title = "Trigger, Rephrase and Reply Pool";
-            await ReplyAsync("Trash info for:\n\"" + message + "\"".AddLine() + "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`", false, embed.Build());
+            await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"" + message + "\"".AddLine() + "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`", false, embed.Build());
         }
     }
 }

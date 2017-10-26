@@ -15,6 +15,8 @@ namespace MKOTH_Discord_Bot.Utilities
 
     public static class Responder
     {
+        private static StatusMessages status = StatusMessages.HELP;
+
         private static void GlobalTryCatch(Action action)
         {
             try
@@ -71,7 +73,7 @@ namespace MKOTH_Discord_Bot.Utilities
 
         }
 
-        public static async Task ChangeStatus(StatusMessages status, DiscordSocketClient client)
+        public static async Task ChangeStatus(DiscordSocketClient client)
         {
             try
             {

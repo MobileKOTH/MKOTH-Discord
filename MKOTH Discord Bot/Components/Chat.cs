@@ -59,14 +59,16 @@ namespace MKOTH_Discord_Bot
 
         public static void LoadHistory()
         {
-            string json = File.ReadAllText(Directory.GetParent(Directory.GetCurrentDirectory()).FullName + "\\Data\\ChatHistory.json");
+            string json = File.ReadAllText(ContextPools.DataPath + "ChatHistory.json");
             History = JsonConvert.DeserializeObject<List<string>>(json);
         }
 
         public static void SaveHistory()
         {
+            DateTime start = DateTime.Now;
             var json = JsonConvert.SerializeObject(History, Formatting.Indented);
-            File.WriteAllText(Directory.GetParent(Directory.GetCurrentDirectory()).FullName + "\\Data\\ChatHistory.json", json);
+            File.WriteAllText(ContextPools.DataPath + "ChatHistory.json", json);
+            Logger.Log("Time taken: " + (DateTime.Now - start).TotalMilliseconds.ToString(), LogType.CHATSAVETIME);
         }
 
         public static async Task Reply(SocketCommandContext context, string message)
@@ -135,12 +137,12 @@ namespace MKOTH_Discord_Bot
 
             bool foundreply = false;
             double wordcountmatch = wordcount;
-            double matchrate = 0.8;
+            double matchrate = 0.9;
             do
             {
                 if (wordcount > 4)
                 {
-                    matchrate -= 0.2;
+                    matchrate -= 0.15;
                 }
                 else
                 {

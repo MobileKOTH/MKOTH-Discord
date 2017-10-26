@@ -21,6 +21,7 @@ namespace MKOTH_Discord_Bot
         static EventHandler _handler;
         enum CtrlType { CTRL_C_EVENT = 0, CTRL_BREAK_EVENT = 1, CTRL_CLOSE_EVENT = 2, CTRL_LOGOFF_EVENT = 5, CTRL_SHUTDOWN_EVENT = 6}
 
+
         public static bool ReplyToTestServer = true;
         public static bool TestMode = false;
         public static ulong OwnerID = 0;
@@ -29,9 +30,6 @@ namespace MKOTH_Discord_Bot
         private DiscordSocketClient _client;
         private CommandService _commands;
         private IServiceProvider _services;
-
-        private StatusMessages status = StatusMessages.HELP;
-
 
         public static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
 
@@ -181,11 +179,11 @@ namespace MKOTH_Discord_Bot
 
             if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
-                Chat.Reply(context, message.Content);
+                await Chat.Reply(context, message.Content);
             }
             else if ( context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
-                Chat.Reply(context, message.Content.Remove(0, argPos));
+                await Chat.Reply(context, message.Content.Remove(0, argPos));
             }
 
             if (!message.Author.IsBot && !message.HasMentionPrefix(_client.CurrentUser, ref argPos)) new Chat(context);
@@ -202,13 +200,13 @@ namespace MKOTH_Discord_Bot
             if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) && !context.IsPrivate) 
             {
                 string msg = message.Content.Remove(0, argPos);
-                Chat.Reply(context, msg);
+                await Chat.Reply(context, msg);
             }
         }
 
-        private void HandleStatusUpdateAsync(object sender, EventArgs e)
+        private async void HandleStatusUpdateAsync(object sender, EventArgs e)
         {
-            Responder.ChangeStatus(status ,_client);
+            await Responder.ChangeStatus(_client);
         }
 
         private void HandleChatSave(object sender, EventArgs e)
