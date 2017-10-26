@@ -135,10 +135,17 @@ namespace MKOTH_Discord_Bot
 
             bool foundreply = false;
             double wordcountmatch = wordcount;
-            double matchrate = 1;
+            double matchrate = 0.8;
             do
             {
-                matchrate = (wordcountmatch - ((wordcount - 4) > 0 ? (wordcount - 4) : 0)) / wordcount;
+                if (wordcount > 4)
+                {
+                    matchrate -= 0.2;
+                }
+                else
+                {
+                    matchrate = wordcountmatch / wordcount;
+                }
                 foreach (var trashreply in responsepool)
                 {
                     if (trashreply.Matchrate >= matchrate)

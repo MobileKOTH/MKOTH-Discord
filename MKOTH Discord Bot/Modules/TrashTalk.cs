@@ -39,10 +39,17 @@ namespace MKOTH_Discord_Bot
             int wordcount = words.Length;
             bool foundreply = false;
             double wordcountmatch = wordcount;
-            double matchrate = 1;
+            double matchrate = 0.8;
             do
             {
-                matchrate = (wordcountmatch - ((wordcount - 4) > 0 ? (wordcount - 4) : 0)) / wordcount;
+                if (wordcount > 4)
+                {
+                    matchrate -= 0.2;
+                }
+                else
+                {
+                    matchrate = wordcountmatch / wordcount;
+                }
                 foreach (var trashreply in triggers)
                 {
                     if (trashreply.Matchrate >= matchrate)
@@ -60,49 +67,19 @@ namespace MKOTH_Discord_Bot
             } while (!foundreply);
             for (int i = 0; i < (possiblereplies.Count > 25 ? 25 : possiblereplies.Count); i++)
             {
-                if (possiblereplies[i].Message.Length > 200)
-                {
-                    possiblereplies[i].Message = possiblereplies[i].Message.Substring(0, 200) + "...";
-                }
-                embed.AddField("ID: " + triggers.IndexOf(possiblereplies[i]).ToString().AddSpace() + "Match: " + possiblereplies[i].Matchrate.ToString(), possiblereplies[i].Message);
-            }
-            embed.Title = "Triggers IDs and Keys";
-            await ReplyAsync("Triggers and Replies for:\n" + message,false, embed.Build());
+                int index = Chat.History.IndexOf(possiblereplies[i].Message);
+                string trigger = Chat.History[index - 1];
+                string rephrase = Chat.History[index];
+                string response = Chat.History[index + 1];
+                trigger = trigger.Length > 200 ? trigger.Substring(0, 200) + "..." : trigger;
+                rephrase = rephrase.Length > 200 ? rephrase.Substring(0, 200) + "..." : rephrase;
+                response = response.Length > 200 ? response.Substring(0, 200) + "..." : response;
 
-            possiblereplies = new List<TrashReply>();
-            embed = new EmbedBuilder();
 
-            wordcount = words.Length;
-            foundreply = false;
-            wordcountmatch = wordcount;
-            matchrate = 1;
-            do
-            {
-                matchrate = (wordcountmatch - ((wordcount - 4) > 0 ? (wordcount - 4) : 0)) / wordcount;
-                foreach (var trashreply in replies)
-                {
-                    if (trashreply.Matchrate >= matchrate)
-                    {
-                        possiblereplies.Add(trashreply);
-                        foundreply = true;
-                    }
-                }
-                if (wordcountmatch <= 0)
-                {
-                    break;
-                }
-                wordcountmatch--;
-            } while (!foundreply);
-            for (int i = 0; i < (possiblereplies.Count > 25 ? 25 : possiblereplies.Count); i++)
-            {
-                if (possiblereplies[i].Message.Length > 200)
-                {
-                    possiblereplies[i].Message = possiblereplies[i].Message.Substring(0, 200) + "...";
-                }
-                embed.AddField("ID: " + replies.IndexOf(possiblereplies[i]).ToString().AddSpace() + "Match: " + possiblereplies[i].Matchrate.ToString(), possiblereplies[i].Message);
+                embed.AddField(string.Format("{0:N2}%", possiblereplies[i].Matchrate * 100), $"`#{index - 1}` {trigger}\n`#{index}` {rephrase}\n`#{index + 1}` {response}");
             }
-            embed.Title = "Response IDs and Keys";
-            await ReplyAsync("", false, embed.Build());
+            embed.Title = "Trigger, Rephrase and Reply Pool";
+            await ReplyAsync("Trash info for:\n\"" + message + "\"".AddLine() + "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`", false, embed.Build());
         }
     }
 }
