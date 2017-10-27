@@ -1,1 +1,1 @@
-# mkoth-discord
+# Discord Bot for MKOTH Management
