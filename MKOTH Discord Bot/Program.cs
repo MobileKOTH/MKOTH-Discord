@@ -1,17 +1,16 @@
 ﻿using System;
+using System.Timers;
+using System.Reflection;
 using System.Threading.Tasks;
-using System.IO;
+using System.Runtime.InteropServices;
+using Microsoft.Extensions.DependencyInjection;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Discord.Net.Providers.WS4Net;
-using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
-using System.Timers;
-using MKOTH_Discord_Bot.Utilities;
-using System.Runtime.InteropServices;
+using MKOTHDiscordBot.Utilities;
 
-namespace MKOTH_Discord_Bot
+namespace MKOTHDiscordBot
 {
     class Program
     {

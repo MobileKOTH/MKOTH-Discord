@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MKOTH_Discord_Bot
+namespace MKOTHDiscordBot
 {
     public static class Extensions
     {

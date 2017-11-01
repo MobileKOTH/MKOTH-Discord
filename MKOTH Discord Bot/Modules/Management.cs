@@ -4,9 +4,9 @@ using Discord.WebSocket;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using MKOTH_Discord_Bot.Utilities;
+using MKOTHDiscordBot.Utilities;
 
-namespace MKOTH_Discord_Bot
+namespace MKOTHDiscordBot
 {
     public class Management : ModuleBase<SocketCommandContext>
     {

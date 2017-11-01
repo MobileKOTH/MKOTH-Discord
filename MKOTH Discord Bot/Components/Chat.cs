@@ -7,9 +7,9 @@ using Newtonsoft.Json;
 using System.IO;
 using Discord.Commands;
 using Discord.WebSocket;
-using MKOTH_Discord_Bot.Utilities;
+using MKOTHDiscordBot.Utilities;
 
-namespace MKOTH_Discord_Bot
+namespace MKOTHDiscordBot
 {
     public class Chat
     {

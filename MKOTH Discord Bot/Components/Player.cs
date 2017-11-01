@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MKOTH_Discord_Bot
+namespace MKOTHDiscordBot
 {
     public static class PlayerClass
     {

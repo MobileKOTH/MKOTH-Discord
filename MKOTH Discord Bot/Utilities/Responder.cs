@@ -9,7 +9,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Discord;
 
-namespace MKOTH_Discord_Bot.Utilities
+namespace MKOTHDiscordBot.Utilities
 {
     public enum StatusMessages { HELP, INVOLVE, INFO, ENCOURAGE };
 

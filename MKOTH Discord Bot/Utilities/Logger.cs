@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
-namespace MKOTH_Discord_Bot
+namespace MKOTHDiscordBot
 {
     public enum LogType { DIRECTMESSAGE, ERROR, TRASHREPLYTIME , NOREPLYFOUND, CHATSAVETIME};
 
@@ -17,25 +17,25 @@ namespace MKOTH_Discord_Bot
             switch (type)
             {
                 case LogType.TRASHREPLYTIME:
+
                 case LogType.NOREPLYFOUND:
-                    using (StreamWriter sw = File.AppendText(Utilities.ContextPools.DataPath + "TrashLogs.txt"))
-                    {
-                        sw.WriteLineAsync(DateTime.Now.ToLocalTime().ToString().AddTab() + type);
-                        sw.WriteLineAsync(log);
-                        sw.WriteLineAsync();
-                        Console.WriteLine(DateTime.Now.ToLocalTime().ToString().AddTab() + type.ToString().AddLine() + log.AddLine());
-                    }
+                    writeLog("TrashLogs.txt");
                     break;
 
                 default:
-                    using (StreamWriter sw = File.AppendText(Utilities.ContextPools.DataPath + "Logs.txt"))
-                    {
-                        sw.WriteLineAsync(DateTime.Now.ToLocalTime().ToString().AddTab() + type);
-                        sw.WriteLineAsync(log);
-                        sw.WriteLineAsync();
-                        Console.WriteLine(DateTime.Now.ToLocalTime().ToString().AddTab() + type.ToString().AddLine() + log.AddLine());
-                    }
+                    writeLog("Logs.txt");
                     break;
+            }
+
+            void writeLog(string filepath)
+            {
+                using (StreamWriter sw = File.AppendText(Utilities.ContextPools.DataPath + filepath))
+                {
+                    sw.WriteLineAsync(DateTime.Now.ToLocalTime().ToString().AddTab() + type);
+                    sw.WriteLineAsync(log);
+                    sw.WriteLineAsync();
+                    Console.WriteLine(DateTime.Now.ToLocalTime().ToString().AddTab() + type.ToString().AddLine() + log.AddLine());
+                }
             }
         }
 
@@ -49,9 +49,10 @@ namespace MKOTH_Discord_Bot
             }
             catch (Exception e)
             {
-                Console.WriteLine("Error generating object data".AddTab() + 
-                    obj.GetType().ToString().AddTab() + variablename.AddLine()
-                    + e.Message.AddLine() + e.StackTrace);
+                Console.WriteLine(
+                    "Error generating object data".AddTab() + obj.GetType().ToString().AddTab() + variablename.AddLine() + 
+                    e.Message.AddLine() + 
+                    e.StackTrace);
             }
         }
     }

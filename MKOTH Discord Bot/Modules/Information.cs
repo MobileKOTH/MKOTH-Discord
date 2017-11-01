@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System;
 
-namespace MKOTH_Discord_Bot
+namespace MKOTHDiscordBot
 {
     public class Information : ModuleBase<SocketCommandContext>
     {
@@ -72,6 +72,15 @@ namespace MKOTH_Discord_Bot
                 WithDescription("Pong!").
                 WithColor(Color.Orange).Build();
             });
+        }
+
+        [Command("ping")]
+        public async Task Ping([Remainder] string para)
+        {
+            EmbedBuilder embed = new EmbedBuilder();
+            await ReplyAsync("`Bot delay: " + Context.Client.Latency + " ms`\n", false, 
+                embed.WithDescription("Pong!").
+                WithColor(Color.Orange).Build());
         }
 
         [Command("settest")]

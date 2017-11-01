@@ -4,7 +4,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MKOTH_Discord_Bot
+namespace MKOTHDiscordBot
 {
     public class Moderation : ModuleBase<SocketCommandContext>
     {
@@ -13,8 +13,21 @@ namespace MKOTH_Discord_Bot
         [Command("ban")]
         public async Task Ban([Remainder] string para)
         {
+            await BanTask(para, false);
+        }
+
+        [Command("superban")]
+        public async Task SuperBan([Remainder] string para)
+        {
+            await BanTask(para, true);
+        }
+
+        async Task BanTask(string para, bool prune)
+        {
             EmbedBuilder embed = new EmbedBuilder();
             IUserMessage msg;
+
+            int daystoprune = prune ? 1 : 0;
 
             para += " ";
             var user = Context.Message.Author as IGuildUser;
@@ -46,7 +59,7 @@ namespace MKOTH_Discord_Bot
                             {
                                 embed.Title = "Reason: " + para.Replace(para.Substring(0, para.IndexOf(" ")), "");
                                 embed.Description = "Moderator: " + Context.User.Mention + " " + Context.User.ToString();
-                                await Context.Guild.AddBanAsync(banuser, 1, para.Replace(para.Substring(0, para.IndexOf(" ")), ""), null);
+                                await Context.Guild.AddBanAsync(banuser, daystoprune, para.Replace(para.Substring(0, para.IndexOf(" ")), ""), null);
                                 msg = await ReplyAsync("User Banned " + banuser, embed: embed);
                                 banlimit--;
                                 return;
@@ -61,13 +74,12 @@ namespace MKOTH_Discord_Bot
 
                     embed.Title = "Reason: " + para.Replace(para.Substring(0, para.IndexOf(" ")), "");
                     embed.Description = "Moderator: " + Context.User.Mention + " " + Context.User.ToString();
-                    await Context.Guild.AddBanAsync(banuser, 1, para.Replace(para.Substring(0, para.IndexOf(" ")), ""), null);
+                    await Context.Guild.AddBanAsync(banuser, daystoprune, para.Replace(para.Substring(0, para.IndexOf(" ")), ""), null);
                     msg = await ReplyAsync("User banned: " + banuser, embed: embed);
                     return;
                 }
             }
             await ReplyAsync("You do not have the permission to ban!");
-            return;
         }
 
         [Command("kick")]
@@ -120,7 +132,6 @@ namespace MKOTH_Discord_Bot
                 }
             }
             await ReplyAsync("You do not have the permission to kick!");
-            return;
         }
 
         [Command("resetban")]
