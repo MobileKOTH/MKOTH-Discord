@@ -35,6 +35,7 @@ namespace MKOTHDiscordBot
                 string CleanMessage = context.Message.Content;
                 for (int i = 0; i < context.Message.MentionedUsers.Count; i++)
                 {
+                    CleanMessage = CleanMessage.Replace("<@" + context.Message.MentionedUsers.ElementAt(i).Id.ToString(), "<@!" + context.Message.MentionedUsers.ElementAt(i).Id.ToString());
                     CleanMessage = CleanMessage.Replace(context.Message.MentionedUsers.ElementAt(i).Mention, context.Message.MentionedUsers.ElementAt(i).Username);
                 }
                 message = CleanMessage.Trim();
@@ -68,7 +69,7 @@ namespace MKOTHDiscordBot
             DateTime start = DateTime.Now;
             var json = JsonConvert.SerializeObject(History, Formatting.Indented);
             File.WriteAllText(ContextPools.DataPath + "ChatHistory.json", json);
-            Logger.Log("Time taken: " + (DateTime.Now - start).TotalMilliseconds.ToString(), LogType.CHATSAVETIME);
+            Logger.Log("Time taken: " + (DateTime.Now - start).TotalMilliseconds.ToString() + " ms", LogType.CHATSAVETIME);
         }
 
         public static async Task Reply(SocketCommandContext context, string message)

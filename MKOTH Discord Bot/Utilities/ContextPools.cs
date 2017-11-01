@@ -16,7 +16,7 @@ namespace MKOTHDiscordBot.Utilities
     {
         public static readonly string DataPath = Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\Data\";
         public static readonly ProgramConfiguration Config = Newtonsoft.Json.JsonConvert.DeserializeObject<ProgramConfiguration>(File.ReadAllText(Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\Config.json"));
-        public static readonly string BuildVersion = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Major}. {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Minor}." + Config.Buildnumber.ToString().PadLeft(4, '0');
+        public static readonly string BuildVersion = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Major}.{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Minor}." + Config.Buildnumber.ToString().PadLeft(4, '0');
         public static readonly DateTime DeploymentTime = DateTime.Now;
 
         public static int CurrentTypingSecond = 0;
