@@ -1,2 +1,2 @@
 # Discord Bot for MKOTH Management
-For Mobile Koth Discord server.
+Used in Mobile Koth Discord server.
