@@ -1,10 +1,10 @@
-﻿using Discord;
-using Discord.Commands;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
 using System.Text;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
 
 namespace MKOTHDiscordBot
 {
@@ -80,7 +80,8 @@ namespace MKOTHDiscordBot
                 embed.AddField(string.Format("{0:N2}%", possiblereplies[i].Matchrate * 100), $"`#{index - 1}` {trigger}\n`#{index}` {rephrase}\n`#{index + 1}` {response}");
             }
             embed.Title = "Trigger, Rephrase and Reply Pool";
-            await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"" + message + "\"".AddLine() + "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`", false, embed.Build());
+            embed.Description = "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`";
+            await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"" + message + "\"", false, embed.Build());
         }
     }
 }

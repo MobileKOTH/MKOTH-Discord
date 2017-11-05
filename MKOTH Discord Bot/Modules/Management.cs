@@ -1,146 +1,166 @@
-﻿using Discord;
+﻿using System;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using MKOTHDiscordBot.Utilities;
 
 namespace MKOTHDiscordBot
 {
     public class Management : ModuleBase<SocketCommandContext>
     {
-        System.Net.WebClient WebRequester = new System.Net.WebClient();
-
         [Command("updatemkoth", RunMode = RunMode.Async)]
         public async Task Updatemkoth()
         {
-            EmbedBuilder embed = new EmbedBuilder();
-            IUserMessage msg;
             var chatmods = ContextPools.MKOTHGuild.ChatMods;
+            var user = (SocketGuildUser)Context.User;
+            if (user.Roles.Contains(chatmods))
+            {
+                await UpdateMKOTH(Context);
+            }
+        }
+
+        public static async Task UpdateMKOTH(SocketCommandContext context)
+        {
+            var starttime = DateTime.Now;
+
+            EmbedBuilder embed = new EmbedBuilder();
+            IUserMessage msg = null;
+            var MKOTHGuild = ContextPools.MKOTHGuild.Guild;
+            var chatmods = ContextPools.MKOTHGuild.ChatMods;
+            var stupid = ContextPools.MKOTHGuild.Stupid;
             var member = ContextPools.MKOTHGuild.Member;
             var peasant = ContextPools.MKOTHGuild.Peasant;
             var vassal = ContextPools.MKOTHGuild.Vassal;
             var squire = ContextPools.MKOTHGuild.Squire;
             var noble = ContextPools.MKOTHGuild.Noble;
             var king = ContextPools.MKOTHGuild.King;
-            var user = (SocketGuildUser)Context.User;
-            if (user.Roles.Contains(chatmods))
+
+            try
             {
-                try
+                embed.Title = "Role Pools";
+                embed.Description = $"{chatmods.Name}\n{member.Name}\n{peasant.Name}\n{vassal.Name}\n{squire.Name}\n{noble.Name}\n{king.Name}\n";
+                if (context != null)
                 {
-                    embed.Title = "Role Pools";
-                    embed.Description = $"{chatmods.Name}\n{member.Name}\n{peasant.Name}\n{vassal.Name}\n{squire.Name}\n{noble.Name}\n{king.Name}\n";
-                    msg = await ReplyAsync("Updating Member Roles and Names", embed: embed.Build());
-
-                    PlayerCode.Load(Context.Client);
+                    msg = await context.Channel.SendMessageAsync("Updating Member Roles and Names", embed: embed.Build());
+                    await PlayerCode.Load();
                     Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(Player.List, Newtonsoft.Json.Formatting.Indented));
+                }
 
-                    int count = 0;
-                    foreach (var serveruser in Context.Guild.Users)
+                int count = 0;
+                foreach (var serveruser in MKOTHGuild.Users)
+                {
+                    count++;
+                    var player = Player.Fetch(serveruser.Id);
+                    if (player.Name != PlayerStatus.UNKNOWN && !player.IsRemoved && !serveruser.Roles.Contains(member))
                     {
-                        count++;
-                        var player = Player.Fetch(serveruser.Id);
-                        if (player.Name != PlayerStatus.UNKNOWN && !player.IsRemoved && !serveruser.Roles.Contains(member))
+                        await serveruser.AddRoleAsync(member);
+                        if (context != null)
                         {
-                            await serveruser.AddRoleAsync(member);
                             await msg.ModifyAsync(x =>
                             {
-                                x.Content = $"Updating nicknames and roles {count}/{Context.Guild.Users.Count}";
+                                x.Content = $"Updating nicknames and roles {count}/{MKOTHGuild.Users.Count}";
                                 embed.Description = embed.Description.AddLine() + serveruser.Username + " Add MKOTH Role ";
                                 x.Embed = embed.Build();
                             });
                         }
-                        if (player.Name != PlayerStatus.UNKNOWN && player.IsRemoved && serveruser.Roles.Contains(member))
+                    }
+                    if (player.Name != PlayerStatus.UNKNOWN && player.IsRemoved && serveruser.Roles.Contains(member))
+                    {
+                        await serveruser.RemoveRoleAsync(member);
+                        if (context != null)
                         {
-                            await serveruser.RemoveRoleAsync(member);
                             await msg.ModifyAsync(x =>
                             {
-                                x.Content = $"Updating nicknames and roles {count}/{Context.Guild.Users.Count}";
+                                x.Content = $"Updating nicknames and roles {count}/{MKOTHGuild.Users.Count}";
                                 embed.Description = embed.Description.AddLine() + serveruser.Username + " Remove MKOTH Role ";
                                 x.Embed = embed.Build();
                             });
                         }
-                        else 
-                        if 
-                            ( 
-                            player.Name != PlayerStatus.UNKNOWN && !
-                            player.IsRemoved && !
-                            player.Name.Equals("Naia Mizugaki") && !
-                            player.Name.Equals("Yt Shield")
-                            )
+                    }
+                    else if(player.Name != PlayerStatus.UNKNOWN && !player.IsRemoved && !serveruser.Roles.Contains(stupid))
+                    {
+                        if (serveruser.Nickname != player.Name && serveruser.Username != player.Name && !serveruser.Roles.Contains(chatmods))
                         {
-                            if (serveruser.Nickname != player.Name && serveruser.Username != player.Name && !serveruser.Roles.Contains(chatmods))
+                            if (context != null)
                             {
                                 await msg.ModifyAsync(x =>
                                 {
-                                    x.Content = $"Updating nicknames and roles {count}/{Context.Guild.Users.Count}";
+                                    x.Content = $"Updating nicknames and roles {count}/{MKOTHGuild.Users.Count}";
                                     embed.Description = embed.Description.AddLine() + serveruser.Username + " => " + player.Name;
                                     x.Embed = embed.Build();
                                 });
-                                await serveruser.ModifyAsync(x => { x.Nickname = player.Name;});
                             }
-                            switch (player.Playerclass)
-                            {
-                                case PlayerClass.KING:
-                                    if (!serveruser.Roles.Contains(king))
-                                    {
-                                        await serveruser.AddRoleAsync(king);
-                                        updateRoleProgressStatus();
-                                    }
-                                    break;
+                            await serveruser.ModifyAsync(x => { x.Nickname = player.Name; });
+                        }
+                        switch (player.Playerclass)
+                        {
+                            case PlayerClass.KING:
+                                if (!serveruser.Roles.Contains(king))
+                                {
+                                    await serveruser.AddRoleAsync(king);
+                                    updateRoleProgressStatus();
+                                }
+                                break;
 
-                                case PlayerClass.NOBLE:
-                                    if (serveruser.Roles.Contains(king) || serveruser.Roles.Contains(squire) || !serveruser.Roles.Contains(noble))
-                                    {
-                                        await serveruser.AddRoleAsync(noble);
-                                        await serveruser.RemoveRoleAsync(king);
-                                        await serveruser.RemoveRoleAsync(squire);
-                                        updateRoleProgressStatus();
-                                    }
-                                    break;
+                            case PlayerClass.NOBLE:
+                                if (serveruser.Roles.Contains(king) || serveruser.Roles.Contains(squire) || !serveruser.Roles.Contains(noble))
+                                {
+                                    await serveruser.AddRoleAsync(noble);
+                                    await serveruser.RemoveRoleAsync(king);
+                                    await serveruser.RemoveRoleAsync(squire);
+                                    updateRoleProgressStatus();
+                                }
+                                break;
 
-                                case PlayerClass.SQUIRE:
-                                    if (serveruser.Roles.Contains(noble) || serveruser.Roles.Contains(vassal) || !serveruser.Roles.Contains(squire))
-                                    {
-                                        await serveruser.AddRoleAsync(squire);
-                                        await serveruser.RemoveRoleAsync(noble);
-                                        await serveruser.RemoveRoleAsync(vassal);
-                                        updateRoleProgressStatus();
-                                    }
-                                    break;
+                            case PlayerClass.SQUIRE:
+                                if (serveruser.Roles.Contains(noble) || serveruser.Roles.Contains(vassal) || !serveruser.Roles.Contains(squire))
+                                {
+                                    await serveruser.AddRoleAsync(squire);
+                                    await serveruser.RemoveRoleAsync(noble);
+                                    await serveruser.RemoveRoleAsync(vassal);
+                                    updateRoleProgressStatus();
+                                }
+                                break;
 
-                                case PlayerClass.VASSAL:
-                                    if (serveruser.Roles.Contains(squire) || serveruser.Roles.Contains(peasant) || !serveruser.Roles.Contains(vassal))
-                                    {
-                                        await serveruser.AddRoleAsync(vassal);
-                                        await serveruser.RemoveRoleAsync(squire);
-                                        await serveruser.RemoveRoleAsync(peasant);
-                                        updateRoleProgressStatus();
-                                    }
-                                    break;
+                            case PlayerClass.VASSAL:
+                                if (serveruser.Roles.Contains(squire) || serveruser.Roles.Contains(peasant) || !serveruser.Roles.Contains(vassal))
+                                {
+                                    await serveruser.AddRoleAsync(vassal);
+                                    await serveruser.RemoveRoleAsync(squire);
+                                    await serveruser.RemoveRoleAsync(peasant);
+                                    updateRoleProgressStatus();
+                                }
+                                break;
 
-                                case PlayerClass.PEASANT:
-                                    if (serveruser.Roles.Contains(vassal) || !serveruser.Roles.Contains(peasant))
-                                    {
-                                        await serveruser.AddRoleAsync(peasant);
-                                        await serveruser.RemoveRoleAsync(vassal);
-                                        updateRoleProgressStatus();
-                                    }
-                                    break;
-                            }
+                            case PlayerClass.PEASANT:
+                                if (serveruser.Roles.Contains(vassal) || !serveruser.Roles.Contains(peasant))
+                                {
+                                    await serveruser.AddRoleAsync(peasant);
+                                    await serveruser.RemoveRoleAsync(vassal);
+                                    updateRoleProgressStatus();
+                                }
+                                break;
+                        }
 
-                            async void updateRoleProgressStatus()
+                        async void updateRoleProgressStatus()
+                        {
+                            if (context != null)
                             {
                                 await msg.ModifyAsync(x =>
                                 {
-                                    x.Content = $"Updating nicknames and roles {count}/{Context.Guild.Users.Count}";
+                                    x.Content = $"Updating nicknames and roles {count}/{MKOTHGuild.Users.Count}";
                                     embed.Description = embed.Description.AddLine() + serveruser.Username + " Update Role";
                                     x.Embed = embed.Build();
                                 });
                             }
                         }
                     }
+                }
+                if (context != null )
+                {
                     await msg.ModifyAsync(x =>
                     {
                         x.Content = "Updating nicknames and roles COMPLETED!";
@@ -148,10 +168,11 @@ namespace MKOTHDiscordBot
                         x.Embed = embed.Build();
                     });
                 }
-                catch (Exception e)
-                {
-                    await ReplyAsync("```" + e.StackTrace + "```");
-                }
+                Logger.Debug((DateTime.Now - starttime).TotalMilliseconds + " ms", "Update MKOTH Run");
+            }
+            catch (Exception e)
+            {
+                await Responder.SendToChannel((SocketTextChannel)ContextPools.TestGuild.BotTest, e.Message + "```" + e.StackTrace + "```");
             }
         }
 
@@ -188,12 +209,12 @@ namespace MKOTHDiscordBot
             {
                 await Context.User.SendMessageAsync("Your Identification for submission form is below. Please keep the code secret.");
                 await Context.User.SendMessageAsync(code.ToString());
-                Logger.Log("Sent code to " + user.Nickname.AddTab().AddLine() + code.ToString(), LogType.DIRECTMESSAGE);
+                Logger.Log("Sent code to " + user.Username.AddTab() + user.Nickname.AddTab().AddLine() + code.ToString(), LogType.DIRECTMESSAGE);
             }
             else
             {
                 await Context.User.SendMessageAsync("Your Identification is not found, please dm an admin for assistance");
-                Logger.Log("Sent code to " + user.Nickname.AddTab().AddLine() + "Code not found", LogType.DIRECTMESSAGE);
+                Logger.Log("Sent code to " + user.Username.AddTab() + user.Nickname.AddTab().AddLine() + "Code not found", LogType.DIRECTMESSAGE);
             }
         }
     }

@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Discord.WebSocket;
-using Discord;
 using System.IO;
-using System.Diagnostics;
 using System.Timers;
+using System.Reflection;
+using Newtonsoft.Json;
+using Discord;
+using Discord.WebSocket;
 
 namespace MKOTHDiscordBot.Utilities
 {
@@ -15,8 +13,8 @@ namespace MKOTHDiscordBot.Utilities
     public static class ContextPools
     {
         public static readonly string DataPath = Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\Data\";
-        public static readonly ProgramConfiguration Config = Newtonsoft.Json.JsonConvert.DeserializeObject<ProgramConfiguration>(File.ReadAllText(Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\Config.json"));
-        public static readonly string BuildVersion = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Major}.{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.Minor}." + Config.Buildnumber.ToString().PadLeft(4, '0');
+        public static readonly ProgramConfiguration Config = JsonConvert.DeserializeObject<ProgramConfiguration>(File.ReadAllText(Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\Config.json"));
+        public static readonly string BuildVersion = $"{Assembly.GetExecutingAssembly().GetName().Version.Major}.{Assembly.GetExecutingAssembly().GetName().Version.Minor}." + Config.Buildnumber.ToString().PadLeft(4, '0');
         public static readonly DateTime DeploymentTime = DateTime.Now;
 
         public static int CurrentTypingSecond = 0;
@@ -28,8 +26,8 @@ namespace MKOTHDiscordBot.Utilities
         public static class MKOTHGuild
         {
             public static SocketGuild Guild;
-            public static SocketChannel Official, Casual, PlayerID;
-            public static SocketRole ChatMods, Member, Peasant, Vassal, Squire, Noble, King;
+            public static SocketChannel Official, Casual, PlayerID, ModLog;
+            public static SocketRole ChatMods, Stupid, Member, Peasant, Vassal, Squire, Noble, King;
         }
 
         public static class TestGuild
@@ -41,6 +39,7 @@ namespace MKOTHDiscordBot.Utilities
         public static async void Load(DiscordSocketClient client)
         {
             SecondCounter.Elapsed += HandleTimeCounter;
+            SecondCounter.Start();
 
             SocketGuild guild;
 
@@ -51,8 +50,10 @@ namespace MKOTHDiscordBot.Utilities
             MKOTHGuild.Official = guild.Channels.FirstOrDefault(x => x.Id.Equals(347258242277310465UL));
             MKOTHGuild.Casual = guild.Channels.FirstOrDefault(x => x.Id.Equals(347166773642133515UL));
             MKOTHGuild.PlayerID = guild.Channels.FirstOrDefault(x => x.Id.Equals(357201006301282309UL));
+            MKOTHGuild.ModLog = guild.Channels.FirstOrDefault(x => x.Id.Equals(349960496591667202));
 
             MKOTHGuild.ChatMods = guild.Roles.FirstOrDefault(x => x.Name.Contains("Chat Mods"));
+            MKOTHGuild.Stupid = guild.Roles.FirstOrDefault(x => x.Name.Contains("I am stupid"));
             MKOTHGuild.Member = guild.Roles.FirstOrDefault(x => x.Name.Contains("MKOTH Members"));
             MKOTHGuild.Peasant = guild.Roles.FirstOrDefault(x => x.Name.Contains("MKOTH Peasants"));
             MKOTHGuild.Vassal = guild.Roles.FirstOrDefault(x => x.Name.Contains("MKOTH Vassals"));
@@ -68,6 +69,9 @@ namespace MKOTHDiscordBot.Utilities
 
             //Owner
             BotOwner = (await client.GetApplicationInfoAsync()).Owner;
+
+            //Player Data
+            var playerloadtask = PlayerCode.Load();
 
             Logger.Debug(BuildVersion, nameof(BuildVersion));
         }
@@ -91,7 +95,7 @@ namespace MKOTHDiscordBot.Utilities
                 {
                     Config.buildnumber += 1;
                 }
-                var json = Newtonsoft.Json.JsonConvert.SerializeObject(Config, Newtonsoft.Json.Formatting.Indented);
+                var json = JsonConvert.SerializeObject(Config, Formatting.Indented);
                 File.WriteAllText(Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\Config.json", json);
             }
         }

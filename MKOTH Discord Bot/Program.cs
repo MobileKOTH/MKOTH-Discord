@@ -96,10 +96,23 @@ namespace MKOTHDiscordBot
             statustimer.Interval = 30000; // in miliseconds
             statustimer.Start();
 
-            Timer savechattimer = new Timer();
-            savechattimer.Elapsed += HandleChatSave;
-            savechattimer.Interval = 60000;
-            savechattimer.Start();
+            Timer savechatupdatemkothtimer = new Timer();
+            savechatupdatemkothtimer.Elapsed += HandleChatSaveUpdateMKOTH;
+            savechatupdatemkothtimer.Interval = 60000;
+            savechatupdatemkothtimer.Start();
+
+            Timer downloadplayerdatatimer = new Timer();
+            downloadplayerdatatimer.Elapsed += HandlePlayerDataDownload;
+            downloadplayerdatatimer.Interval = 300000;
+            downloadplayerdatatimer.Start();
+        }
+
+        private async void HandlePlayerDataDownload(object sender, ElapsedEventArgs e)
+        {
+            if (!TestMode)
+            {
+                await PlayerCode.Load();
+            }
         }
 
         private static bool Handler(CtrlType sig)
@@ -117,9 +130,34 @@ namespace MKOTHDiscordBot
             }
         }
 
+        private async void HandleStatusUpdateAsync(object sender, EventArgs e)
+        {
+            if (!TestMode)
+            {
+                await Responder.ChangeStatus(_client);
+            }
+        }
+
+        private void HandleChatSaveUpdateMKOTH(object sender, EventArgs e)
+        {
+            Chat.SaveHistory();
+            if (!TestMode)
+            {
+                var task = Management.UpdateMKOTH(null);
+            }
+        }
+
         private Task LoadContext()
         {
             ContextPools.Load(_client);
+            return Task.CompletedTask;
+        }
+
+        private Task Log(LogMessage msg)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine(msg.ToString());
+            Console.ResetColor();
             return Task.CompletedTask;
         }
 
@@ -180,7 +218,7 @@ namespace MKOTHDiscordBot
             {
                 await Chat.Reply(context, message.Content);
             }
-            else if ( context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && message.HasMentionPrefix(_client.CurrentUser, ref argPos))
+            else if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
                 await Chat.Reply(context, message.Content.Remove(0, argPos));
             }
@@ -196,29 +234,11 @@ namespace MKOTHDiscordBot
                 return;
             }
 
-            if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) && !context.IsPrivate) 
+            if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) && !context.IsPrivate)
             {
                 string msg = message.Content.Remove(0, argPos);
                 await Chat.Reply(context, msg);
             }
-        }
-
-        private async void HandleStatusUpdateAsync(object sender, EventArgs e)
-        {
-            await Responder.ChangeStatus(_client);
-        }
-
-        private void HandleChatSave(object sender, EventArgs e)
-        {
-            Chat.SaveHistory();
-        }
-
-        private Task Log(LogMessage msg)
-        {
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine(msg.ToString());
-            Console.ResetColor();
-            return Task.CompletedTask;
         }
     }
 }

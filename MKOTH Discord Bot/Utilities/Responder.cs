@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using System.IO;
 using Discord.Commands;
 using Discord.WebSocket;
-using Discord;
 
 namespace MKOTHDiscordBot.Utilities
 {
@@ -16,7 +10,8 @@ namespace MKOTHDiscordBot.Utilities
     public static class Responder
     {
         private static StatusMessages status = StatusMessages.HELP;
-
+        
+        /**
         private static void GlobalTryCatch(Action action)
         {
             try
@@ -29,6 +24,7 @@ namespace MKOTHDiscordBot.Utilities
                 Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
             }
         }
+            **/
 
         public static async Task TriggerTyping(SocketCommandContext context)
         {
@@ -62,6 +58,20 @@ namespace MKOTHDiscordBot.Utilities
                 Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
             }
         }
+
+        public static async Task SendToChannel (SocketTextChannel channel, string message)
+        {
+            try
+            {
+                await channel.SendMessageAsync(message, false, null);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message.AddLine() + e.StackTrace);
+                Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
+            }
+        }
+
 
         public static void SendToGuildUser(SocketGuildUser user, string message)
         {

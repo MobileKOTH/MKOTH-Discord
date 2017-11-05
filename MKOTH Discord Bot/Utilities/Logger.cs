@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 
 namespace MKOTHDiscordBot
 {
-    public enum LogType { DIRECTMESSAGE, ERROR, TRASHREPLYTIME , NOREPLYFOUND, CHATSAVETIME};
+    public enum LogType { DIRECTMESSAGE, ERROR, TRASHREPLYTIME , NOREPLYFOUND, CHATSAVETIME, PLAYERDATALOAD};
 
     public class Logger
     {
@@ -33,7 +29,7 @@ namespace MKOTHDiscordBot
                 {
                     sw.WriteLineAsync(DateTime.Now.ToLocalTime().ToString().AddTab() + type);
                     sw.WriteLineAsync(log);
-                    sw.WriteLineAsync();
+                    sw.WriteLineAsync("");
                     Console.WriteLine(DateTime.Now.ToLocalTime().ToString().AddTab() + type.ToString().AddLine() + log.AddLine());
                 }
             }

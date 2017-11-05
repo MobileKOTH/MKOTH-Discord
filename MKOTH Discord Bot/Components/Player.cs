@@ -1,9 +1,9 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Discord;
+using Discord.WebSocket;
 
 namespace MKOTHDiscordBot
 {
@@ -120,21 +120,31 @@ namespace MKOTHDiscordBot
             CodeList.Add(this);
         }
 
-        public static void Load(DiscordSocketClient client)
+        public static async Task Load()
         {
-            var response = new System.Net.WebClient().DownloadString("https://docs.google.com/spreadsheets/d/e/2PACX-1vSITdXPzQ_5eidATjL9j7uBicp4qvDuhx55IPvbMJ_jor8JU60UWCHwaHdXcR654W8Tp6VIjg-8V7g0/pub?gid=282944341&single=true&output=tsv");
-            Player.InitialiseList(response);
-            CodeList.Clear();
-            var channel = client.GetGuild(271109067261476866UL).GetChannel(357201006301282309UL) as ISocketMessageChannel;
-            var messages = channel.GetMessagesAsync(100, CacheMode.AllowDownload, null).Flatten().GetAwaiter().GetResult();
-            foreach (var msg in messages)
+            try
             {
-                var embed = msg.Embeds.First();
-                foreach (var field in embed.Fields)
+                var starttime = DateTime.Now;
+                var response = await new System.Net.WebClient().DownloadStringTaskAsync("https://docs.google.com/spreadsheets/d/e/2PACX-1vSITdXPzQ_5eidATjL9j7uBicp4qvDuhx55IPvbMJ_jor8JU60UWCHwaHdXcR654W8Tp6VIjg-8V7g0/pub?gid=282944341&single=true&output=tsv");
+                Player.InitialiseList(response);
+                var channel = Utilities.ContextPools.MKOTHGuild.PlayerID as ISocketMessageChannel;
+                var messages = channel.GetMessagesAsync(100, CacheMode.AllowDownload, null).Flatten().GetAwaiter().GetResult();
+                if (messages.Count() <= 1) return;
+                CodeList.Clear();
+                foreach (var msg in messages)
                 {
-                    var player = Player.Fetch(field.Name);
-                    PlayerCode playercode = new PlayerCode(field.Name, player.discordid, int.Parse(field.Value));
+                    var embed = msg.Embeds.First();
+                    foreach (var field in embed.Fields)
+                    {
+                        var player = Player.Fetch(field.Name);
+                        PlayerCode playercode = new PlayerCode(field.Name, player.discordid, int.Parse(field.Value));
+                    }
                 }
+                Logger.Log("Time used: " + (DateTime.Now - starttime).TotalMilliseconds + " ms", LogType.PLAYERDATALOAD);
+            }
+            catch (Exception e)
+            {
+                Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
             }
         }
 
@@ -143,7 +153,7 @@ namespace MKOTHDiscordBot
             int code = 0;
             if (CodeList.Count < 1)
             {
-                Load(client);
+                Load().RunSynchronously();
             }
             foreach (var item in CodeList)
             {

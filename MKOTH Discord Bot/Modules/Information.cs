@@ -2,7 +2,6 @@
 using Discord;
 using System.Threading.Tasks;
 using System.Diagnostics;
-using System.Reflection;
 using System;
 
 namespace MKOTHDiscordBot
@@ -28,7 +27,6 @@ namespace MKOTHDiscordBot
         public async Task Info()
         {
             EmbedBuilder embed = new EmbedBuilder();
-
             string prcName = Process.GetCurrentProcess().ProcessName;
             var counter = new PerformanceCounter("Process", "Working Set - Private", prcName);
 
@@ -38,7 +36,7 @@ namespace MKOTHDiscordBot
             embed.WithThumbnailUrl("https://cdn.discordapp.com/attachments/341163606605299716/360336022745382912/13615239_1204861226212220_2613382245523520956_n.png");
 
             EmbedAuthorBuilder author = new EmbedAuthorBuilder();
-            author.WithName("Created by Cerlancism CY");
+            author.WithName("Developed by Cerlancism CY");
             author.WithIconUrl("https://cdn.discordapp.com/avatars/234242692303814657/536e902dca1564f8f49afdc2113e7ce0.png");
             embed.WithAuthor(author);
 
