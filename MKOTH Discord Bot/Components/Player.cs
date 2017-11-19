@@ -28,8 +28,8 @@ namespace MKOTHDiscordBot
 
     public class Player
     {
-        internal string name = "";
-        internal ulong discordid = 0;
+        protected string name = "";
+        protected ulong discordid = 0;
         string playerclass = PlayerClass.SQUIRE ;
         bool isHoliday = false;
         bool isRemoved = false;
@@ -116,7 +116,6 @@ namespace MKOTHDiscordBot
             this.name = name;
             this.discordid = discordid;
             this.codeid = codeid;
-
             CodeList.Add(this);
         }
 
@@ -137,7 +136,7 @@ namespace MKOTHDiscordBot
                     foreach (var field in embed.Fields)
                     {
                         var player = Player.Fetch(field.Name);
-                        PlayerCode playercode = new PlayerCode(field.Name, player.discordid, int.Parse(field.Value));
+                        PlayerCode playercode = new PlayerCode(field.Name, player.Discordid, int.Parse(field.Value));
                     }
                 }
                 Logger.Log("Time used: " + (DateTime.Now - starttime).TotalMilliseconds + " ms", LogType.PLAYERDATALOAD);

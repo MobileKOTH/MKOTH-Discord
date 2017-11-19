@@ -8,7 +8,7 @@ namespace MKOTHDiscordBot
 {
     public class Information : ModuleBase<SocketCommandContext>
     {
-        /**
+        /*
         [Command("")]
         [Alias("")]
         [Summary("")]
@@ -19,7 +19,7 @@ namespace MKOTHDiscordBot
 
             msg = await ReplyAsync("Test");
         }
-            **/
+        */
 
         [Command("info")]
         [Alias("stats")]

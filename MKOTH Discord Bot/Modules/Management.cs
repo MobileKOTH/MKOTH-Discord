@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -172,7 +173,12 @@ namespace MKOTHDiscordBot
             }
             catch (Exception e)
             {
-                await Responder.SendToChannel((SocketTextChannel)ContextPools.TestGuild.BotTest, e.Message + "```" + e.StackTrace + "```");
+                string stacktrace = e.StackTrace;
+                if (stacktrace.Length >= 1800)
+                {
+                    stacktrace = stacktrace.Substring(0, 1800) + "...";
+                }
+                await Responder.SendToChannel((SocketTextChannel)ContextPools.TestGuild.BotTest, e.Message + "```" + stacktrace + "```");
             }
         }
 
@@ -215,6 +221,73 @@ namespace MKOTHDiscordBot
             {
                 await Context.User.SendMessageAsync("Your Identification is not found, please dm an admin for assistance");
                 Logger.Log("Sent code to " + user.Username.AddTab() + user.Nickname.AddTab().AddLine() + "Code not found", LogType.DIRECTMESSAGE);
+            }
+        }
+
+        [Command("missingMembers")]
+        [Alias("listMissingMembers")]
+        [Summary("List the MKOTH Members who are missing from the discord server")]
+        public async Task MissingMembers()
+        {
+            try
+            {
+                EmbedBuilder embed = new EmbedBuilder();
+                IUserMessage msg;
+                var playerlist = Player.List;
+                for (int i = 0; i < playerlist.Count; i++)
+                {
+                    foreach (var user in ContextPools.MKOTHGuild.Guild.Users)
+                    {
+                        if (user.Id == playerlist[i].Discordid || playerlist[i].IsRemoved)
+                        {
+                            playerlist.RemoveAt(i);
+                            i = 0;
+                            break;
+                        }
+                    }
+                }
+
+                var activemissinglist = new List<Player>();
+                var holidaymissinglist = new List<Player>();
+
+                foreach (var item in playerlist)
+                {
+                    if (!item.IsHoliday)
+                    {
+                        activemissinglist.Add(item);
+                    }
+                    else
+                    {
+                        holidaymissinglist.Add(item);
+                    }
+                }
+
+                string activemisinglistfield = "";
+                string holidaymisinglistfield = "";
+                foreach (var item in activemissinglist)
+                {
+                    activemisinglistfield += $"{item.Playerclass}: {item.Name}\n";
+                }
+                foreach (var item in holidaymissinglist)
+                {
+                    holidaymisinglistfield += $"{item.Playerclass}: {item.Name}\n";
+                }
+                embed.Title = "Missing MKOTH Members from MKOTH discord server";
+                embed.Description = "MKOTH Members who are not in the discord server but still remain active or in holiday in the MKOTH Ranking.";
+                embed.AddField(activemissinglist.Count + " Active Members", $"```{activemisinglistfield}```");
+                embed.AddField(holidaymissinglist.Count + " Holiday Members", $"```{holidaymisinglistfield}```");
+                embed.Color = Color.Orange;
+
+                msg = await ReplyAsync(string.Empty, false, embed: embed);
+            }
+            catch (Exception e)
+            {
+                string stacktrace = e.StackTrace;
+                if (stacktrace.Length >= 1800)
+                {
+                    stacktrace = stacktrace.Substring(0, 1800) + "...";
+                }
+                await Responder.SendToChannel((SocketTextChannel)ContextPools.TestGuild.BotTest, e.Message + "```" + stacktrace + "```");
             }
         }
     }

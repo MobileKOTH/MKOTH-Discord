@@ -27,9 +27,9 @@ namespace MKOTHDiscordBot
             {
                 using (StreamWriter sw = File.AppendText(Utilities.ContextPools.DataPath + filepath))
                 {
-                    sw.WriteLineAsync(DateTime.Now.ToLocalTime().ToString().AddTab() + type);
-                    sw.WriteLineAsync(log);
-                    sw.WriteLineAsync("");
+                    sw.WriteLine(DateTime.Now.ToLocalTime().ToString().AddTab() + type);
+                    sw.WriteLine(log);
+                    sw.WriteLine("");
                     Console.WriteLine(DateTime.Now.ToLocalTime().ToString().AddTab() + type.ToString().AddLine() + log.AddLine());
                 }
             }
