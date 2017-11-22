@@ -94,7 +94,7 @@ namespace MKOTHDiscordBot
                 {
                     discordid = 0;
                 }
-                var player = new Player(item[0], item[2], discordid, (item[10] == PlayerStatus.HOLIDAY) ? true : false, (item[10] == PlayerStatus.REMOVED) ? true : false);
+                var player = new Player(item[0], item[2].Replace(" (Knight)", ""), discordid, (item[10] == PlayerStatus.HOLIDAY) ? true : false, (item[10] == PlayerStatus.REMOVED) ? true : false);
             }
         }
 
