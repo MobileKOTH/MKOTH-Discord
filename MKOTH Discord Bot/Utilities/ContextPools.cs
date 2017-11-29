@@ -14,7 +14,7 @@ namespace MKOTHDiscordBot.Utilities
     {
         public static readonly string DataPath = Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\Data\";
         public static readonly ProgramConfiguration Config = JsonConvert.DeserializeObject<ProgramConfiguration>(File.ReadAllText(Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\Config.json"));
-        public static readonly string BuildVersion = $"{Assembly.GetExecutingAssembly().GetName().Version.Major}.{Assembly.GetExecutingAssembly().GetName().Version.Minor}." + Config.Buildnumber.ToString().PadLeft(4, '0');
+        public static readonly string BuildVersion = $"{Assembly.GetExecutingAssembly().GetName().Version.Major}.{Assembly.GetExecutingAssembly().GetName().Version.Minor}." + Config.BuildNumber.ToString().PadLeft(4, '0');
         public static readonly DateTime DeploymentTime = DateTime.Now;
 
         public static int CurrentTypingSecond = 0;
@@ -86,7 +86,7 @@ namespace MKOTHDiscordBot.Utilities
             private int buildnumber;
             private string token;
 
-            public int Buildnumber { get => buildnumber; set => buildnumber = value; }
+            public int BuildNumber { get => buildnumber; set => buildnumber = value; }
             public string Token { get => token; set => token = value; }
 
             public static void Save()
