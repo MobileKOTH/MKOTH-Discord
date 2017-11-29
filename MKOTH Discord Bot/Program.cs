@@ -18,7 +18,7 @@ namespace MKOTHDiscordBot
         private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
         private delegate bool EventHandler(CtrlType sig);
         static EventHandler _handler;
-        enum CtrlType { CTRL_C_EVENT = 0, CTRL_BREAK_EVENT = 1, CTRL_CLOSE_EVENT = 2, CTRL_LOGOFF_EVENT = 5, CTRL_SHUTDOWN_EVENT = 6}
+        enum CtrlType { CTRL_C_EVENT = 0, CTRL_BREAK_EVENT = 1, CTRL_CLOSE_EVENT = 2, CTRL_LOGOFF_EVENT = 5, CTRL_SHUTDOWN_EVENT = 6 }
 
 
         public static bool ReplyToTestServer = true;
@@ -84,6 +84,7 @@ namespace MKOTHDiscordBot
         {
             _client.MessageReceived += HandleCommandAsync;
             _client.Ready += LoadContext;
+            _client.UserJoined += HandleChatSaveUpdateMKOTH;
 
             // Discover all of the commands in this assembly and load them.
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
@@ -130,7 +131,7 @@ namespace MKOTHDiscordBot
             }
         }
 
-        private async void HandleStatusUpdateAsync(object sender, EventArgs e)
+        private async void HandleStatusUpdateAsync(object sender, ElapsedEventArgs e)
         {
             if (!TestMode)
             {
@@ -139,6 +140,20 @@ namespace MKOTHDiscordBot
         }
 
         private void HandleChatSaveUpdateMKOTH(object sender, EventArgs e)
+        {
+            HandleChatSaveUpdateMKOTH();
+        }
+
+        private Task HandleChatSaveUpdateMKOTH(SocketGuildUser user)
+        {
+            if (user.Guild.Id == ContextPools.MKOTHGuild.Guild.Id)
+            {
+                HandleChatSaveUpdateMKOTH();
+            }
+            return Task.CompletedTask;
+        }
+
+        private void HandleChatSaveUpdateMKOTH()
         {
             Chat.SaveHistory();
             if (!TestMode)
