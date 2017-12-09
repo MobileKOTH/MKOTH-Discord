@@ -233,34 +233,18 @@ namespace MKOTHDiscordBot
             {
                 EmbedBuilder embed = new EmbedBuilder();
                 IUserMessage msg;
-                var playerlist = Player.List;
-                for (int i = 0; i < playerlist.Count; i++)
+                var playerlist = Player.List.Where(x => !x.IsRemoved).ToList();
+                foreach (var user in ContextPools.MKOTHGuild.Guild.Users)
                 {
-                    foreach (var user in ContextPools.MKOTHGuild.Guild.Users)
+                    var index = playerlist.FindIndex(x => x.Discordid == user.Id);
+                    if (index > -1)
                     {
-                        if (user.Id == playerlist[i].Discordid || playerlist[i].IsRemoved)
-                        {
-                            playerlist.RemoveAt(i);
-                            i = 0;
-                            break;
-                        }
+                        playerlist.RemoveAt(index);
                     }
                 }
 
-                var activemissinglist = new List<Player>();
-                var holidaymissinglist = new List<Player>();
-
-                foreach (var item in playerlist)
-                {
-                    if (!item.IsHoliday)
-                    {
-                        activemissinglist.Add(item);
-                    }
-                    else
-                    {
-                        holidaymissinglist.Add(item);
-                    }
-                }
+                var activemissinglist = playerlist.Where(x => !x.IsHoliday).ToList();
+                var holidaymissinglist = playerlist.Where(x => x.IsHoliday).ToList();
 
                 string activemisinglistfield = "";
                 string holidaymisinglistfield = "";
