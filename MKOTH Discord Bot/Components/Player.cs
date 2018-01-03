@@ -34,6 +34,15 @@ namespace MKOTHDiscordBot
         bool isHoliday = false;
         bool isRemoved = false;
 
+        public string Name { get => name; set => name = value; }
+        public string Playerclass { get => playerclass; set => playerclass = value; }
+        public ulong Discordid { get => discordid; set => discordid = value; }
+        public bool IsHoliday { get => isHoliday; set => isHoliday = value; }
+        public bool IsRemoved { get => isRemoved; set => isRemoved = value; }
+        public int Wins { get; set; }
+        public int Loss { get; set; }
+        public int Draws { get; set; }
+
         public static List<Player> List = new List<Player>();
 
         public Player()
@@ -41,13 +50,17 @@ namespace MKOTHDiscordBot
             name = PlayerStatus.UNKNOWN;
         }
 
-        public Player(string name, string playerclass, ulong discordid, bool isHoliday, bool isRemoved)
+        public Player(string name, string playerclass, int wins, int loss, int draws, ulong discordid, bool isHoliday, bool isRemoved)
         {
             this.name = name;
             this.playerclass = playerclass;
             this.discordid = discordid;
             this.isHoliday = isHoliday;
             this.isRemoved = isRemoved;
+
+            Wins = wins;
+            Loss = loss;
+            Draws = draws;
 
             List.Add(this);
         }
@@ -94,15 +107,9 @@ namespace MKOTHDiscordBot
                 {
                     discordid = 0;
                 }
-                var player = new Player(item[0], item[2].Replace(" (Knight)", ""), discordid, (item[10] == PlayerStatus.HOLIDAY) ? true : false, (item[10] == PlayerStatus.REMOVED) ? true : false);
+                var player = new Player(item[0], item[2].Replace(" (Knight)", ""), int.Parse(item[3]), int.Parse(item[4]), int.Parse(item[5]), discordid, (item[10] == PlayerStatus.HOLIDAY) ? true : false, (item[10] == PlayerStatus.REMOVED) ? true : false);
             }
         }
-
-        public string Name { get => name; set => name = value; }
-        public string Playerclass { get => playerclass; set => playerclass = value; }
-        public ulong Discordid { get => discordid; set => discordid = value; }
-        public bool IsHoliday { get => isHoliday; set => isHoliday = value; }
-        public bool IsRemoved { get => isRemoved; set => isRemoved = value; }
     }
 
     public class PlayerCode : Player

@@ -94,7 +94,7 @@ namespace MKOTHDiscordBot
 
             Timer statustimer = new Timer();
             statustimer.Elapsed += HandleStatusUpdateAsync;
-            statustimer.Interval = 30000; // in miliseconds
+            statustimer.Interval = 15000; // in miliseconds
             statustimer.Start();
 
             Timer savechatupdatemkothtimer = new Timer();

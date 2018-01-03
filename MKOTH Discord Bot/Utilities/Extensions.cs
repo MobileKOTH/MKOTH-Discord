@@ -25,5 +25,11 @@ namespace MKOTHDiscordBot
             str += " ";
             return str;
         }
+
+        public static string Slice(this String str, int lengthtokeep)
+        {
+            str = str.Length > lengthtokeep ? str.Substring(0, lengthtokeep - 3) + "..." : str;
+            return str;
+        }
     }
 }

@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
 
 namespace MKOTHDiscordBot.Utilities
 {
-    public enum StatusMessages { HELP, INVOLVE, INFO, ENCOURAGE };
+    public enum StatusMessages { INFO, KING, HELP, GAMESCOUNT };
 
     public static class Responder
     {
@@ -92,19 +93,23 @@ namespace MKOTHDiscordBot.Utilities
                 switch (status)
                 {
                     case StatusMessages.HELP:
-                        await client.SetGameAsync("a Series | .mkothhelp for help");
-                        break;
-
-                    case StatusMessages.INVOLVE:
-                        await client.SetGameAsync("with MKOTH Members!");
+                        await client.SetGameAsync("| .mkothhelp for help");
                         break;
 
                     case StatusMessages.INFO:
-                        await client.SetGameAsync("MKOTH | .info for information");
+                        await client.SetGameAsync("| .info for information");
                         break;
 
-                    case StatusMessages.ENCOURAGE:
-                        await client.SetGameAsync("Ranked Series for ELO Display!");
+                    case StatusMessages.KING:
+                        var kingname = Player.List.First(x => x.Playerclass == PlayerClass.KING).Name;
+                        var kingstatus = "King: " + kingname.Slice(18);
+                        await client.SetGameAsync(kingstatus);
+                        break;
+
+                    case StatusMessages.GAMESCOUNT:
+                        var count = Player.List.Sum(x => (x.Wins + x.Loss + x.Draws) / 2);
+                        var gamestatus = count + " total games played";
+                        await client.SetGameAsync(gamestatus);
                         break;
                 }
             }

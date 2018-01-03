@@ -48,7 +48,7 @@ namespace MKOTHDiscordBot
 
             embed.WithImageUrl("https://cdn.discordapp.com/attachments/271109067261476866/330727796647395330/Untitled12111.jpg");
 
-            embed.WithFooter(a => a.Text = "Copyright 2017 © Mobile Koth");
+            embed.WithFooter(a => a.Text = "Copyright 2018 © Mobile Koth");
             embed.WithCurrentTimestamp();
             embed.WithColor(Color.Orange);
 
