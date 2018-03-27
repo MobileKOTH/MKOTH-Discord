@@ -19,7 +19,7 @@ namespace MKOTHDiscordBot
             EmbedBuilder embed = new EmbedBuilder();
             IUserMessage msg;
 
-            if (Context.Guild.Id != Utilities.ContextPools.TestGuild.Guild.Id)
+            if (Context.Guild.Id != Globals.TestGuild.Guild.Id)
             {
                 return;
             }

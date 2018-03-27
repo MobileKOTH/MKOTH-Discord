@@ -60,7 +60,7 @@ namespace MKOTHDiscordBot
 
         public static void LoadHistory()
         {
-            string json = File.ReadAllText(ContextPools.DataPath + "ChatHistory.json");
+            string json = File.ReadAllText(Globals.Directories.DataFolder + "ChatHistory.json");
             History = JsonConvert.DeserializeObject<List<string>>(json);
         }
 
@@ -68,7 +68,7 @@ namespace MKOTHDiscordBot
         {
             DateTime start = DateTime.Now;
             var json = JsonConvert.SerializeObject(History, Formatting.Indented);
-            File.WriteAllText(ContextPools.DataPath + "ChatHistory.json", json);
+            File.WriteAllText(Globals.Directories.DataFolder + "ChatHistory.json", json);
             Logger.Log("Time taken: " + (DateTime.Now - start).TotalMilliseconds.ToString() + " ms", LogType.CHATSAVETIME);
         }
 

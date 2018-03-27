@@ -1,26 +1,18 @@
 ﻿using System;
+using System.Linq;
 using System.Timers;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Runtime.InteropServices;
 using Microsoft.Extensions.DependencyInjection;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Discord.Net.Providers.WS4Net;
 using MKOTHDiscordBot.Utilities;
 
 namespace MKOTHDiscordBot
 {
     class Program
     {
-        [DllImport("Kernel32")]
-        private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
-        private delegate bool EventHandler(CtrlType sig);
-        static EventHandler _handler;
-        enum CtrlType { CTRL_C_EVENT = 0, CTRL_BREAK_EVENT = 1, CTRL_CLOSE_EVENT = 2, CTRL_LOGOFF_EVENT = 5, CTRL_SHUTDOWN_EVENT = 6 }
-
-
         public static bool ReplyToTestServer = true;
         public static bool TestMode = false;
         public static ulong OwnerID = 0;
@@ -30,17 +22,21 @@ namespace MKOTHDiscordBot
         private CommandService _commands;
         private IServiceProvider _services;
 
-        public static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
+        public static void Main(string[] args) => new Program().MainAsync(args).GetAwaiter().GetResult();
 
-        public async Task MainAsync()
+        public async Task MainAsync(string[] args)
         {
             Chat.LoadHistory();
-
+#if DEBUG
+            Console.WriteLine("Debug Build");
             checkfortestmode();
-
+            Globals.IncreaseBuild();
+            Globals.SaveConfig();
+#else
+            Console.WriteLine("Release Build");
+#endif
             _client = new DiscordSocketClient(new DiscordSocketConfig
             {
-                WebSocketProvider = WS4NetProvider.Instance,
                 LogLevel = LogSeverity.Debug
             });
             _commands = new CommandService();
@@ -52,9 +48,9 @@ namespace MKOTHDiscordBot
 
             _client.Log += Log;
 
-            await _client.LoginAsync(TokenType.Bot, ContextPools.Config.Token);
+            await _client.LoginAsync(TokenType.Bot, Globals.Config.Token);
             await _client.StartAsync();
-            OwnerID = (await _client.GetApplicationInfoAsync()).Owner.Id;
+            OwnerID = _client.GetApplicationInfoAsync().Result.Owner.Id;
             Console.WriteLine(OwnerID);
 
             await Task.Delay(-1);
@@ -68,6 +64,7 @@ namespace MKOTHDiscordBot
                     input = Console.ReadLine();
                 }
                 while (input != "Y" && input != "N" && input != "");
+
                 if (input == "Y" || input == "")
                 {
                     TestMode = true;
@@ -88,9 +85,6 @@ namespace MKOTHDiscordBot
 
             // Discover all of the commands in this assembly and load them.
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
-
-            _handler += new EventHandler(Handler);
-            SetConsoleCtrlHandler(_handler, true);
 
             Timer statustimer = new Timer();
             statustimer.Elapsed += HandleStatusUpdateAsync;
@@ -116,21 +110,6 @@ namespace MKOTHDiscordBot
             }
         }
 
-        private static bool Handler(CtrlType sig)
-        {
-            switch (sig)
-            {
-                case CtrlType.CTRL_C_EVENT:
-                case CtrlType.CTRL_LOGOFF_EVENT:
-                case CtrlType.CTRL_SHUTDOWN_EVENT:
-                case CtrlType.CTRL_CLOSE_EVENT:
-                    ContextPools.ProgramConfiguration.Save();
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
         private async void HandleStatusUpdateAsync(object sender, ElapsedEventArgs e)
         {
             if (!TestMode)
@@ -146,7 +125,7 @@ namespace MKOTHDiscordBot
 
         private Task HandleChatSaveUpdateMKOTH(SocketGuildUser user)
         {
-            if (user.Guild.Id == ContextPools.MKOTHGuild.Guild.Id)
+            if (user.Guild.Id == Globals.MKOTHGuild.Guild.Id)
             {
                 HandleChatSaveUpdateMKOTH();
             }
@@ -164,7 +143,7 @@ namespace MKOTHDiscordBot
 
         private Task LoadContext()
         {
-            ContextPools.Load(_client);
+            Globals.Load(_client);
             return Task.CompletedTask;
         }
 

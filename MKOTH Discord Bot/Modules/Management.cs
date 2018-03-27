@@ -15,7 +15,7 @@ namespace MKOTHDiscordBot
         [Command("updatemkoth", RunMode = RunMode.Async)]
         public async Task Updatemkoth()
         {
-            var chatmods = ContextPools.MKOTHGuild.ChatMods;
+            var chatmods = Globals.MKOTHGuild.ChatMods;
             var user = (SocketGuildUser)Context.User;
             if (user.Roles.Contains(chatmods))
             {
@@ -29,15 +29,15 @@ namespace MKOTHDiscordBot
 
             EmbedBuilder embed = new EmbedBuilder();
             IUserMessage msg = null;
-            var MKOTHGuild = ContextPools.MKOTHGuild.Guild;
-            var chatmods = ContextPools.MKOTHGuild.ChatMods;
-            var stupid = ContextPools.MKOTHGuild.Stupid;
-            var member = ContextPools.MKOTHGuild.Member;
-            var peasant = ContextPools.MKOTHGuild.Peasant;
-            var vassal = ContextPools.MKOTHGuild.Vassal;
-            var squire = ContextPools.MKOTHGuild.Squire;
-            var noble = ContextPools.MKOTHGuild.Noble;
-            var king = ContextPools.MKOTHGuild.King;
+            var MKOTHGuild = Globals.MKOTHGuild.Guild;
+            var chatmods = Globals.MKOTHGuild.ChatMods;
+            var stupid = Globals.MKOTHGuild.Stupid;
+            var member = Globals.MKOTHGuild.Member;
+            var peasant = Globals.MKOTHGuild.Peasant;
+            var vassal = Globals.MKOTHGuild.Vassal;
+            var squire = Globals.MKOTHGuild.Squire;
+            var noble = Globals.MKOTHGuild.Noble;
+            var king = Globals.MKOTHGuild.King;
 
             try
             {
@@ -83,7 +83,7 @@ namespace MKOTHDiscordBot
                     }
                     else if(player.Name != PlayerStatus.UNKNOWN && !player.IsRemoved && !serveruser.Roles.Contains(stupid))
                     {
-                        if (serveruser.Nickname != player.Name && serveruser.Username != player.Name && !serveruser.Roles.Contains(chatmods))
+                        if (serveruser.GetDisplayName() != player.Name && !serveruser.Roles.Contains(chatmods))
                         {
                             if (context != null)
                             {
@@ -178,7 +178,7 @@ namespace MKOTHDiscordBot
                 {
                     stacktrace = stacktrace.Substring(0, 1800) + "...";
                 }
-                await Responder.SendToChannel((SocketTextChannel)ContextPools.TestGuild.BotTest, e.Message + "```" + stacktrace + "```");
+                await Responder.SendToChannel((SocketTextChannel)Globals.TestGuild.BotTest, e.Message + "```" + stacktrace + "```");
             }
         }
 
@@ -234,7 +234,7 @@ namespace MKOTHDiscordBot
                 EmbedBuilder embed = new EmbedBuilder();
                 IUserMessage msg;
                 var playerlist = Player.List.Where(x => !x.IsRemoved).ToList();
-                foreach (var user in ContextPools.MKOTHGuild.Guild.Users)
+                foreach (var user in Globals.MKOTHGuild.Guild.Users)
                 {
                     var index = playerlist.FindIndex(x => x.Discordid == user.Id);
                     if (index > -1)
@@ -271,7 +271,7 @@ namespace MKOTHDiscordBot
                 {
                     stacktrace = stacktrace.Substring(0, 1800) + "...";
                 }
-                await Responder.SendToChannel((SocketTextChannel)ContextPools.TestGuild.BotTest, e.Message + "```" + stacktrace + "```");
+                await Responder.SendToChannel((SocketTextChannel)Globals.TestGuild.BotTest, e.Message + "```" + stacktrace + "```");
             }
         }
     }

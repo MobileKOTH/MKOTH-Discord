@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Discord;
 
 namespace MKOTHDiscordBot
 {
     public static class Extensions
     {
+        #region String
         public static string AddLine(this String str)
         {
             str += Environment.NewLine;
@@ -28,8 +30,17 @@ namespace MKOTHDiscordBot
 
         public static string Slice(this String str, int lengthtokeep)
         {
-            str = str.Length > lengthtokeep ? str.Substring(0, lengthtokeep - 3) + "..." : str;
+            string leftoverCover = "...";
+            str = str.Length > lengthtokeep ? str.Take(lengthtokeep - leftoverCover.Length) + leftoverCover : str;
             return str;
         }
+        #endregion
+
+        #region IGuildUser
+        public static string GetDisplayName(this IGuildUser user)
+        {
+            return user.Nickname ?? user.Username;
+        }
+        #endregion
     }
 }

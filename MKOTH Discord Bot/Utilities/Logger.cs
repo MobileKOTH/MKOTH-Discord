@@ -23,9 +23,9 @@ namespace MKOTHDiscordBot
                     break;
             }
 
-            void writeLog(string filepath)
+            void writeLog(string fileName)
             {
-                using (StreamWriter sw = File.AppendText(Utilities.ContextPools.DataPath + filepath))
+                using (StreamWriter sw = File.AppendText(Globals.Directories.DataFolder + fileName))
                 {
                     sw.WriteLine(DateTime.Now.ToLocalTime().ToString().AddTab() + type);
                     sw.WriteLine(log);

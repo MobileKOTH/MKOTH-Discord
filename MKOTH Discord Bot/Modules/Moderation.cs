@@ -63,7 +63,7 @@ namespace MKOTHDiscordBot
                                 await Context.Guild.AddBanAsync(banuser, daystoprune, para.Replace(para.Substring(0, para.IndexOf(" ")), ""), null);
                                 msg = await ReplyAsync("User Banned " + banuser, embed: embed);
                                 banlimit--;
-                                await ((ITextChannel)Utilities.ContextPools.MKOTHGuild.ModLog).SendMessageAsync("User Banned " + banuser, embed: embed);
+                                await ((ITextChannel)Globals.MKOTHGuild.ModLog).SendMessageAsync("User Banned " + banuser, embed: embed);
                                 return;
                             }
                             else
@@ -79,7 +79,7 @@ namespace MKOTHDiscordBot
                     embed.Color = Color.Red;
                     await Context.Guild.AddBanAsync(banuser, daystoprune, para.Replace(para.Substring(0, para.IndexOf(" ")), ""), null);
                     msg = await ReplyAsync("User banned: " + banuser, embed: embed);
-                    await ((ITextChannel)Utilities.ContextPools.MKOTHGuild.ModLog).SendMessageAsync("User Banned " + banuser, embed: embed);
+                    await ((ITextChannel)Globals.MKOTHGuild.ModLog).SendMessageAsync("User Banned " + banuser, embed: embed);
                     return;
                 }
             }
@@ -133,7 +133,7 @@ namespace MKOTHDiscordBot
                     embed.Description = "Moderator: " + Context.User.Mention + " " + Context.User.ToString();
                     embed.Color = Color.Red;
                     msg = await ReplyAsync("User kicked: " + kickuser, embed: embed);
-                    await ((ITextChannel)Utilities.ContextPools.MKOTHGuild.ModLog).SendMessageAsync("User kicked: " + kickuser, embed: embed);
+                    await ((ITextChannel)Globals.MKOTHGuild.ModLog).SendMessageAsync("User kicked: " + kickuser, embed: embed);
                     return;
                 }
             }

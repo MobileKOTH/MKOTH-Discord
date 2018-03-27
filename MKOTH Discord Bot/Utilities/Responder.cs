@@ -31,9 +31,9 @@ namespace MKOTHDiscordBot.Utilities
         {
             try
             {
-                if (ContextPools.CurrentTypingSecond == 0)
+                if (Globals.CurrentTypingSecond == 0)
                 {
-                    ContextPools.CurrentTypingSecond = 10;
+                    Globals.CurrentTypingSecond = 10;
                     await context.Channel.TriggerTypingAsync();
                 }
                 await Task.CompletedTask;
@@ -49,7 +49,7 @@ namespace MKOTHDiscordBot.Utilities
         {
             try
             {
-                ContextPools.CurrentTypingSecond = 0;
+                Globals.CurrentTypingSecond = 0;
                 await Task.Delay(500);
                 await context.Channel.SendMessageAsync(reply);
             }

@@ -37,14 +37,14 @@ namespace MKOTHDiscordBot
 
             EmbedAuthorBuilder author = new EmbedAuthorBuilder();
             author.WithName("Developed by Cerlancism CY");
-            author.WithIconUrl("https://cdn.discordapp.com/avatars/234242692303814657/536e902dca1564f8f49afdc2113e7ce0.png");
+            author.WithIconUrl(Globals.BotOwner.GetAvatarUrl());
             embed.WithAuthor(author);
 
             embed.AddField("Help Command", "```.MKOTHHelp```", false);
             embed.AddField("Library", "```Discord.Net v1.0.2```", true);
             embed.AddField("Memory", string.Format("```{0:N2} MB```", ((double)(counter.RawValue / 1024)) / 1024), true);
-            embed.AddField("Build", $"```v{Utilities.ContextPools.BuildVersion}```", true);
-            embed.AddField("Up Time", $"```{(DateTime.Now - Utilities.ContextPools.DeploymentTime)}```", true);
+            embed.AddField("Build", $"```v{Globals.BuildVersion}```", true);
+            embed.AddField("Up Time", $"```{(DateTime.Now - Globals.DeploymentTime)}```", true);
 
             embed.WithImageUrl("https://cdn.discordapp.com/attachments/271109067261476866/330727796647395330/Untitled12111.jpg");
 
@@ -66,9 +66,9 @@ namespace MKOTHDiscordBot
             await msg.ModifyAsync(x =>
             {
                 x.Content = "`Bot delay: " + (msg.Timestamp - Context.Message.Timestamp).TotalMilliseconds + " ms`\n";
-                x.Embed = new EmbedBuilder().
-                WithDescription("Pong!").
-                WithColor(Color.Orange).Build();
+                x.Embed = new EmbedBuilder()
+                .WithDescription("Pong!")
+                .WithColor(Color.Orange).Build();
             });
         }
 
@@ -76,9 +76,10 @@ namespace MKOTHDiscordBot
         public async Task Ping([Remainder] string para)
         {
             EmbedBuilder embed = new EmbedBuilder();
-            await ReplyAsync("`Bot delay: " + Context.Client.Latency + " ms`\n", false, 
-                embed.WithDescription("Pong!").
-                WithColor(Color.Orange).Build());
+            await ReplyAsync("`Bot client latency: " + Context.Client.Latency + " ms`\n", false, 
+                embed.WithDescription("Pong!")
+                .AddField("Reflect", para)
+                .WithColor(Color.Orange).Build());
         }
 
         [Command("settest")]
