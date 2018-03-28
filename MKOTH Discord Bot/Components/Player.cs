@@ -134,7 +134,7 @@ namespace MKOTHDiscordBot
                 var response = await new System.Net.WebClient().DownloadStringTaskAsync("https://docs.google.com/spreadsheets/d/e/2PACX-1vSITdXPzQ_5eidATjL9j7uBicp4qvDuhx55IPvbMJ_jor8JU60UWCHwaHdXcR654W8Tp6VIjg-8V7g0/pub?gid=282944341&single=true&output=tsv");
                 Player.InitialiseList(response);
                 var channel = Globals.MKOTHGuild.PlayerID as ISocketMessageChannel;
-                var messages = channel.GetMessagesAsync(100, CacheMode.AllowDownload, null).Flatten().GetAwaiter().GetResult();
+                var messages = await channel.GetMessagesAsync(100, CacheMode.AllowDownload, null).FlattenAsync();
                 if (messages.Count() <= 1) return;
                 CodeList.Clear();
                 foreach (var msg in messages)

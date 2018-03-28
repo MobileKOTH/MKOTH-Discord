@@ -262,7 +262,7 @@ namespace MKOTHDiscordBot
                 embed.AddField(holidaymissinglist.Count + " Holiday Members", $"```{holidaymisinglistfield}```");
                 embed.Color = Color.Orange;
 
-                msg = await ReplyAsync(string.Empty, false, embed: embed);
+                msg = await ReplyAsync(string.Empty, false, embed: embed.Build());
             }
             catch (Exception e)
             {

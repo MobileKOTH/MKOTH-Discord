@@ -52,7 +52,7 @@ namespace MKOTHDiscordBot
             embed.WithCurrentTimestamp();
             embed.WithColor(Color.Orange);
 
-            await ReplyAsync(string.Empty, embed: embed);
+            await ReplyAsync(string.Empty, embed: embed.Build());
         }
 
         [Command("ping")]

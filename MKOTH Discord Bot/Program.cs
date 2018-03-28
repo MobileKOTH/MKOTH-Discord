@@ -3,6 +3,7 @@ using System.Linq;
 using System.Timers;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.DependencyInjection;
 using Discord;
 using Discord.Commands;
@@ -26,10 +27,14 @@ namespace MKOTHDiscordBot
 
         public async Task MainAsync(string[] args)
         {
+            Console.WriteLine(RuntimeInformation.FrameworkDescription);
+            Console.WriteLine(RuntimeInformation.OSArchitecture);
+            Console.WriteLine(RuntimeInformation.ProcessArchitecture);
+            Console.WriteLine(RuntimeInformation.OSDescription);
             Chat.LoadHistory();
 #if DEBUG
             Console.WriteLine("Debug Build");
-            checkfortestmode();
+            checkForTestMode();
             Globals.IncreaseBuild();
             Globals.SaveConfig();
 #else
@@ -39,6 +44,7 @@ namespace MKOTHDiscordBot
             {
                 LogLevel = LogSeverity.Debug
             });
+
             _commands = new CommandService();
             _services = new ServiceCollection()
             .AddSingleton(_client)
@@ -51,11 +57,11 @@ namespace MKOTHDiscordBot
             await _client.LoginAsync(TokenType.Bot, Globals.Config.Token);
             await _client.StartAsync();
             OwnerID = _client.GetApplicationInfoAsync().Result.Owner.Id;
-            Console.WriteLine(OwnerID);
+            Console.WriteLine($"Owner Id: {OwnerID}");
 
             await Task.Delay(-1);
 
-            void checkfortestmode()
+            void checkForTestMode()
             {
                 string input;
                 do

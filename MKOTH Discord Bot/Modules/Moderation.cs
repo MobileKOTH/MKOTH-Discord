@@ -61,9 +61,9 @@ namespace MKOTHDiscordBot
                                 embed.Description = "Moderator: " + Context.User.Mention + " " + Context.User.ToString();
                                 embed.Color = Color.Red;
                                 await Context.Guild.AddBanAsync(banuser, daystoprune, para.Replace(para.Substring(0, para.IndexOf(" ")), ""), null);
-                                msg = await ReplyAsync("User Banned " + banuser, embed: embed);
+                                msg = await ReplyAsync("User Banned " + banuser, embed: embed.Build());
                                 banlimit--;
-                                await ((ITextChannel)Globals.MKOTHGuild.ModLog).SendMessageAsync("User Banned " + banuser, embed: embed);
+                                await ((ITextChannel)Globals.MKOTHGuild.ModLog).SendMessageAsync("User Banned " + banuser, embed: embed.Build());
                                 return;
                             }
                             else
@@ -78,8 +78,8 @@ namespace MKOTHDiscordBot
                     embed.Description = "Moderator: " + Context.User.Mention + " " + Context.User.ToString();
                     embed.Color = Color.Red;
                     await Context.Guild.AddBanAsync(banuser, daystoprune, para.Replace(para.Substring(0, para.IndexOf(" ")), ""), null);
-                    msg = await ReplyAsync("User banned: " + banuser, embed: embed);
-                    await ((ITextChannel)Globals.MKOTHGuild.ModLog).SendMessageAsync("User Banned " + banuser, embed: embed);
+                    msg = await ReplyAsync("User banned: " + banuser, embed: embed.Build());
+                    await ((ITextChannel)Globals.MKOTHGuild.ModLog).SendMessageAsync("User Banned " + banuser, embed: embed.Build());
                     return;
                 }
             }
@@ -132,8 +132,8 @@ namespace MKOTHDiscordBot
                     embed.Title = "Reason: " + para.Replace(para.Substring(0, para.IndexOf(" ")), "");
                     embed.Description = "Moderator: " + Context.User.Mention + " " + Context.User.ToString();
                     embed.Color = Color.Red;
-                    msg = await ReplyAsync("User kicked: " + kickuser, embed: embed);
-                    await ((ITextChannel)Globals.MKOTHGuild.ModLog).SendMessageAsync("User kicked: " + kickuser, embed: embed);
+                    msg = await ReplyAsync("User kicked: " + kickuser, embed: embed.Build());
+                    await ((ITextChannel)Globals.MKOTHGuild.ModLog).SendMessageAsync("User kicked: " + kickuser, embed: embed.Build());
                     return;
                 }
             }
