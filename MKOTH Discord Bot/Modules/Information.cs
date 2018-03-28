@@ -1,8 +1,9 @@
 ﻿using Discord.Commands;
 using Discord;
+using System;
 using System.Threading.Tasks;
 using System.Diagnostics;
-using System;
+using System.Management;
 
 namespace MKOTHDiscordBot
 {
@@ -21,38 +22,48 @@ namespace MKOTHDiscordBot
         }
         */
 
+        PerformanceCounter cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+        PerformanceCounter ramCounter = new PerformanceCounter("Memory", "Available MBytes");
+
         [Command("info")]
         [Alias("stats")]
-        [Summary ("Display bot information and statistics.")]
+        [Summary("Display bot information and statistics.")]
         public async Task Info()
         {
-            EmbedBuilder embed = new EmbedBuilder();
+            ulong memorySize = 0;
+            ObjectQuery winQuery = new ObjectQuery("SELECT * FROM CIM_OperatingSystem");
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(winQuery);
+            foreach (ManagementObject item in searcher.Get())
+            {
+                memorySize = (ulong)item["TotalVirtualMemorySize"];
+            }
+
             string prcName = Process.GetCurrentProcess().ProcessName;
             var counter = new PerformanceCounter("Process", "Working Set - Private", prcName);
 
-            embed.WithTitle("Information");
-            embed.WithDescription("Official MKOTH Management Bot. In early development and testing phase.");
-            embed.WithUrl("https://mobilekoth.wordpress.com/");
-            embed.WithThumbnailUrl("https://cdn.discordapp.com/attachments/341163606605299716/360336022745382912/13615239_1204861226212220_2613382245523520956_n.png");
+            var embed = 
+                new EmbedBuilder()
+                .WithTitle("Information")
+                .WithDescription("Official MKOTH Management Bot. In early development and testing phase.")
+                .WithUrl("https://mobilekoth.wordpress.com/")
+                .WithThumbnailUrl("https://cdn.discordapp.com/attachments/341163606605299716/360336022745382912/13615239_1204861226212220_2613382245523520956_n.png")
+                .WithAuthor(
+                    new EmbedAuthorBuilder()
+                    .WithName("Developed by " + Globals.BotOwner.Username)
+                    .WithIconUrl(Globals.BotOwner.GetAvatarUrl()))
+                .AddField("Help Command", "```.MKOTHHelp```")
+                .AddField("Library", "```Discord.Net v2.0.0```", true)
+                .AddField("Memory Usage", string.Format("```{0:N2} MB```", ((double)counter.RawValue) / 1024 / 1024), true)
+                .AddField("Build", $"```v{Globals.BuildVersion}```", true)
+                .AddField("System", string.Format("```Free RAM: {0:N2} / {1:N2} GB\nCPU Load: {2}%```", ramCounter.NextValue() / 1024, memorySize / 1024 / 1024, cpuCounter.NextValue()))
+                .AddField("Up Time", $"```{(DateTime.Now - Globals.DeploymentTime)}```")
+                .WithImageUrl("https://cdn.discordapp.com/attachments/271109067261476866/330727796647395330/Untitled12111.jpg")
+                .WithFooter(a => a.Text = "Copyright 2018 © Mobile Koth")
+                .WithCurrentTimestamp()
+                .WithColor(Color.Orange)
+                .Build();
 
-            EmbedAuthorBuilder author = new EmbedAuthorBuilder();
-            author.WithName("Developed by Cerlancism CY");
-            author.WithIconUrl(Globals.BotOwner.GetAvatarUrl());
-            embed.WithAuthor(author);
-
-            embed.AddField("Help Command", "```.MKOTHHelp```", false);
-            embed.AddField("Library", "```Discord.Net v1.0.2```", true);
-            embed.AddField("Memory", string.Format("```{0:N2} MB```", ((double)(counter.RawValue / 1024)) / 1024), true);
-            embed.AddField("Build", $"```v{Globals.BuildVersion}```", true);
-            embed.AddField("Up Time", $"```{(DateTime.Now - Globals.DeploymentTime)}```", true);
-
-            embed.WithImageUrl("https://cdn.discordapp.com/attachments/271109067261476866/330727796647395330/Untitled12111.jpg");
-
-            embed.WithFooter(a => a.Text = "Copyright 2018 © Mobile Koth");
-            embed.WithCurrentTimestamp();
-            embed.WithColor(Color.Orange);
-
-            await ReplyAsync(string.Empty, embed: embed.Build());
+            await ReplyAsync(string.Empty, embed: embed);
         }
 
         [Command("ping")]
@@ -76,7 +87,7 @@ namespace MKOTHDiscordBot
         public async Task Ping([Remainder] string para)
         {
             EmbedBuilder embed = new EmbedBuilder();
-            await ReplyAsync("`Bot client latency: " + Context.Client.Latency + " ms`\n", false, 
+            await ReplyAsync("`Bot client latency: " + Context.Client.Latency + " ms`\n", false,
                 embed.WithDescription("Pong!")
                 .AddField("Reflect", para)
                 .WithColor(Color.Orange).Build());

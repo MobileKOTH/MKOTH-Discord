@@ -31,7 +31,7 @@ namespace MKOTHDiscordBot
         public static string Slice(this String str, int lengthtokeep)
         {
             string leftoverCover = "...";
-            str = str.Length > lengthtokeep ? str.Take(lengthtokeep - leftoverCover.Length) + leftoverCover : str;
+            str = str.Length > lengthtokeep ? str.Substring(0, lengthtokeep - leftoverCover.Length) + leftoverCover : str;
             return str;
         }
         #endregion
