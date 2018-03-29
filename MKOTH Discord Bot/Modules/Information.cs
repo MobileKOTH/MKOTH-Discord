@@ -22,65 +22,82 @@ namespace MKOTHDiscordBot
         }
         */
 
-        PerformanceCounter cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-        PerformanceCounter ramCounter = new PerformanceCounter("Memory", "Available MBytes");
-
         [Command("info")]
         [Alias("stats")]
         [Summary("Display bot information and statistics.")]
         public async Task Info()
         {
-            ulong memorySize = 0;
-            ObjectQuery winQuery = new ObjectQuery("SELECT * FROM CIM_OperatingSystem");
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher(winQuery);
-            foreach (ManagementObject item in searcher.Get())
+            var msgTask = ReplyAsync(string.Empty, embed: buildEmbed());
+
+            var prcName = Process.GetCurrentProcess().ProcessName;
+            var RamUsageMB = (float) new PerformanceCounter("Process", "Working Set - Private", prcName).RawValue / 1024 / 1024;
+            var freeRAMGB = new PerformanceCounter("Memory", "Available MBytes").NextValue() / 1024;
+            ulong ramSizeGB = 0;
+            ushort cpuUsagePercent = 0;
+
+            var ramQuery = new ObjectQuery("SELECT * FROM CIM_PhysicalMemory");
+            var searcherRAM = new ManagementObjectSearcher(ramQuery);
+            var cpuQuery = new ObjectQuery("SELECT * FROM CIM_Processor");
+            var searcherCPU = new ManagementObjectSearcher(cpuQuery);
+            foreach (var item in searcherRAM.Get()) ramSizeGB += (ulong)item["Capacity"] / 1024 / 1024 / 1024;
+            foreach (var item in searcherCPU.Get()) cpuUsagePercent = (ushort)item["LoadPercentage"];
+
+            await msgTask.Result.ModifyAsync(x => x.Embed = buildEmbed(
+                string.Format("```{0:N2} MB```", RamUsageMB),
+                string.Format("```Free RAM: {0:N2} / {1:N2} GB\nCPU Load: {2}%```", freeRAMGB, ramSizeGB, cpuUsagePercent)));
+
+            Embed buildEmbed(string ramUsage = "```Loading...```", string systemInfo = "```Loading...```")
             {
-                memorySize = (ulong)item["TotalVirtualMemorySize"];
-            }
-
-            string prcName = Process.GetCurrentProcess().ProcessName;
-            var counter = new PerformanceCounter("Process", "Working Set - Private", prcName);
-
-            var embed = 
-                new EmbedBuilder()
+                return new EmbedBuilder()
                 .WithTitle("Information")
                 .WithDescription("Official MKOTH Management Bot. In early development and testing phase.")
                 .WithUrl("https://mobilekoth.wordpress.com/")
                 .WithThumbnailUrl("https://cdn.discordapp.com/attachments/341163606605299716/360336022745382912/13615239_1204861226212220_2613382245523520956_n.png")
-                .WithAuthor(
-                    new EmbedAuthorBuilder()
+                .WithAuthor(new EmbedAuthorBuilder()
                     .WithName("Developed by " + Globals.BotOwner.Username)
-                    .WithIconUrl(Globals.BotOwner.GetAvatarUrl()))
-                .AddField("Help Command", "```.MKOTHHelp```")
-                .AddField("Library", "```Discord.Net v2.0.0```", true)
-                .AddField("Memory Usage", string.Format("```{0:N2} MB```", ((double)counter.RawValue) / 1024 / 1024), true)
-                .AddField("Build", $"```v{Globals.BuildVersion}```", true)
-                .AddField("System", string.Format("```Free RAM: {0:N2} / {1:N2} GB\nCPU Load: {2}%```", ramCounter.NextValue() / 1024, memorySize / 1024 / 1024, cpuCounter.NextValue()))
-                .AddField("Up Time", $"```{(DateTime.Now - Globals.DeploymentTime)}```")
+                    .WithIconUrl(Globals.BotOwner
+                        .GetAvatarUrl()))
+                .AddField(new EmbedFieldBuilder()
+                    .WithName("Help")
+                    .WithValue("```.MKOTHHelp```"))
+                .AddField(new EmbedFieldBuilder()
+                    .WithName("Library")
+                    .WithValue("```Discord.Net v2.0.0```")
+                    .WithIsInline(true))
+                .AddField(new EmbedFieldBuilder()
+                    .WithName("Memory")
+                    .WithValue(ramUsage)
+                    .WithIsInline(true))
+                .AddField(new EmbedFieldBuilder()
+                    .WithName("Build")
+                    .WithValue($"```v{Globals.BuildVersion}```")
+                    .WithIsInline(true))
+                .AddField(new EmbedFieldBuilder()
+                    .WithName("System")
+                    .WithValue(systemInfo))
+                .AddField(new EmbedFieldBuilder()
+                    .WithName("Uptime")
+                    .WithValue($"```{(DateTime.Now - Globals.DeploymentTime)}```"))
                 .WithImageUrl("https://cdn.discordapp.com/attachments/271109067261476866/330727796647395330/Untitled12111.jpg")
-                .WithFooter(a => a.Text = "Copyright 2018 © Mobile Koth")
+                .WithFooter(text: "Copyright 2018 © Mobile Koth")
                 .WithCurrentTimestamp()
                 .WithColor(Color.Orange)
                 .Build();
-
-            await ReplyAsync(string.Empty, embed: embed);
+            }
         }
 
         [Command("ping")]
         public async Task Ping()
         {
-            EmbedBuilder embed = new EmbedBuilder();
-            IUserMessage msg;
-
-            msg = await ReplyAsync("`loading...`");
-
+            var msg = await ReplyAsync("`loading...`");
             await msg.ModifyAsync(x =>
-            {
-                x.Content = "`Bot delay: " + (msg.Timestamp - Context.Message.Timestamp).TotalMilliseconds + " ms`\n";
-                x.Embed = new EmbedBuilder()
-                .WithDescription("Pong!")
-                .WithColor(Color.Orange).Build();
-            });
+                {
+                    x.Content = "`Bot delay: " + (msg.Timestamp - Context.Message.Timestamp).TotalMilliseconds + " ms`\n";
+                    x.Embed = new EmbedBuilder()
+                    .WithDescription("Pong!")
+                    .WithColor(Color.Orange)
+                    .Build();
+                });
         }
 
         [Command("ping")]
