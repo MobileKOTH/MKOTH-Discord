@@ -22,7 +22,7 @@ namespace MKOTHDiscordBot
         }
         */
 
-        [Command("info")]
+        [Command("info", RunMode = RunMode.Async)]
         [Alias("stats")]
         [Summary("Display bot information and statistics.")]
         public async Task Info()
@@ -55,11 +55,10 @@ namespace MKOTHDiscordBot
                 .WithThumbnailUrl("https://cdn.discordapp.com/attachments/341163606605299716/360336022745382912/13615239_1204861226212220_2613382245523520956_n.png")
                 .WithAuthor(new EmbedAuthorBuilder()
                     .WithName("Developed by " + Globals.BotOwner.Username)
-                    .WithIconUrl(Globals.BotOwner
-                        .GetAvatarUrl()))
+                    .WithIconUrl(Globals.BotOwner.GetAvatarUrl()))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Help")
-                    .WithValue("```.MKOTHHelp```"))
+                    .WithValue("```.Help```"))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Library")
                     .WithValue("```Discord.Net v2.0.0```")
@@ -101,12 +100,12 @@ namespace MKOTHDiscordBot
         }
 
         [Command("ping")]
-        public async Task Ping([Remainder] string para)
+        public async Task Ping([Remainder] string reflection)
         {
             EmbedBuilder embed = new EmbedBuilder();
             await ReplyAsync("`Bot client latency: " + Context.Client.Latency + " ms`\n", false,
                 embed.WithDescription("Pong!")
-                .AddField("Reflect", para)
+                .AddField("Reflect", reflection)
                 .WithColor(Color.Orange).Build());
         }
 

@@ -55,7 +55,7 @@ namespace MKOTHDiscordBot
         {
             public static SocketGuild Guild;
             public static SocketChannel Official, Casual, PlayerID, ModLog;
-            public static SocketRole ChatMods, Stupid, Member, Peasant, Vassal, Squire, Noble, King;
+            public static SocketRole ChatMods, VIP, Stupid, Member, Peasant, Vassal, Squire, Noble, King;
         }
 
         public static class TestGuild
@@ -64,7 +64,7 @@ namespace MKOTHDiscordBot
             public static SocketChannel BotTest;
         }
 
-        public static void Load(DiscordSocketClient client)
+        public static Task Load(DiscordSocketClient client)
         {
             try
             {
@@ -84,6 +84,7 @@ namespace MKOTHDiscordBot
 
                 MKOTHGuild.ChatMods = guild.Roles.Single(x => x.Name.Contains("Chat Mods"));
                 MKOTHGuild.Stupid = guild.Roles.Single(x => x.Name.Contains("I am stupid"));
+                MKOTHGuild.VIP = guild.Roles.Single(x => x.Name.Contains("Peers of the Realm"));
                 MKOTHGuild.Member = guild.Roles.Single(x => x.Name.Contains("MKOTH Members"));
                 MKOTHGuild.Peasant = guild.Roles.Single(x => x.Name.Contains("MKOTH Peasants"));
                 MKOTHGuild.Vassal = guild.Roles.Single(x => x.Name.Contains("MKOTH Vassals"));
@@ -113,6 +114,8 @@ namespace MKOTHDiscordBot
                 Console.ReadKey();
                 Environment.Exit(0);
             }
+
+            return Task.CompletedTask;
         }
 
         private static void HandleTimeCounter(object sender, ElapsedEventArgs e)

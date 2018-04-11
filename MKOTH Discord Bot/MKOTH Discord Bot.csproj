@@ -132,6 +132,8 @@
     <Compile Include="Components\Chat.cs" />
     <Compile Include="Components\Player.cs" />
     <Compile Include="Modules\TrashTalk.cs" />
+    <Compile Include="Preconditions\RequireMKOTHGuildAttribute.cs" />
+    <Compile Include="Preconditions\RequireMKOTHModAttribute.cs" />
     <Compile Include="Utilities\Globals.cs" />
     <Compile Include="Utilities\Extensions.cs" />
     <Compile Include="Utilities\Logger.cs" />

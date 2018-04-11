@@ -10,8 +10,8 @@ namespace MKOTHDiscordBot
 {
     public class TrashTalk : ModuleBase<SocketCommandContext>
     {
-        [Command("TrashInfo")]
-        [Summary("")]
+        [Command("TrashInfo", RunMode = RunMode.Async)]
+        [Summary("Displays the possible response the bot will give when being pinged with the content.")]
         [Alias("ti")]
         public async Task TrashInfo([Remainder] string message)
         {

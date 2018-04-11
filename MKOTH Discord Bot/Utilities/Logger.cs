@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Newtonsoft.Json;
 
 namespace MKOTHDiscordBot
 {
@@ -35,19 +36,22 @@ namespace MKOTHDiscordBot
             }
         }
 
-        public static void Debug(object obj, string variablename)
+        public static void Debug(object obj, string description)
         {
             string type = obj.GetType().ToString();
             try
             {
-                string json = Newtonsoft.Json.JsonConvert.SerializeObject(obj, Newtonsoft.Json.Formatting.Indented);
-                Console.WriteLine(type.AddSpace() + variablename.AddTab().AddLine() + json);
+                string json = JsonConvert.SerializeObject(obj, Formatting.Indented, new JsonSerializerSettings
+                {
+                    PreserveReferencesHandling = PreserveReferencesHandling.Objects,
+                });
+                Console.WriteLine(type.AddSpace() + description.AddTab().AddLine() + json);
             }
             catch (Exception e)
             {
                 Console.WriteLine(
-                    "Error generating object data".AddTab() + obj.GetType().ToString().AddTab() + variablename.AddLine() + 
-                    e.Message.AddLine() + 
+                    "Error generating object data".AddTab() + obj.GetType().ToString().AddTab() + description.AddLine() +
+                    e.Message.AddLine() +
                     e.StackTrace);
             }
         }

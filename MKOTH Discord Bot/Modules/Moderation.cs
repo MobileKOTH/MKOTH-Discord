@@ -6,141 +6,46 @@ using Discord.Commands;
 
 namespace MKOTHDiscordBot
 {
+    using static Globals.MKOTHGuild;
+
+    [RequireMKOTHMod]
     public class Moderation : ModuleBase<SocketCommandContext>
     {
         static int banlimit = 3;
 
-        [Command("ban")]
-        public async Task Ban([Remainder] string para)
+        [Command("Ban")]
+        [Summary("Ban an eligable user in MKOTH Server.")]
+        [RequireMKOTHGuild]
+        public async Task Ban(IGuildUser user, [Remainder] string reason = "Not Provided.")
         {
-            await BanTask(para, false);
+            await BanAsync(user, reason, false);
         }
 
-        [Command("superban")]
-        public async Task SuperBan([Remainder] string para)
+        [Command("SuperBan")]
+        [Summary("Ban an eligable user in MKOTH Server and prune their messages from the past 1 day.")]
+        [RequireMKOTHGuild]
+        public async Task SuperBan(IGuildUser user, [Remainder] string reason = "Not Provided.")
         {
-            await BanTask(para, true);
+            await BanAsync(user, reason, true);
         }
 
-        async Task BanTask(string para, bool prune)
+        [RequireMKOTHGuild]
+        [Command("Kick")]
+        [Summary("Kick a user from the MKOTH server.")]
+        public async Task Kick(IGuildUser user, [Remainder] string reason = "Not Provided.")
         {
-            EmbedBuilder embed = new EmbedBuilder();
-            IUserMessage msg;
-
-            int daystoprune = prune ? 1 : 0;
-
-            para += " ";
-            var user = Context.Message.Author as IGuildUser;
-
-            foreach (var role in user.RoleIds)
+            if (IsModImmuneUser(user) || user.RoleIds.Contains(Member.Id))
             {
-                if (role == 349945390193180674L)
-                {
-                    if (Context.Message.MentionedUsers.Count != 1)
-                    {
-                        msg = await ReplyAsync("Invalid user mention");
-                        return;
-                    }
-
-                    var banuser = Context.Message.MentionedUsers.First();
-                    foreach (var banuserrole in (banuser as IGuildUser).RoleIds)
-                    {
-                        if (banuserrole == role)
-                        {
-                            await ReplyAsync("Cannot ban a moderator!");
-                            return;
-                        }
-                    }
-                    foreach (var banuserrole in (banuser as IGuildUser).RoleIds)
-                    {
-                        if (banuserrole == 347261976600248320L)
-                        {
-                            if (banlimit > 0)
-                            {
-                                embed.Title = "Reason: " + para.Replace(para.Substring(0, para.IndexOf(" ")), "");
-                                embed.Description = "Moderator: " + Context.User.Mention + " " + Context.User.ToString();
-                                embed.Color = Color.Red;
-                                await Context.Guild.AddBanAsync(banuser, daystoprune, para.Replace(para.Substring(0, para.IndexOf(" ")), ""), null);
-                                msg = await ReplyAsync("User Banned " + banuser, embed: embed.Build());
-                                banlimit--;
-                                await ((ITextChannel)Globals.MKOTHGuild.ModLog).SendMessageAsync("User Banned " + banuser, embed: embed.Build());
-                                return;
-                            }
-                            else
-                            {
-                                await ReplyAsync("Ban limit for MKOTH members reached!");
-                                return;
-                            }
-                        }
-                    }
-
-                    embed.Title = "Reason: " + para.Replace(para.Substring(0, para.IndexOf(" ")), "");
-                    embed.Description = "Moderator: " + Context.User.Mention + " " + Context.User.ToString();
-                    embed.Color = Color.Red;
-                    await Context.Guild.AddBanAsync(banuser, daystoprune, para.Replace(para.Substring(0, para.IndexOf(" ")), ""), null);
-                    msg = await ReplyAsync("User banned: " + banuser, embed: embed.Build());
-                    await ((ITextChannel)Globals.MKOTHGuild.ModLog).SendMessageAsync("User Banned " + banuser, embed: embed.Build());
-                    return;
-                }
+                await ReplyAsync("Cannot kick a moderator, a bot, a VIP or a MKOTH Member.");
+                return;
             }
-            await ReplyAsync("You do not have the permission to ban!");
+
+            await user.KickAsync(reason);
+            await SendModResponseAsync(user, reason, "Kicked");
+            return;
         }
 
-        [Command("kick")]
-        public async Task Kick([Remainder] string para)
-        {
-            EmbedBuilder embed = new EmbedBuilder();
-            IUserMessage msg;
-
-            para += " ";
-            var user = Context.Message.Author as IGuildUser;
-
-            foreach (var role in user.RoleIds)
-            {
-                if (role == 349945390193180674L)
-                {
-                    if (Context.Message.MentionedUsers.Count != 1)
-                    {
-                        msg = await ReplyAsync("Invalid user mention");
-                        return;
-                    }
-
-                    var kickuser = Context.Message.MentionedUsers.First();
-                    foreach (var kickuserrole in (kickuser as IGuildUser).RoleIds)
-                    {
-                        if (kickuserrole == role)
-                        {
-                            await ReplyAsync("Cannot kick a moderator!");
-                            return;
-                        }
-                    }
-                    foreach (var kickuserrole in (kickuser as IGuildUser).RoleIds)
-                    {
-                        if (kickuserrole == 349945390193180674L)
-                        {
-                            await ReplyAsync("Cannot kick a moderator!");
-                            return;
-                        }
-                        if (kickuserrole == 347261976600248320L)
-                        {
-                            await ReplyAsync("No kicking of MKOTH members!");
-                            return;
-                        }
-                    }
-
-                    await (kickuser as IGuildUser).KickAsync();
-                    embed.Title = "Reason: " + para.Replace(para.Substring(0, para.IndexOf(" ")), "");
-                    embed.Description = "Moderator: " + Context.User.Mention + " " + Context.User.ToString();
-                    embed.Color = Color.Red;
-                    msg = await ReplyAsync("User kicked: " + kickuser, embed: embed.Build());
-                    await ((ITextChannel)Globals.MKOTHGuild.ModLog).SendMessageAsync("User kicked: " + kickuser, embed: embed.Build());
-                    return;
-                }
-            }
-            await ReplyAsync("You do not have the permission to kick!");
-        }
-
-        [Command("resetban")]
+        [Command("ResetBan")]
         [RequireOwner]
         public async Task ResetBan()
         {
@@ -148,11 +53,63 @@ namespace MKOTHDiscordBot
             await ReplyAsync("Ban limit reset.");
         }
 
-        [Command("showbanlimit")]
+        [Command("ShowBanLimit")]
         [RequireOwner]
         public async Task Showbanlimit()
         {
             await ReplyAsync("Ban limit: " + banlimit);
+        }
+
+        private async Task BanAsync(IGuildUser user, string para, bool prune)
+        {
+            int daystoprune = prune ? 1 : 0;
+
+            if (IsModImmuneUser(user))
+            {
+                await ReplyAsync("Cannot ban a moderator, a bot or a VIP.");
+                return;
+            }
+
+            if (user.RoleIds.Contains(Member.Id))
+            {
+                if (banlimit > 0)
+                {
+                    banlimit--;
+                    goto banProcedure;
+                }
+                else
+                {
+                    await ReplyAsync("Ban limit for MKOTH members has reached!");
+                    return;
+                }
+            }
+
+            banProcedure:
+            await Context.Guild.AddBanAsync(user, daystoprune, para);
+            await SendModResponseAsync(user, para, "Banned");
+
+            return;
+        }
+
+        private bool IsModImmuneUser(IGuildUser user)
+        {
+            if (user.IsBot || user.RoleIds.Intersect(new ulong[] { ChatMods.Id, VIP.Id}).Count() > 0)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private async Task SendModResponseAsync(IGuildUser user, string para, string type)
+        {
+            EmbedBuilder embed = new EmbedBuilder
+            {
+                Title = "Reason: " + para,
+                Description = "Moderator: " + Context.User.Mention + " " + Context.User.ToString(),
+                Color = Color.Red
+            };
+            await ReplyAsync($"User {type} " + user.Mention.AddSpace() + user, embed: embed.Build());
+            await ((ITextChannel)ModLog).SendMessageAsync($"User {type} " + user, embed: embed.Build());
         }
     }
 }

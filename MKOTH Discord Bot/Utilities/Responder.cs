@@ -93,7 +93,7 @@ namespace MKOTHDiscordBot.Utilities
                 switch (status)
                 {
                     case StatusMessages.HELP:
-                        await client.SetGameAsync("| .mkothhelp for help");
+                        await client.SetGameAsync("| .help for help");
                         break;
 
                     case StatusMessages.INFO:

@@ -9,6 +9,8 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using MKOTHDiscordBot.Utilities;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace MKOTHDiscordBot
 {
@@ -17,7 +19,6 @@ namespace MKOTHDiscordBot
         public static bool ReplyToTestServer = true;
         public static bool TestMode = false;
         public static ulong OwnerID = 0;
-
 
         private DiscordSocketClient _client;
         private CommandService _commands;
@@ -28,7 +29,6 @@ namespace MKOTHDiscordBot
         public async Task MainAsync(string[] args)
         {
             Console.WriteLine(RuntimeInformation.FrameworkDescription);
-            Console.WriteLine(RuntimeInformation.OSArchitecture);
             Console.WriteLine(RuntimeInformation.ProcessArchitecture);
             Console.WriteLine(RuntimeInformation.OSDescription);
             Chat.LoadHistory();
@@ -40,19 +40,22 @@ namespace MKOTHDiscordBot
 #else
             Console.WriteLine("Release Build");
 #endif
-            _client = new DiscordSocketClient(new DiscordSocketConfig
-            {
-                LogLevel = LogSeverity.Debug
-            });
+            _client = new DiscordSocketClient(new DiscordSocketConfig{ LogLevel = LogSeverity.Debug });
 
             _commands = new CommandService();
             _services = new ServiceCollection()
-            .AddSingleton(_client)
-            .AddSingleton(_commands)
-            .BuildServiceProvider();
+                .AddSingleton(_client)
+                .AddSingleton(_commands)
+                .BuildServiceProvider();
             await InstallCommandsAsync();
 
-            _client.Log += Log;
+            _client.Log += (msg) =>
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine(msg.ToString());
+                Console.ResetColor();
+                return Task.CompletedTask;
+            };
 
             await _client.LoginAsync(TokenType.Bot, Globals.Config.Token);
             await _client.StartAsync();
@@ -86,7 +89,7 @@ namespace MKOTHDiscordBot
         public async Task InstallCommandsAsync()
         {
             _client.MessageReceived += HandleCommandAsync;
-            _client.Ready += LoadContext;
+            _client.Ready += () => Globals.Load(_client);
             _client.UserJoined += HandleChatSaveUpdateMKOTH;
 
             // Discover all of the commands in this assembly and load them.
@@ -103,7 +106,7 @@ namespace MKOTHDiscordBot
             savechatupdatemkothtimer.Start();
 
             Timer downloadplayerdatatimer = new Timer();
-            downloadplayerdatatimer.Elapsed += HandlePlayerDataDownload;
+            downloadplayerdatatimer.Elapsed += async (sender, evt) => { if (!TestMode) await PlayerCode.Load(); };
             downloadplayerdatatimer.Interval = 300000;
             downloadplayerdatatimer.Start();
         }
@@ -147,20 +150,6 @@ namespace MKOTHDiscordBot
             }
         }
 
-        private Task LoadContext()
-        {
-            Globals.Load(_client);
-            return Task.CompletedTask;
-        }
-
-        private Task Log(LogMessage msg)
-        {
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine(msg.ToString());
-            Console.ResetColor();
-            return Task.CompletedTask;
-        }
-
         private async Task HandleCommandAsync(SocketMessage messageParam)
         {
             var message = messageParam as SocketUserMessage;
@@ -186,7 +175,7 @@ namespace MKOTHDiscordBot
                         Console.WriteLine(e.StackTrace);
                     }
                 }
-                Console.ForegroundColor = ConsoleColor.DarkBlue;
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
                 Console.WriteLine(message.Timestamp.ToLocalTime() + "\tUser: " + message.Author.Username + "\nMessage: " + message.Content);
                 Console.ResetColor();
             }
