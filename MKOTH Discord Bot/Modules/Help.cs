@@ -25,7 +25,7 @@ namespace MKOTHDiscordBot
         {
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
-                .WithAuthor("❓ Manual")
+                .WithTitle("❓ Manual")
                 .WithDescription("This shows the list of command modules. " +
                 "A command module is a catergory for a group of related commands.\n" +
                 "Use `.help <module>` to show the commands in the module.\n" +
@@ -61,12 +61,29 @@ namespace MKOTHDiscordBot
                 goto helpReplyProcedure;
             }
 
-            var command = commands.Commands.ToList().Find(x => x.Name.ToLower() == para || x.Aliases.ToList().Find(y => y.ToLower() == para) != null);
-            if (command != null)
+            para = para.StartsWith(".") ? para.TrimStart('.') : para;
+            var command = commands.Commands.ToList().FindAll(x => x.Name.ToLower() == para || x.Aliases.ToList().Find(y => y.ToLower() == para) != null);
+            if (command.Count > 0)
             {
+                var baseCommand = command.First();
                 embed.WithAuthor("📃 Command Information")
-                    .WithTitle(command.Name)
-                    .WithDescription(command.Summary ?? "In Development".MarkdownCodeBlock());
+                    .WithTitle(baseCommand.Name)
+                    .WithDescription(baseCommand.Summary ?? "In Development".MarkdownCodeBlock());
+                if (baseCommand.Aliases.Count > 0)
+                {
+                    string alias = "";
+                    baseCommand.Aliases.ToList().ForEach(x =>
+                    {
+                        alias += $"{("." + x).MarkdownCodeLine()}\t";
+                    });
+                    embed.AddField("Alias", alias);
+                }
+                string usage = "";
+                command.ForEach(x =>
+                {
+                    usage += $".{x.Name.AddSpace() + x.GetCommandParametersInfo()}\n";
+                });
+                embed.AddField("Usage", usage.MarkdownCodeBlock("css"));
                 goto helpReplyProcedure;
             }
 

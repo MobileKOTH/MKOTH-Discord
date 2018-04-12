@@ -175,7 +175,7 @@ namespace MKOTHDiscordBot
         }
 
         [Command("myId")]
-        [Alias("myformid", "mysubmissionid", "mysubmissioncode")]
+        [Alias("myformid", "mysubmissionid", "mysubmissioncode", "what is my id", "what is my id?", "what is my mkoth id", "what is my mkoth id?")]
         public async Task MyID()
         {
             int code = PlayerCode.FetchCode(Context.User.Id, Context.Client);

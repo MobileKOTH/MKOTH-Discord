@@ -14,7 +14,7 @@ namespace MKOTHDiscordBot
         static int banlimit = 3;
 
         [Command("Ban")]
-        [Summary("Ban an eligable user in MKOTH Server.")]
+        [Summary("Ban a user in MKOTH Server.")]
         [RequireMKOTHGuild]
         public async Task Ban(IGuildUser user, [Remainder] string reason = "Not Provided.")
         {
@@ -22,16 +22,16 @@ namespace MKOTHDiscordBot
         }
 
         [Command("SuperBan")]
-        [Summary("Ban an eligable user in MKOTH Server and prune their messages from the past 1 day.")]
+        [Summary("Ban a user in MKOTH Server and prune their messages from the past 1 day.")]
         [RequireMKOTHGuild]
         public async Task SuperBan(IGuildUser user, [Remainder] string reason = "Not Provided.")
         {
             await BanAsync(user, reason, true);
         }
 
-        [RequireMKOTHGuild]
         [Command("Kick")]
-        [Summary("Kick a user from the MKOTH server.")]
+        [Summary("Kick a user from the MKOTH server. Cannot kick a MKOTH Member.")]
+        [RequireMKOTHGuild]
         public async Task Kick(IGuildUser user, [Remainder] string reason = "Not Provided.")
         {
             if (IsModImmuneUser(user) || user.RoleIds.Contains(Member.Id))
@@ -42,7 +42,6 @@ namespace MKOTHDiscordBot
 
             await user.KickAsync(reason);
             await SendModResponseAsync(user, reason, "Kicked");
-            return;
         }
 
         [Command("ResetBan")]
@@ -108,8 +107,9 @@ namespace MKOTHDiscordBot
                 Description = "Moderator: " + Context.User.Mention + " " + Context.User.ToString(),
                 Color = Color.Red
             };
-            await ReplyAsync($"User {type} " + user.Mention.AddSpace() + user, embed: embed.Build());
-            await ((ITextChannel)ModLog).SendMessageAsync($"User {type} " + user, embed: embed.Build());
+            string text = $"User {type} " + user.Mention.AddSpace() + user;
+            await ReplyAsync(text, embed: embed.Build());
+            await ((ITextChannel)ModLog).SendMessageAsync(text, embed: embed.Build());
         }
     }
 }

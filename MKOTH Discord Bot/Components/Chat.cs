@@ -72,116 +72,116 @@ namespace MKOTHDiscordBot
             Logger.Log("Time taken: " + (DateTime.Now - start).TotalMilliseconds.ToString() + " ms", LogType.CHATSAVETIME);
         }
 
-        public static async Task Reply(SocketCommandContext context, string message)
+        public static async Task ReplyAsync(SocketCommandContext context, string message)
         {
-            DateTimeOffset starttime = DateTime.Now;
-            string reply = "";
-            List<string> possiblereplies = new List<string>();
-            List<TrashReply> rephrasepool = new List<TrashReply>();
-            List<TrashReply> replypool = new List<TrashReply>();
-            List<TrashReply> responsepool = new List<TrashReply>();
-            if (context.Channel.Id == 347258242277310465UL)
+            await Task.Run(async () =>
             {
-                possiblereplies.Add(context.User.Mention + ", lets talk in <#347166773642133515> shall we?");
-                possiblereplies.Add(context.User.Mention + ", we do not want to flood the prestigious <#347258242277310465> with our trash talks.");
-                possiblereplies.Add(context.User.Mention + ", no bot use in this channel :(");
-                possiblereplies.Add(context.User.Mention + ", don't talk to me here!");
-                possiblereplies.Add(context.User.Mention + ", I will tell mods to mute if you keep pinging me here :rage:");
-                possiblereplies.Add(context.User.Mention + ", is'nt it no bot use in <#347258242277310465> :thinking: ");
-                possiblereplies.Add(context.User.Mention + ", why am I replying to you here in <#347258242277310465>");
-                reply = possiblereplies[((int)((new Random().NextDouble() * possiblereplies.Count())))];
-                await Responder.SendToContext(context, reply);
-                return;
-            }
-            if (context.Channel.Id == 347272877134839810UL)
-            {
-                possiblereplies.Add(context.User.Mention + ", I don't think you will need to talk to me for giving suggestions <:monekeyfacepalm:352423604216135680>");
-                possiblereplies.Add(context.User.Mention + ", <:monkeyrage:352681458919407617><:monkeyrage:352681458919407617><:monkeyrage:352681458919407617><:monkeyrage:352681458919407617>, you are probably not giving a proper suggestion!");
-                reply = possiblereplies[((int)((new Random().NextDouble() * possiblereplies.Count())))];
-                await Responder.SendToContext(context, reply);
-                return;
-            }
-
-            var typetask = Responder.TriggerTyping(context);
-
-            ProcessResponses(ref message, ref rephrasepool, ref replypool);
-            string[] words = message.ToLower().Split(' ');
-            if (words.Length == 1)
-            {
-                if (words[0].Length < 2)
+                DateTimeOffset starttime = DateTime.Now;
+                string reply = "";
+                List<string> possiblereplies = new List<string>();
+                List<TrashReply> rephrasepool = new List<TrashReply>();
+                List<TrashReply> replypool = new List<TrashReply>();
+                List<TrashReply> responsepool = new List<TrashReply>();
+                if (context.Channel.Id == 347258242277310465UL)
                 {
+                    possiblereplies.Add(context.User.Mention + ", lets talk in <#347166773642133515> shall we?");
+                    possiblereplies.Add(context.User.Mention + ", we do not want to flood the prestigious <#347258242277310465> with our trash talks.");
+                    possiblereplies.Add(context.User.Mention + ", no bot use in this channel :(");
+                    possiblereplies.Add(context.User.Mention + ", don't talk to me here!");
+                    possiblereplies.Add(context.User.Mention + ", I will tell mods to mute if you keep pinging me here :rage:");
+                    possiblereplies.Add(context.User.Mention + ", is'nt it no bot use in <#347258242277310465> :thinking: ");
+                    possiblereplies.Add(context.User.Mention + ", why am I replying to you here in <#347258242277310465>");
+                    reply = possiblereplies[((int)((new Random().NextDouble() * possiblereplies.Count())))];
+                    await Responder.SendToContext(context, reply);
                     return;
                 }
-            }
-
-            int wordcount = words.Length;
-            string poollog = "";
-            double randomsource = new Random().NextDouble();
-            switch (wordcount)
-            {
-                case 1:
-                case 2:
-                    responsepool = (randomsource > 0.2) ? rephrasepool : replypool;
-                    poollog = (randomsource > 0.2) ? nameof(rephrasepool) : nameof(replypool);
-                    break;
-
-                case 3:
-                    responsepool = (randomsource > 0.66) ? rephrasepool : replypool;
-                    poollog = (randomsource > 0.66) ? nameof(rephrasepool) : nameof(replypool);
-                    break;
-
-                default:
-                    responsepool = replypool;
-                    poollog = nameof(replypool);
-                    break;
-            }
-
-            bool foundreply = false;
-            double wordcountmatch = wordcount;
-            double matchrate = 0.9;
-            do
-            {
-                if (wordcount > 4)
+                if (context.Channel.Id == 347272877134839810UL)
                 {
-                    matchrate -= 0.15;
+                    possiblereplies.Add(context.User.Mention + ", I don't think you will need to talk to me for giving suggestions <:monekeyfacepalm:352423604216135680>");
+                    possiblereplies.Add(context.User.Mention + ", <:monkeyrage:352681458919407617><:monkeyrage:352681458919407617><:monkeyrage:352681458919407617><:monkeyrage:352681458919407617>, you are probably not giving a proper suggestion!");
+                    reply = possiblereplies[((int)((new Random().NextDouble() * possiblereplies.Count())))];
+                    await Responder.SendToContext(context, reply);
+                    return;
                 }
-                else
+
+                var typetask = Responder.TriggerTyping(context);
+
+                ProcessResponses(ref message, ref rephrasepool, ref replypool);
+                string[] words = message.ToLower().Split(' ');
+                if (words.Length == 1)
                 {
-                    matchrate = wordcountmatch / wordcount;
-                }
-                foreach (var trashreply in responsepool)
-                {
-                    if (trashreply.Matchrate >= matchrate)
+                    if (words[0].Length < 2)
                     {
-                        possiblereplies.Add(trashreply.Message);
-                        foundreply = true;
+                        return;
                     }
                 }
-                if (wordcountmatch <= 0)
+
+                int wordcount = words.Length;
+                string poollog = "";
+                double randomsource = new Random().NextDouble();
+                switch (wordcount)
                 {
-                    Logger.Log("No chat results: ".AddLine() + message, LogType.NOREPLYFOUND);
-                    break;
+                    case 1:
+                    case 2:
+                        responsepool = (randomsource > 0.2) ? rephrasepool : replypool;
+                        poollog = (randomsource > 0.2) ? nameof(rephrasepool) : nameof(replypool);
+                        break;
+
+                    case 3:
+                        responsepool = (randomsource > 0.66) ? rephrasepool : replypool;
+                        poollog = (randomsource > 0.66) ? nameof(rephrasepool) : nameof(replypool);
+                        break;
+
+                    default:
+                        responsepool = replypool;
+                        poollog = nameof(replypool);
+                        break;
                 }
-                wordcountmatch--;
-            } while (!foundreply);
 
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            foreach (var item in possiblereplies)
-            {
-                Console.WriteLine(item);
-            }
-            Console.ResetColor();
+                bool foundreply = false;
+                double wordcountmatch = wordcount;
+                double matchrate = 0.9;
+                do
+                {
+                    if (wordcount > 4)
+                    {
+                        matchrate -= 0.15;
+                    }
+                    else
+                    {
+                        matchrate = wordcountmatch / wordcount;
+                    }
+                    foreach (var trashreply in responsepool)
+                    {
+                        if (trashreply.Matchrate >= matchrate)
+                        {
+                            possiblereplies.Add(trashreply.Message);
+                            foundreply = true;
+                        }
+                    }
+                    if (wordcountmatch <= 0)
+                    {
+                        Logger.Log("No chat results: ".AddLine() + message, LogType.NOREPLYFOUND);
+                        break;
+                    }
+                    wordcountmatch--;
+                } while (!foundreply);
 
-            if (possiblereplies.Count() == 0)
-            {
-                possiblereplies.AddRange(History);
-            };
-            Logger.Log(((
-                DateTime.Now - starttime).TotalMilliseconds).ToString().AddSpace() + "ms".AddLine() + 
-                "Chat Trigger: " + message.AddLine() + "Match Rate: " + matchrate.ToString().AddLine() + "Pool: " + poollog, LogType.TRASHREPLYTIME);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                possiblereplies.Take(10).ToList().ForEach(x => Console.WriteLine(x));
+                Console.ResetColor();
 
-            reply = possiblereplies[((int)(new Random().NextDouble() * possiblereplies.Count()))];
-            await Responder.SendToContext(context, reply);
+                if (possiblereplies.Count() == 0)
+                {
+                    possiblereplies.AddRange(History);
+                };
+                Logger.Log(((
+                    DateTime.Now - starttime).TotalMilliseconds).ToString().AddSpace() + "ms".AddLine() +
+                    "Chat Trigger: " + message.AddLine() + "Match Rate: " + matchrate.ToString().AddLine() + "Pool: " + poollog, LogType.TRASHREPLYTIME);
+
+                reply = possiblereplies[((int)(new Random().NextDouble() * possiblereplies.Count()))];
+                await Responder.SendToContext(context, reply);
+            });
         }
 
         private static string TrimMessage(string message)

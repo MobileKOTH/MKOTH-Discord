@@ -205,11 +205,11 @@ namespace MKOTHDiscordBot
 
             if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
-                await Chat.Reply(context, message.Content);
+                await Chat.ReplyAsync(context, message.Content);
             }
             else if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
-                await Chat.Reply(context, message.Content.Remove(0, argPos));
+                await Chat.ReplyAsync(context, message.Content.Remove(0, argPos));
             }
 
             if (!message.Author.IsBot && !message.HasMentionPrefix(_client.CurrentUser, ref argPos)) new Chat(context);
@@ -222,11 +222,13 @@ namespace MKOTHDiscordBot
                 await context.Channel.SendMessageAsync(result.ErrorReason);
                 return;
             }
-
-            if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) && !context.IsPrivate)
+            else if (result.Error == CommandError.UnknownCommand)
             {
-                string msg = message.Content.Remove(0, argPos);
-                await Chat.Reply(context, msg);
+                if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) && !context.IsPrivate)
+                {
+                    string msg = message.Content.Remove(0, argPos);
+                    Chat.ReplyAsync(context, msg).Start();
+                }
             }
         }
     }

@@ -25,7 +25,6 @@ namespace MKOTHDiscordBot
                 {
                     return PreconditionResult.FromSuccess();
                 }
-                goto error;
 
                 error:
                 return PreconditionResult.FromError("You do not have the permission to do that.");

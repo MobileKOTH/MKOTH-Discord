@@ -11,21 +11,6 @@ namespace MKOTHDiscordBot.Utilities
     public static class Responder
     {
         private static StatusMessages status = StatusMessages.HELP;
-        
-        /**
-        private static void GlobalTryCatch(Action action)
-        {
-            try
-            {
-                action.Invoke();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message.AddLine() + e.StackTrace);
-                Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
-            }
-        }
-            **/
 
         public static async Task TriggerTyping(SocketCommandContext context)
         {
@@ -73,17 +58,6 @@ namespace MKOTHDiscordBot.Utilities
             }
         }
 
-
-        public static void SendToGuildUser(SocketGuildUser user, string message)
-        {
-
-        }
-
-        public static void SendToUser(SocketUser user, string message)
-        {
-
-        }
-
         public static async Task ChangeStatus(DiscordSocketClient client)
         {
             try
@@ -119,11 +93,5 @@ namespace MKOTHDiscordBot.Utilities
                 Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
             }
         }
-
-
-
-
-
-
     }
 }
