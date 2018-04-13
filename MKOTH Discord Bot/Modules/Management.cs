@@ -15,13 +15,10 @@ namespace MKOTHDiscordBot
     public class Management : ModuleBase<SocketCommandContext>
     {
         [Command("updatemkoth", RunMode = RunMode.Async)]
+        [RequireMKOTHMod]
         public async Task Updatemkoth()
         {
-            var user = (SocketGuildUser)Context.User;
-            if (user.Roles.Contains(ChatMods))
-            {
-                await UpdateMKOTH(Context);
-            }
+            await UpdateMKOTH(Context);
         }
 
         public static async Task UpdateMKOTH(SocketCommandContext context)
@@ -165,12 +162,7 @@ namespace MKOTHDiscordBot
             }
             catch (Exception e)
             {
-                string stacktrace = e.StackTrace;
-                if (stacktrace.Length >= 1800)
-                {
-                    stacktrace = stacktrace.Substring(0, 1800) + "...";
-                }
-                await Responder.SendToChannel((SocketTextChannel)Globals.TestGuild.BotTest, e.Message + "```" + stacktrace + "```");
+                await Logger.SendError(e);
             }
         }
 
@@ -254,16 +246,11 @@ namespace MKOTHDiscordBot
                 embed.AddField(holidaymissinglist.Count + " Holiday Members", $"```{holidaymisinglistfield}```");
                 embed.Color = Color.Orange;
 
-                msg = await ReplyAsync(string.Empty, false, embed: embed.Build());
+                msg = await ReplyAsync(string.Empty, embed: embed.Build());
             }
             catch (Exception e)
             {
-                string stacktrace = e.StackTrace;
-                if (stacktrace.Length >= 1800)
-                {
-                    stacktrace = stacktrace.Substring(0, 1800) + "...";
-                }
-                await Responder.SendToChannel((SocketTextChannel)Globals.TestGuild.BotTest, e.Message + "```" + stacktrace + "```");
+                await Logger.SendError(e);
             }
         }
     }

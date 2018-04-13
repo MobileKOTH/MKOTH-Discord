@@ -1,16 +1,24 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
 namespace MKOTHDiscordBot.Utilities
 {
-    public enum StatusMessages { INFO, KING, HELP, GAMESCOUNT };
+    public enum StatusMessageType { HELP, INFO, KING, GAMESCOUNT };
 
     public static class Responder
     {
-        private static StatusMessages status = StatusMessages.HELP;
+        private static readonly List<StatusMessageType> statusSequence = new List<StatusMessageType>
+        {
+            StatusMessageType.INFO,
+            StatusMessageType.KING,
+            StatusMessageType.GAMESCOUNT
+        };
+        private static (StatusMessageType current, StatusMessageType last) status = (StatusMessageType.HELP, statusSequence.Last());
 
         public static async Task TriggerTyping(SocketCommandContext context)
         {
@@ -25,12 +33,11 @@ namespace MKOTHDiscordBot.Utilities
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message.AddLine() + e.StackTrace);
-                Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
+                Logger.LogError(e);
             }
         }
 
-        public static async Task SendToContext (SocketCommandContext context, string reply)
+        public static async Task SendToContext(SocketCommandContext context, string reply)
         {
             try
             {
@@ -40,21 +47,19 @@ namespace MKOTHDiscordBot.Utilities
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message.AddLine() + e.StackTrace);
-                Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
+                Logger.LogError(e);
             }
         }
 
-        public static async Task SendToChannel (SocketTextChannel channel, string message)
+        public static async Task SendToChannel(SocketTextChannel channel, string message, Embed embed = null)
         {
             try
             {
-                await channel.SendMessageAsync(message, false, null);
+                await channel.SendMessageAsync(message, false, embed);
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message.AddLine() + e.StackTrace);
-                Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
+                Logger.LogError(e);
             }
         }
 
@@ -62,35 +67,43 @@ namespace MKOTHDiscordBot.Utilities
         {
             try
             {
-                status = (int)status + 1 < (Enum.GetValues(typeof(StatusMessages)).Length) ? status + 1 : 0;
                 Console.WriteLine(status);
-                switch (status)
+                switch (status.current)
                 {
-                    case StatusMessages.HELP:
+                    case StatusMessageType.HELP:
                         await client.SetGameAsync("| .help for help");
-                        break;
+                        setNextStatus();
+                        return;
 
-                    case StatusMessages.INFO:
+                    case StatusMessageType.INFO:
                         await client.SetGameAsync("| .info for information");
                         break;
 
-                    case StatusMessages.KING:
+                    case StatusMessageType.KING:
                         var kingname = Player.List.First(x => x.Playerclass == PlayerClass.KING).Name;
-                        var kingstatus = "King: " + kingname.Slice(18);
+                        var kingstatus = "King: " + kingname.SliceBack(18);
                         await client.SetGameAsync(kingstatus);
                         break;
 
-                    case StatusMessages.GAMESCOUNT:
+                    case StatusMessageType.GAMESCOUNT:
                         var count = Player.List.Sum(x => (x.Wins + x.Loss + x.Draws) / 2);
                         var gamestatus = count + " total games played";
                         await client.SetGameAsync(gamestatus);
                         break;
                 }
+                status.last = status.current;
+                status.current = StatusMessageType.HELP;
+
+                void setNextStatus()
+                {
+                    var currentIndex = statusSequence.IndexOf(status.last);
+                    currentIndex = currentIndex + 1 == statusSequence.Count ? 0 : currentIndex + 1;
+                    status.current = statusSequence[currentIndex];
+                }
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message.AddLine() + e.StackTrace);
-                Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
+                await Logger.SendError(e);
             }
         }
     }

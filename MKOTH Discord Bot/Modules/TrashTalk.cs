@@ -68,20 +68,24 @@ namespace MKOTHDiscordBot
             } while (!foundreply);
             for (int i = 0; i < (possiblereplies.Count > 25 ? 25 : possiblereplies.Count); i++)
             {
-                int index = Chat.History.IndexOf(possiblereplies[i].Message);
-                string trigger = Chat.History[index - 1];
-                string rephrase = Chat.History[index];
-                string response = Chat.History[index + 1];
-                trigger = trigger.Length > 200 ? trigger.Substring(0, 200) + "..." : trigger;
-                rephrase = rephrase.Length > 200 ? rephrase.Substring(0, 200) + "..." : rephrase;
-                response = response.Length > 200 ? response.Substring(0, 200) + "..." : response;
+                lock (Chat.History)
+                {
+                    int index = Chat.History.IndexOf(possiblereplies[i].Message);
+                    string trigger = Chat.History[index - 1];
+                    string rephrase = Chat.History[index];
+                    string response = Chat.History[index + 1];
+                    trigger = trigger.Length > 200 ? trigger.Substring(0, 200) + "..." : trigger;
+                    rephrase = rephrase.Length > 200 ? rephrase.Substring(0, 200) + "..." : rephrase;
+                    response = response.Length > 200 ? response.Substring(0, 200) + "..." : response;
 
-
-                embed.AddField(string.Format("{0:N2}%", possiblereplies[i].Matchrate * 100), $"`#{index - 1}` {trigger}\n`#{index}` {rephrase}\n`#{index + 1}` {response}");
+                    embed.AddField(string.Format("{0:N2}%", possiblereplies[i].Matchrate * 100), $"`#{index - 1}` {trigger}\n`#{index}` {rephrase}\n`#{index + 1}` {response}");
+                }
             }
             embed.Title = "Trigger, Rephrase and Reply Pool";
             embed.Description = "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`";
             await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"" + message + "\"", false, embed.Build());
+            await Task.CompletedTask;
+            return;
         }
     }
 }

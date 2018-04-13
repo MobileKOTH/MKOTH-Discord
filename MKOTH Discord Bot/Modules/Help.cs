@@ -1,13 +1,13 @@
-﻿using Discord;
-using Discord.Commands;
-using System;
+﻿using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
 
 namespace MKOTHDiscordBot
 {
-    [Summary("Provides the list of available commands.")]
+    [Summary("Provides guidance of using the MKOTH Discord Bot.")]
     [Remarks("Module A")]
     public class Help : ModuleBase<SocketCommandContext>
     {
@@ -29,7 +29,7 @@ namespace MKOTHDiscordBot
                 .WithDescription("This shows the list of command modules. " +
                 "A command module is a catergory for a group of related commands.\n" +
                 "Use `.help <module>` to show the commands in the module.\n" +
-                "Use `.help <command>` to show the details of the command.\n" +
+                "Use `.help <.command>` to show the details of the command.\n" +
                 "Most commands will also come with alias(abbreviation) to ease typing, e.g `.h` is the same for `.help`. " +
                 "Alias for a command can be found in the command details of it.");
 
@@ -49,7 +49,7 @@ namespace MKOTHDiscordBot
             para = para.ToLower();
             var embed = new EmbedBuilder().WithColor(Color.Orange);
 
-            var module = commands.Modules.ToList().Find(x => x.Name.ToLower() == para);
+            var module = commands.Modules.ToList().Find(x => x.Name.ToLower().StartsWith(para));
             if (module != null)
             {
                 string commandList = "";
@@ -88,8 +88,6 @@ namespace MKOTHDiscordBot
             }
 
             embed.WithDescription("🔎 Module / Command not found.");
-            await ReplyAsync(string.Empty, false, embed.Build());
-            return;
 
             helpReplyProcedure:
             await ReplyAsync(string.Empty, false, embed.Build());

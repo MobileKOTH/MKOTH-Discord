@@ -17,6 +17,12 @@ namespace MKOTHDiscordBot
             return str;
         }
 
+        public static string AddMarkDownLine(this String str)
+        {
+            str += "  ".AddLine();
+            return str;
+        }
+
         public static string AddTab(this String str)
         {
             str += "\t";
@@ -29,16 +35,21 @@ namespace MKOTHDiscordBot
             return str;
         }
 
-        public static string Slice(this String str, int lengthtokeep)
+        public static string SliceBack(this String str, int limit, string leftOverCover = "...")
         {
-            string leftoverCover = "...";
-            str = str.Length > lengthtokeep ? str.Substring(0, lengthtokeep - leftoverCover.Length) + leftoverCover : str;
+            str = str.Length > limit ? str.Substring(0, limit - leftOverCover.Length) + leftOverCover : str;
+            return str;
+        }
+
+        public static string SliceFront(this String str, int limit, string leftOverCover = "...")
+        {
+            str = limit >= str.Length ? str : leftOverCover + str.Substring(str.Length - limit);
             return str;
         }
 
         public static string MarkdownCodeBlock(this String str, string lang = null)
         {
-            return $"```{(lang == null ? "" : lang + "\n")}{str}```";
+            return $"```{(lang == null ? "" : lang + "\n")}{str}\n```";
         }
 
         public static string MarkdownCodeLine(this String str)

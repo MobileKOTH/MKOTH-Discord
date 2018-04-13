@@ -1,10 +1,13 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Discord.WebSocket;
+using MKOTHDiscordBot.Utilities;
 
 namespace MKOTHDiscordBot
 {
-    public enum LogType { DIRECTMESSAGE, ERROR, TRASHREPLYTIME , NOREPLYFOUND, CHATSAVETIME, PLAYERDATALOAD};
+    public enum LogType { DIRECTMESSAGE, ERROR, TRASHREPLY , NOREPLYFOUND, CHATSAVETIME, PLAYERDATALOAD};
 
     public class Logger
     {
@@ -13,27 +16,51 @@ namespace MKOTHDiscordBot
         {
             switch (type)
             {
-                case LogType.TRASHREPLYTIME:
+                case LogType.TRASHREPLY:
 
                 case LogType.NOREPLYFOUND:
-                    writeLog("TrashLogs.txt");
+                    writeLog(Globals.Directories.ChatLogsFile);
+                    break;
+
+                case LogType.ERROR:
+                    writeLog(Globals.Directories.ErrorLogsFile);
                     break;
 
                 default:
-                    writeLog("Logs.txt");
+                    writeLog(Globals.Directories.GeneralLogsFile);
                     break;
             }
 
-            void writeLog(string fileName)
+            void writeLog(string directory)
             {
-                using (StreamWriter sw = File.AppendText(Globals.Directories.DataFolder + fileName))
+                try
                 {
-                    sw.WriteLine(DateTime.Now.ToLocalTime().ToString().AddTab() + type);
-                    sw.WriteLine(log);
-                    sw.WriteLine("");
-                    Console.WriteLine(DateTime.Now.ToLocalTime().ToString().AddTab() + type.ToString().AddLine() + log.AddLine());
+                    using (StreamWriter sw = File.AppendText(directory))
+                    {
+                        string text =
+                            "## " + DateTime.Now.ToLocalTime().ToString().AddSpace() + type.ToString().AddLine() +
+                            log.AddMarkDownLine();
+                        sw.WriteLine(text);
+                        Console.ResetColor();
+                        Console.WriteLine(text);
+                    }
+                }
+                catch (Exception error)
+                {
+                    if (error.GetType() == typeof(DirectoryNotFoundException))
+                    {
+                        new FileInfo(directory).Directory.Create();
+                        writeLog(directory);
+                    }
+                    Console.WriteLine(error.Message.AddLine() + error.StackTrace);
                 }
             }
+        }
+
+        public static void LogError(Exception error)
+        {
+            Log("### " + error.Message.AddMarkDownLine() + 
+                error.StackTrace.MarkdownCodeBlock("diff"), LogType.ERROR);
         }
 
         public static void Debug(object obj, string description)
@@ -45,7 +72,9 @@ namespace MKOTHDiscordBot
                 {
                     PreserveReferencesHandling = PreserveReferencesHandling.Objects,
                 });
-                Console.WriteLine(type.AddSpace() + description.AddTab().AddLine() + json);
+                Console.WriteLine(
+                    type.AddSpace() + description.AddTab().AddLine() + 
+                    json);
             }
             catch (Exception e)
             {
@@ -54,6 +83,21 @@ namespace MKOTHDiscordBot
                     e.Message.AddLine() +
                     e.StackTrace);
             }
+        }
+
+        public static async Task SendError(Exception error)
+        {
+            try
+            {
+                string stacktrace = error.StackTrace;
+                stacktrace = stacktrace.SliceFront(1800);
+                await Responder.SendToChannel(Globals.TestGuild.BotTest, error.Message + stacktrace.MarkdownCodeBlock("yaml"));
+            }
+            catch (Exception e)
+            {
+                LogError(e);
+            }
+            LogError(error);
         }
     }
 }

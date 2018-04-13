@@ -1,16 +1,16 @@
 ﻿using System;
+using System.Collections;
 using System.Linq;
-using System.Timers;
 using System.Reflection;
-using System.Threading.Tasks;
+using System.Timers;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using MKOTHDiscordBot.Utilities;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace MKOTHDiscordBot
 {
@@ -40,14 +40,14 @@ namespace MKOTHDiscordBot
 #else
             Console.WriteLine("Release Build");
 #endif
-            _client = new DiscordSocketClient(new DiscordSocketConfig{ LogLevel = LogSeverity.Debug });
+            _client = new DiscordSocketClient(new DiscordSocketConfig { LogLevel = LogSeverity.Debug });
 
             _commands = new CommandService();
             _services = new ServiceCollection()
                 .AddSingleton(_client)
                 .AddSingleton(_commands)
                 .BuildServiceProvider();
-            await InstallCommandsAsync();
+            await InitialiseAsync();
 
             _client.Log += (msg) =>
             {
@@ -86,22 +86,22 @@ namespace MKOTHDiscordBot
             }
         }
 
-        public async Task InstallCommandsAsync()
+        public async Task InitialiseAsync()
         {
-            _client.MessageReceived += HandleCommandAsync;
+            _client.MessageReceived += HandleMessageAsync;
             _client.Ready += () => Globals.Load(_client);
-            _client.UserJoined += HandleChatSaveUpdateMKOTH;
+            _client.UserJoined += (user) => { if (user.Guild.Id == Globals.MKOTHGuild.Guild.Id) HandleChatSaveUpdateMKOTH(); return Task.CompletedTask; };
 
             // Discover all of the commands in this assembly and load them.
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
 
             Timer statustimer = new Timer();
-            statustimer.Elapsed += HandleStatusUpdateAsync;
+            statustimer.Elapsed += async(sender, evt) => { if (!TestMode) await Responder.ChangeStatus(_client); };
             statustimer.Interval = 15000; // in miliseconds
             statustimer.Start();
 
             Timer savechatupdatemkothtimer = new Timer();
-            savechatupdatemkothtimer.Elapsed += HandleChatSaveUpdateMKOTH;
+            savechatupdatemkothtimer.Elapsed += (sender, evt) => HandleChatSaveUpdateMKOTH();
             savechatupdatemkothtimer.Interval = 60000;
             savechatupdatemkothtimer.Start();
 
@@ -109,36 +109,6 @@ namespace MKOTHDiscordBot
             downloadplayerdatatimer.Elapsed += async (sender, evt) => { if (!TestMode) await PlayerCode.Load(); };
             downloadplayerdatatimer.Interval = 300000;
             downloadplayerdatatimer.Start();
-        }
-
-        private async void HandlePlayerDataDownload(object sender, ElapsedEventArgs e)
-        {
-            if (!TestMode)
-            {
-                await PlayerCode.Load();
-            }
-        }
-
-        private async void HandleStatusUpdateAsync(object sender, ElapsedEventArgs e)
-        {
-            if (!TestMode)
-            {
-                await Responder.ChangeStatus(_client);
-            }
-        }
-
-        private void HandleChatSaveUpdateMKOTH(object sender, EventArgs e)
-        {
-            HandleChatSaveUpdateMKOTH();
-        }
-
-        private Task HandleChatSaveUpdateMKOTH(SocketGuildUser user)
-        {
-            if (user.Guild.Id == Globals.MKOTHGuild.Guild.Id)
-            {
-                HandleChatSaveUpdateMKOTH();
-            }
-            return Task.CompletedTask;
         }
 
         private void HandleChatSaveUpdateMKOTH()
@@ -150,84 +120,74 @@ namespace MKOTHDiscordBot
             }
         }
 
-        private async Task HandleCommandAsync(SocketMessage messageParam)
+        private async Task HandleMessageAsync(SocketMessage messageParam)
         {
             var message = messageParam as SocketUserMessage;
-
-            if (message.Author.Id == _client.CurrentUser.Id) return; //No handle to own message
+            // No handle to own or null message.
+            if (message.Author.Id == _client.CurrentUser.Id) return;
             if (message == null) return;
 
             var context = new SocketCommandContext(_client, message);
             int argPos = 0;
-
-            if (context.IsPrivate)
-            {
-                var channel = _client.GetGuild(270838709287387136).GetChannel(360352712619065345) as ISocketMessageChannel;
-                var embed = new EmbedBuilder().WithAuthor(message.Author).WithDescription(message.Content).Build();
-                if (!(context.User.Id == OwnerID))
-                {
-                    try
-                    {
-                        await channel.SendMessageAsync("DM Received: \n", embed: embed);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e.StackTrace);
-                    }
-                }
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-                Console.WriteLine(message.Timestamp.ToLocalTime() + "\tUser: " + message.Author.Username + "\nMessage: " + message.Content);
-                Console.ResetColor();
-            }
-            else
+            // Debug log non dm messages.
+            if (!context.IsPrivate)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
                 Console.WriteLine(message.Timestamp.ToLocalTime() + "\tUser: " + message.Author.Username + "\nMessage: " + message.Content);
                 Console.ResetColor();
             }
-
+            // Special test mode command handling.
             if (!ReplyToTestServer && message.Content == ".settest")
             {
                 ReplyToTestServer = true;
                 await context.Channel.SendMessageAsync("Replying to test server");
                 return;
             }
-
+            // Special test mode to not handle certain messages.
             if (!context.IsPrivate)
             {
-                if (!TestMode && !ReplyToTestServer && (context.Guild.Id == 270838709287387136UL)) return;
-                if (TestMode && (context.Guild.Id == 271109067261476866UL)) return;
+                if (!TestMode && !ReplyToTestServer && (context.Guild.Id == Globals.TestGuild.Guild.Id)) return;
+                if (TestMode && (context.Guild.Id == Globals.MKOTHGuild.Guild.Id)) return;
             }
             else if (context.IsPrivate && context.User.Id != OwnerID)
             {
                 if (TestMode) return;
             }
-
+            // Chat handling in DM.
             if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
-                await Chat.ReplyAsync(context, message.Content);
+                Task.Run(async () => await Chat.ReplyAsync(context, message.Content)).Start();
+                return;
             }
             else if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
-                await Chat.ReplyAsync(context, message.Content.Remove(0, argPos));
+                Task.Run(async () => await Chat.ReplyAsync(context, message.Content.Remove(0, argPos))).Start();
+                return;
             }
 
             if (!message.Author.IsBot && !message.HasMentionPrefix(_client.CurrentUser, ref argPos)) new Chat(context);
 
             if (!(message.HasCharPrefix('.', ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))) return;
-
+            // Command handling.
             var result = await _commands.ExecuteAsync(context, argPos, _services);
+            if (context.IsPrivate && message.Author.Id != Globals.BotOwner.Id)
+            {
+                await Responder.SendToChannel(Globals.TestGuild.BotTest, "DM command received:", new EmbedBuilder()
+                    .WithAuthor(message.Author)
+                    .WithDescription(message.Content)
+                    .Build());
+            }
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
             {
                 await context.Channel.SendMessageAsync(result.ErrorReason);
                 return;
             }
             else if (result.Error == CommandError.UnknownCommand)
-            {
+            {// Chat reply.
                 if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) && !context.IsPrivate)
                 {
                     string msg = message.Content.Remove(0, argPos);
-                    Chat.ReplyAsync(context, msg).Start();
+                    Task.Run(async () => await Chat.ReplyAsync(context, msg)).Start();
                 }
             }
         }

@@ -19,13 +19,14 @@ namespace MKOTHDiscordBot
             {
                 public const string DATA = @"\Data\";
                 public const string LOGS = @"\Logs\";
-                public const string CHAT = @"\Logs\";
+                public const string CHAT = @"\Chat\";
             }
 
             public static class FileNames
             {
                 public const string CONFIG_JSON = "Config.json";
                 public const string GENERALLOGS_MD = "General Logs.md";
+                public const string ERRORLOGS_MD = "Error Logs.md";
                 public const string CHATLOGS_TXT = "Chat Logs.md";
             }
 
@@ -36,6 +37,7 @@ namespace MKOTHDiscordBot
 
             public static readonly string ConfigFile = Root + FileNames.CONFIG_JSON;
             public static readonly string GeneralLogsFile = LogsFolder + FileNames.GENERALLOGS_MD;
+            public static readonly string ErrorLogsFile = LogsFolder + FileNames.ERRORLOGS_MD;
             public static readonly string ChatLogsFile = LogsFolder + FileNames.CHATLOGS_TXT;
         }
 
@@ -47,21 +49,21 @@ namespace MKOTHDiscordBot
 
         public static int CurrentTypingSecond = 0;
 
-        public static IUser BotOwner;
+        public static SocketUser BotOwner;
 
         private static Timer SecondCounter = new Timer(1000);
 
         public static class MKOTHGuild
         {
             public static SocketGuild Guild;
-            public static SocketChannel Official, Casual, PlayerID, ModLog;
+            public static SocketTextChannel Official, Casual, PlayerID, ModLog;
             public static SocketRole ChatMods, VIP, Stupid, Member, Peasant, Vassal, Squire, Noble, King;
         }
 
         public static class TestGuild
         {
             public static SocketGuild Guild;
-            public static SocketChannel BotTest;
+            public static SocketTextChannel BotTest;
         }
 
         public static Task Load(DiscordSocketClient client)
@@ -77,10 +79,10 @@ namespace MKOTHDiscordBot
                 MKOTHGuild.Guild = client.GetGuild(271109067261476866UL);
                 guild = MKOTHGuild.Guild;
 
-                MKOTHGuild.Official = guild.Channels.Single(x => x.Id.Equals(347258242277310465UL));
-                MKOTHGuild.Casual = guild.Channels.Single(x => x.Id.Equals(347166773642133515UL));
-                MKOTHGuild.PlayerID = guild.Channels.Single(x => x.Id.Equals(357201006301282309UL));
-                MKOTHGuild.ModLog = guild.Channels.Single(x => x.Id.Equals(349960496591667202));
+                MKOTHGuild.Official = guild.TextChannels.Single(x => x.Id.Equals(347258242277310465UL));
+                MKOTHGuild.Casual = guild.TextChannels.Single(x => x.Id.Equals(347166773642133515UL));
+                MKOTHGuild.PlayerID = guild.TextChannels.Single(x => x.Id.Equals(357201006301282309UL));
+                MKOTHGuild.ModLog = guild.TextChannels.Single(x => x.Id.Equals(349960496591667202));
 
                 MKOTHGuild.ChatMods = guild.Roles.Single(x => x.Name.Contains("Chat Mods"));
                 MKOTHGuild.Stupid = guild.Roles.Single(x => x.Name.Contains("I am stupid"));
@@ -96,10 +98,10 @@ namespace MKOTHDiscordBot
                 TestGuild.Guild = client.GetGuild(270838709287387136UL);
                 guild = TestGuild.Guild;
 
-                TestGuild.BotTest = guild.Channels.Single(x => x.Id.Equals(360352712619065345UL));
+                TestGuild.BotTest = guild.TextChannels.Single(x => x.Id.Equals(360352712619065345UL));
 
                 // Owner
-                BotOwner = client.GetApplicationInfoAsync().Result.Owner;
+                BotOwner = client.GetApplicationInfoAsync().Result.Owner as SocketUser;
 
                 // Player Data
                 var playerloadtask = PlayerCode.Load();

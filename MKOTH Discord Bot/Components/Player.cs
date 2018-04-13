@@ -146,11 +146,11 @@ namespace MKOTHDiscordBot
                         PlayerCode playercode = new PlayerCode(field.Name, player.Discordid, int.Parse(field.Value));
                     }
                 }
-                Logger.Log("Time used: " + (DateTime.Now - starttime).TotalMilliseconds + " ms", LogType.PLAYERDATALOAD);
+                Logger.Log("**Time used:** `" + (DateTime.Now - starttime).TotalMilliseconds + " ms`", LogType.PLAYERDATALOAD);
             }
             catch (Exception e)
             {
-                Logger.Log(e.Message.AddLine() + e.StackTrace, LogType.ERROR);
+                Logger.LogError(e);
             }
         }
 
