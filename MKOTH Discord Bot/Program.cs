@@ -18,7 +18,6 @@ namespace MKOTHDiscordBot
     {
         public static bool ReplyToTestServer = true;
         public static bool TestMode = false;
-        public static ulong OwnerID = 0;
 
         private DiscordSocketClient _client;
         private CommandService _commands;
@@ -59,8 +58,6 @@ namespace MKOTHDiscordBot
 
             await _client.LoginAsync(TokenType.Bot, Globals.Config.Token);
             await _client.StartAsync();
-            OwnerID = _client.GetApplicationInfoAsync().Result.Owner.Id;
-            Console.WriteLine($"Owner Id: {OwnerID}");
 
             await Task.Delay(-1);
 
@@ -149,7 +146,7 @@ namespace MKOTHDiscordBot
                 if (!TestMode && !ReplyToTestServer && (context.Guild.Id == Globals.TestGuild.Guild.Id)) return;
                 if (TestMode && (context.Guild.Id == Globals.MKOTHGuild.Guild.Id)) return;
             }
-            else if (context.IsPrivate && context.User.Id != OwnerID)
+            else if (context.IsPrivate && context.User.Id != Globals.BotOwner.Id)
             {
                 if (TestMode) return;
             }

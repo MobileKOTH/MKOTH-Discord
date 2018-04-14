@@ -22,8 +22,8 @@ namespace MKOTHDiscordBot
         }
         */
 
-        [Command("info", RunMode = RunMode.Async)]
-        [Alias("stats")]
+        [Command("Info", RunMode = RunMode.Async)]
+        [Alias("Stats")]
         [Summary("Display bot information and statistics.")]
         public async Task Info()
         {
@@ -85,7 +85,7 @@ namespace MKOTHDiscordBot
             }
         }
 
-        [Command("ping")]
+        [Command("Ping")]
         public async Task Ping()
         {
             var msg = await ReplyAsync("`loading...`");
@@ -99,7 +99,7 @@ namespace MKOTHDiscordBot
                 });
         }
 
-        [Command("ping")]
+        [Command("Ping")]
         public async Task Ping([Remainder] string reflection)
         {
             EmbedBuilder embed = new EmbedBuilder();
@@ -109,14 +109,14 @@ namespace MKOTHDiscordBot
                 .WithColor(Color.Orange).Build());
         }
 
-        [Command("settest")]
-        public async Task Settest()
+        [Command("SetTest")]
+        [RequireOwner]
+        public async Task SetTest()
         {
             EmbedBuilder embed = new EmbedBuilder();
             IUserMessage msg;
 
             if (Program.TestMode) return;
-            if (Context.Message.Author.Id != Program.OwnerID) return;
             Program.ReplyToTestServer = false;
             msg = await ReplyAsync("Disabled replying to test server");
         }

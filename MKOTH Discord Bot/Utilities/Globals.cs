@@ -49,7 +49,7 @@ namespace MKOTHDiscordBot
 
         public static int CurrentTypingSecond = 0;
 
-        public static SocketUser BotOwner;
+        public static IUser BotOwner;
 
         private static Timer SecondCounter = new Timer(1000);
 
@@ -72,6 +72,14 @@ namespace MKOTHDiscordBot
             {
                 SecondCounter.Elapsed += HandleTimeCounter;
                 SecondCounter.Start();
+
+                // Owner
+                client.GetApplicationInfoAsync()
+                    .ContinueWith(x =>
+                    {
+                        BotOwner = x.Result.Owner;
+                        Console.WriteLine($"Owner Id: {BotOwner.Id}");
+                    });
 
                 SocketGuild guild;
 
@@ -100,9 +108,6 @@ namespace MKOTHDiscordBot
 
                 TestGuild.BotTest = guild.TextChannels.Single(x => x.Id.Equals(360352712619065345UL));
 
-                // Owner
-                BotOwner = client.GetApplicationInfoAsync().Result.Owner as SocketUser;
-
                 // Player Data
                 var playerloadtask = PlayerCode.Load();
 
@@ -110,6 +115,7 @@ namespace MKOTHDiscordBot
             }
             catch (Exception e)
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(e.Message.AddLine() + e.StackTrace);
                 Console.WriteLine("Failed loading context!");
                 client.LogoutAsync();

@@ -42,8 +42,8 @@ namespace MKOTHDiscordBot
         }
 
         [Command("Help")]
-        [Alias("H")]
-        [Summary("Display the help information.")]
+        [Alias("H", "Info")]
+        [Summary("Use with an input `<para>` to find the details and usage about a module or a command.")]
         public async Task MKOTHHelp([Remainder]string para)
         {
             para = para.ToLower();
@@ -63,12 +63,21 @@ namespace MKOTHDiscordBot
 
             para = para.StartsWith(".") ? para.TrimStart('.') : para;
             var command = commands.Commands.ToList().FindAll(x => x.Name.ToLower() == para || x.Aliases.ToList().Find(y => y.ToLower() == para) != null);
+            command = para == "info" ? command.FindAll(x => x.Name == "Info").ToList() : command;
             if (command.Count > 0)
             {
                 var baseCommand = command.First();
+                string commandDescription = "";
+                command.ForEach(x =>
+                {
+                    commandDescription = 
+                    !commandDescription.Contains(x.Summary ?? "") ? 
+                    commandDescription + (x.Summary == null ? "" : x.Summary.AddSpace()) : commandDescription;
+                });
+                commandDescription = commandDescription == "" ? "In Development".MarkdownCodeBlock() : commandDescription;
                 embed.WithAuthor("📃 Command Information")
                     .WithTitle(baseCommand.Name)
-                    .WithDescription(baseCommand.Summary ?? "In Development".MarkdownCodeBlock());
+                    .WithDescription(commandDescription);
                 if (baseCommand.Aliases.Count > 0)
                 {
                     string alias = "";
