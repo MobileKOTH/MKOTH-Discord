@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Linq;
 using System.IO;
+using System.Linq;
 using System.Timers;
-using System.Threading.Tasks;
 using System.Reflection;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Discord;
 using Discord.WebSocket;
@@ -15,30 +15,40 @@ namespace MKOTHDiscordBot
     {
         public static class Directories
         {
-            public static class FoldersNames
+            private static class FoldersNames
             {
-                public const string DATA = @"\Data\";
-                public const string LOGS = @"\Logs\";
-                public const string CHAT = @"\Chat\";
+                public const string
+                    DATA = @"\Data\",
+                    LOGS = @"\Logs\",
+                    CHAT = @"\Chat\";
             }
 
-            public static class FileNames
+            private static class FileNames
             {
-                public const string CONFIG_JSON = "Config.json";
-                public const string GENERALLOGS_MD = "General Logs.md";
-                public const string ERRORLOGS_MD = "Error Logs.md";
-                public const string CHATLOGS_TXT = "Chat Logs.md";
+                public const string 
+                    CONFIG_JSON = "Config.json",
+                    GENERALLOGS_MD = "General Logs.md",
+                    ERRORLOGS_MD = "Error Logs.md",
+                    CHATLOGS_TXT = "Chat Logs.md";
             }
 
-            public static readonly string Root = Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\";
-            public static readonly string DataFolder = Root + FoldersNames.DATA;
-            public static readonly string ChatFolder = DataFolder + FoldersNames.CHAT;
-            public static readonly string LogsFolder = Root + FoldersNames.LOGS;
+            /// <summary>
+            /// Full directory string paths for an application folder.
+            /// </summary>
+            public static readonly string 
+                Root = Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\",
+                DataFolder = Root + FoldersNames.DATA,
+                ChatFolder = DataFolder + FoldersNames.CHAT,
+                LogsFolder = Root + FoldersNames.LOGS;
 
-            public static readonly string ConfigFile = Root + FileNames.CONFIG_JSON;
-            public static readonly string GeneralLogsFile = LogsFolder + FileNames.GENERALLOGS_MD;
-            public static readonly string ErrorLogsFile = LogsFolder + FileNames.ERRORLOGS_MD;
-            public static readonly string ChatLogsFile = LogsFolder + FileNames.CHATLOGS_TXT;
+            /// <summary>
+            /// Full directory string path of an application file.
+            /// </summary>
+            public static readonly string 
+                ConfigFile = Root + FileNames.CONFIG_JSON,
+                GeneralLogsFile = LogsFolder + FileNames.GENERALLOGS_MD,
+                ErrorLogsFile = LogsFolder + FileNames.ERRORLOGS_MD,
+                ChatLogsFile = LogsFolder + FileNames.CHATLOGS_TXT;
         }
 
         private static ProgramConfiguration _config = JsonConvert.DeserializeObject<ProgramConfiguration>(File.ReadAllText(Directories.ConfigFile));
@@ -49,6 +59,7 @@ namespace MKOTHDiscordBot
 
         public static int CurrentTypingSecond = 0;
 
+        public static DiscordSocketClient Client;
         public static IUser BotOwner;
 
         private static Timer SecondCounter = new Timer(1000);
@@ -72,6 +83,8 @@ namespace MKOTHDiscordBot
             {
                 SecondCounter.Elapsed += HandleTimeCounter;
                 SecondCounter.Start();
+
+                Client = client;
 
                 // Owner
                 client.GetApplicationInfoAsync()
@@ -110,6 +123,11 @@ namespace MKOTHDiscordBot
 
                 // Player Data
                 var playerloadtask = PlayerCode.Load();
+
+                if (Program.FirstArgument == "Restarted")
+                {
+                    TestGuild.BotTest.SendMessageAsync("The Bot has restarted");
+                }
 
                 Logger.Debug(BuildVersion, nameof(BuildVersion));
             }

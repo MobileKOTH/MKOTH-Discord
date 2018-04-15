@@ -12,9 +12,11 @@ namespace MKOTHDiscordBot
 {
     using static Globals.MKOTHGuild;
 
+    [Summary("Contains the utilities for MKOTH needs and management.")]
     public class Management : ModuleBase<SocketCommandContext>
     {
         [Command("updatemkoth", RunMode = RunMode.Async)]
+        [Summary("To be deprecated. Manually refresh the MKOTH member roles and nicknames.")]
         [RequireMKOTHMod]
         public async Task Updatemkoth()
         {
@@ -168,8 +170,10 @@ namespace MKOTHDiscordBot
 
         [Command("myId")]
         [Alias("myformid", "mysubmissionid", "mysubmissioncode", "what is my id", "what is my id?", "what is my mkoth id", "what is my mkoth id?")]
+        [Summary("Sends your unique personal MKOTH series submission form identification code, if you are a MKOTH Member.")]
         public async Task MyID()
         {
+            // TODO: Revamp unknown player detection.
             int code = PlayerCode.FetchCode(Context.User.Id, Context.Client);
 
             if (Player.Fetch(Context.User.Id).Name == PlayerStatus.UNKNOWN)
@@ -210,7 +214,7 @@ namespace MKOTHDiscordBot
 
         [Command("missingMembers")]
         [Alias("listMissingMembers")]
-        [Summary("List the MKOTH Members who are missing from the discord server")]
+        [Summary("List the MKOTH Members who are missing from the discord server.")]
         public async Task MissingMembers()
         {
             try

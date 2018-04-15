@@ -87,12 +87,18 @@ namespace MKOTHDiscordBot
                     });
                     embed.AddField("Alias", alias);
                 }
-                string usage = "";
-                command.ForEach(x =>
+                string restrictions = null;
+                baseCommand.Module.Preconditions.ToList().ForEach(x => restrictions += x.ToString().MarkdownCodeLine().AddLine());
+                baseCommand.Preconditions.ToList().ForEach(x => restrictions += x.ToString().MarkdownCodeLine().AddLine());
+                if (restrictions != null)
                 {
-                    usage += $".{x.Name.AddSpace() + x.GetCommandParametersInfo()}\n";
-                });
+                    embed.AddField("Restrictions", restrictions);
+                }
+
+                string usage = "";
+                command.ForEach(x => usage += $".{x.Name.AddSpace() + x.GetCommandParametersInfo()}\n");
                 embed.AddField("Usage", usage.MarkdownCodeBlock("css"));
+
                 goto helpReplyProcedure;
             }
 

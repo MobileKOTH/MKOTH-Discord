@@ -18,6 +18,7 @@ namespace MKOTHDiscordBot
     {
         public static bool ReplyToTestServer = true;
         public static bool TestMode = false;
+        public static string FirstArgument = "";
 
         private DiscordSocketClient _client;
         private CommandService _commands;
@@ -27,6 +28,8 @@ namespace MKOTHDiscordBot
 
         public async Task MainAsync(string[] args)
         {
+            FirstArgument = args.FirstOrDefault();
+            Console.WriteLine(FirstArgument);
             Console.WriteLine(RuntimeInformation.FrameworkDescription);
             Console.WriteLine(RuntimeInformation.ProcessArchitecture);
             Console.WriteLine(RuntimeInformation.OSDescription);
@@ -60,7 +63,7 @@ namespace MKOTHDiscordBot
             await _client.StartAsync();
 
             await Task.Delay(-1);
-
+#if DEBUG
             void checkForTestMode()
             {
                 string input;
@@ -81,6 +84,7 @@ namespace MKOTHDiscordBot
                     Console.WriteLine("Not a test mode.");
                 }
             }
+#endif
         }
 
         public async Task InitialiseAsync()

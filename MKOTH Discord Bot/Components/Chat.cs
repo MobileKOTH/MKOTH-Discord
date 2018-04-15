@@ -42,7 +42,7 @@ namespace MKOTHDiscordBot
                 message = CleanMessage.Trim();
             }
             message = message.Replace("@", "`@`");
-            if ((message.StartsWith(".") || message.StartsWith(">") || message.Equals("")))
+            if (new string[] { ".", ">", "?", "!" }.Any(x => message.StartsWith(x)) || message == "")
             {
                 return;
             }
@@ -112,7 +112,7 @@ namespace MKOTHDiscordBot
 
             var typetask = Responder.TriggerTyping(context);
 
-            ProcessResponses(ref message, ref rephrasepool, ref replypool);
+            ProcessResponses(ref message, rephrasepool, replypool);
             string[] words = message.ToLower().Split(' ');
             if (words.Length == 1)
             {
@@ -214,7 +214,7 @@ namespace MKOTHDiscordBot
             return message;
         }
 
-        public static void ProcessResponses(ref string message, ref List<TrashReply> triggers, ref List<TrashReply> replies)
+        public static void ProcessResponses(ref string message, List<TrashReply> triggers, List<TrashReply> replies)
         {
             message = TrimMessage(message);
             string[] words = message.ToLower().Split(' ');

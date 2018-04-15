@@ -8,6 +8,7 @@ namespace MKOTHDiscordBot
 {
     using static Globals.MKOTHGuild;
 
+    [Summary("Performs user moderations for MKOTH chat.")]
     [RequireMKOTHMod]
     public class Moderation : ModuleBase<SocketCommandContext>
     {
@@ -45,7 +46,8 @@ namespace MKOTHDiscordBot
         }
 
         [Command("ResetBan")]
-        [RequireOwner]
+        [Summary("Reset the ban limit.")]
+        [RequireDeveloper]
         public async Task ResetBan()
         {
             banlimit = 3;
@@ -53,7 +55,8 @@ namespace MKOTHDiscordBot
         }
 
         [Command("ShowBanLimit")]
-        [RequireOwner]
+        [Summary("Show the remaining amount of MKOTH Members the chat mods can ban.")]
+        [RequireMKOTHMod]
         public async Task Showbanlimit()
         {
             await ReplyAsync("Ban limit: " + banlimit);

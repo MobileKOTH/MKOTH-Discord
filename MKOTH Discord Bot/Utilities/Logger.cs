@@ -11,6 +11,7 @@ namespace MKOTHDiscordBot
 
     public class Logger
     {
+        public static int ResponderErrors = 0;
 
         public static void Log(string log, LogType type)
         {
@@ -92,6 +93,11 @@ namespace MKOTHDiscordBot
                 string stacktrace = error.StackTrace;
                 stacktrace = stacktrace.SliceFront(1800);
                 await Responder.SendToChannel(Globals.TestGuild.BotTest, error.Message + stacktrace.MarkdownCodeBlock("yaml"));
+                if (++ResponderErrors > 3)
+                {
+                    await SendError(new Exception("The application has experienced too many errors and is attempting to auto restart"));
+                    Modules.System.RestartStatic();
+                }
             }
             catch (Exception e)
             {

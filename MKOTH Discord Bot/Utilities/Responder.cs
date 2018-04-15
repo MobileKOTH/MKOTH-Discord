@@ -102,7 +102,7 @@ namespace MKOTHDiscordBot.Utilities
                 }
             }
             catch (Exception e)
-            {
+            {                
                 await Logger.SendError(e);
             }
         }

@@ -7,33 +7,26 @@ using Discord.WebSocket;
 
 namespace MKOTHDiscordBot
 {
-    using static Globals.MKOTHGuild;
-
-    public class RequireMKOTHModAttribute : PreconditionAttribute
+    public class RequireDeveloperAttribute : PreconditionAttribute
     {
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
             return Task.Run(() =>
             {
-                var guildUser = Guild.GetUser(context.User.Id);
-                if (guildUser == null)
-                {
-                    goto error;
-                }
-
-                if (guildUser.Roles.Contains(ChatMods))
+                if (context.User.Id == Globals.BotOwner.Id)
                 {
                     return PreconditionResult.FromSuccess();
                 }
-
-                error:
-                return PreconditionResult.FromError("You do not have the permission to do that.");
+                else
+                {
+                    return PreconditionResult.FromError("This command can only be used by the developer of the bot.");
+                }
             });
         }
 
         public override string ToString()
         {
-            return "Require MKOTH Mod";
+            return "Require developer";
         }
     }
 }

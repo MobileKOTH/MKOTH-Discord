@@ -8,26 +8,24 @@ using Discord.Commands;
 
 namespace MKOTHDiscordBot
 {
+    [Summary("The debug module for the chat system.")]
+    [Remarks("Module Y")]
     public class TrashTalk : ModuleBase<SocketCommandContext>
     {
         [Command("TrashInfo", RunMode = RunMode.Async)]
         [Summary("Displays the possible response the bot will give when being pinged with the content.")]
         [Alias("ti")]
+        [RequireBotTest]
         public async Task TrashInfo([Remainder] string message)
         {
             DateTime start = DateTime.Now;
             EmbedBuilder embed = new EmbedBuilder();
             IUserMessage msg;
 
-            if (Context.Guild.Id != Globals.TestGuild.Guild.Id)
-            {
-                return;
-            }
-
             List<TrashReply> triggers = new List<TrashReply>();
             List<TrashReply> replies = new List<TrashReply>();
             List<TrashReply> possiblereplies = new List<TrashReply>();
-            Chat.ProcessResponses(ref message, ref triggers, ref replies);
+            Chat.ProcessResponses(ref message, triggers, replies);
             string[] words = message.ToLower().Split(' ');
             if (words.Length == 1)
             {
