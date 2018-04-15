@@ -8,7 +8,7 @@ using System.Reflection;
 
 namespace MKOTHDiscordBot.Modules
 {
-    [Summary("Contains the diagnostics and maintainance infomation of the bot.")]
+    [Summary("Contains the diagnostics and maintainance information of the bot.")]
     public class System : ModuleBase<SocketCommandContext>
     {
         /*
@@ -26,7 +26,7 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Info", RunMode = RunMode.Async)]
         [Alias("Stats")]
-        [Summary("Display bot information and statistics.")]
+        [Summary("Displays the bot information and statistics.")]
         public async Task Info()
         {
             var msgTask = ReplyAsync(string.Empty, embed: buildEmbed());
@@ -103,7 +103,7 @@ namespace MKOTHDiscordBot.Modules
         }
 
         [Command("Ping")]
-        [Summary("Checks the bot's connection and command response.")]
+        [Summary("With an input `<reflection>`(any text) to reflect the input from the bot.")]
         public async Task Ping([Remainder] string reflection)
         {
             EmbedBuilder embed = new EmbedBuilder();
@@ -131,22 +131,16 @@ namespace MKOTHDiscordBot.Modules
         public async Task Restart()
         {
             await ReplyAsync("Restarting...");
-            Task.Run(() =>
-            {
-                RestartStatic();
-            }).Start();
+            Task.Run(() => RestartStatic()).Start();
         }
 
         [Command("ShutDown")]
-        [Summary("Shut down the bot application.")]
+        [Summary("Shuts down the bot application.")]
         [RequireDeveloper]
         public async Task ShutDown()
         {
             await ReplyAsync("Shutting Down...");
-            Task.Run(() =>
-            {
-                ShutDownStatic();
-            }).Start();
+            Task.Run(() => ShutDownStatic()).Start();
         }
 
         public static void RestartStatic()

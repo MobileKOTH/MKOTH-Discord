@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 
-namespace MKOTHDiscordBot
+namespace MKOTHDiscordBot.Modules
 {
     [Summary("Provides guidance of using the MKOTH Discord Bot.")]
     [Remarks("Module A")]
@@ -20,7 +20,7 @@ namespace MKOTHDiscordBot
 
         [Command("Help")]
         [Alias("H", "Manual")]
-        [Summary("Display the help information.")]
+        [Summary("Displays the help information.")]
         public async Task MKOTHHelp()
         {
             var embed = new EmbedBuilder()
@@ -43,7 +43,7 @@ namespace MKOTHDiscordBot
 
         [Command("Help")]
         [Alias("H", "Info")]
-        [Summary("Use with an input `<para>` to find the details and usage about a module or a command.")]
+        [Summary("Use with an input `<para>`(module or command name) to find the details and usage about a module or a command.")]
         public async Task MKOTHHelp([Remainder]string para)
         {
             para = para.ToLower();
@@ -75,7 +75,7 @@ namespace MKOTHDiscordBot
                     commandDescription + (x.Summary == null ? "" : x.Summary.AddSpace()) : commandDescription;
                 });
                 commandDescription = commandDescription == "" ? "In Development".MarkdownCodeBlock() : commandDescription;
-                embed.WithAuthor("📃 Command Information")
+                embed.WithAuthor("📃 Command information")
                     .WithTitle(baseCommand.Name)
                     .WithDescription(commandDescription);
                 if (baseCommand.Aliases.Count > 0)
@@ -99,10 +99,12 @@ namespace MKOTHDiscordBot
                 command.ForEach(x => usage += $".{x.Name.AddSpace() + x.GetCommandParametersInfo()}\n");
                 embed.AddField("Usage", usage.MarkdownCodeBlock("css"));
 
+                embed.WithFooter($"📦 {baseCommand.Module.Name} module");
+
                 goto helpReplyProcedure;
             }
 
-            embed.WithDescription("🔎 Module / Command not found.");
+            embed.WithDescription("🔎 module / command not found.");
 
             helpReplyProcedure:
             await ReplyAsync(string.Empty, false, embed.Build());

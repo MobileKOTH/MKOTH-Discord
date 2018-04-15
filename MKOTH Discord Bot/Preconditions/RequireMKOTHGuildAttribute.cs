@@ -11,9 +11,9 @@ namespace MKOTHDiscordBot
 
     public class RequireMKOTHGuildAttribute : PreconditionAttribute
     {
-        public async override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
+        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
-            return await Task.Run(() =>
+            return Task.Run(() =>
             {
                 if (context.Guild == null)
                 {

@@ -71,16 +71,16 @@ namespace MKOTHDiscordBot.Utilities
                 switch (status.current)
                 {
                     case StatusMessageType.HELP:
-                        await client.SetGameAsync("| .help for help");
+                        await client.SetGameAsync("|.help for help");
                         setNextStatus();
                         return;
 
                     case StatusMessageType.INFO:
-                        await client.SetGameAsync("| .info for information");
+                        await client.SetGameAsync("|.info for information");
                         break;
 
                     case StatusMessageType.KING:
-                        var kingname = Player.List.First(x => x.Playerclass == PlayerClass.KING).Name;
+                        var kingname = Player.List.First(x => x.PlayerClass == PlayerClass.KING).Name;
                         var kingstatus = "King: " + kingname.SliceBack(18);
                         await client.SetGameAsync(kingstatus);
                         break;

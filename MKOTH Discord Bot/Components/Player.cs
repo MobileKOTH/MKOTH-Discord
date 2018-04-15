@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Discord;
 using Discord.WebSocket;
 
@@ -9,8 +10,8 @@ namespace MKOTHDiscordBot
 {
     public static class PlayerClass
     {
-        public const string 
-            KING = "King", 
+        public const string
+            KING = "King",
             NOBLE = "Nobleman",
             SQUIRE = "Squire",
             VASSAL = "Vassal",
@@ -22,83 +23,132 @@ namespace MKOTHDiscordBot
         public const string
             ACTIVE = "Active",
             HOLIDAY = "Holiday",
-            REMOVED = "Removed",
-            UNKNOWN = "Unknown";
+            REMOVED = "Removed";
     }
 
     public class Player
     {
-        protected string name = "";
-        protected ulong discordid = 0;
-        string playerclass = PlayerClass.SQUIRE ;
-        bool isHoliday = false;
-        bool isRemoved = false;
-
-        public string Name { get => name; set => name = value; }
-        public string Playerclass { get => playerclass; set => playerclass = value; }
-        public ulong Discordid { get => discordid; set => discordid = value; }
-        public bool IsHoliday { get => isHoliday; set => isHoliday = value; }
-        public bool IsRemoved { get => isRemoved; set => isRemoved = value; }
+        public string Name { get; set; }
+        public string PlayerClass { get; set; }
+        public ulong DiscordId { get; set; }
+        public bool IsHoliday { get; set; }
+        public bool IsRemoved { get; set; }
+        public bool IsUnknown { get; set; } = false;
+        public int Rank { get; set; }
         public int Wins { get; set; }
         public int Loss { get; set; }
         public int Draws { get; set; }
+        public int Points { get; set; }
+
+        public string ELOString { get; set; }
+
+        public int CodeId { get; set; }
 
         public static List<Player> List = new List<Player>();
 
         public Player()
         {
-            name = PlayerStatus.UNKNOWN;
+            IsUnknown = true;
         }
 
-        public Player(string name, string playerclass, int wins, int loss, int draws, ulong discordid, bool isHoliday, bool isRemoved)
+        public Player(int rank, string name, string playerclass, int points, string eloString, int wins, int loss, int draws, ulong discordid, bool isHoliday, bool isRemoved, int codeId)
         {
-            this.name = name;
-            this.playerclass = playerclass;
-            this.discordid = discordid;
-            this.isHoliday = isHoliday;
-            this.isRemoved = isRemoved;
+            Rank = rank;
+            Name = name;
+            PlayerClass = playerclass;
+            Points = points;
+            ELOString = eloString;
+            DiscordId = discordid;
+            IsHoliday = isHoliday;
+            IsRemoved = isRemoved;
 
             Wins = wins;
             Loss = loss;
             Draws = draws;
 
+            CodeId = codeId;
+
             List.Add(this);
         }
 
-        public Player(string name, ulong discordid)
+        public static Player Fetch(ulong playerId)
         {
-            this.name = name;
-            this.discordid = discordid;
+            return List.Find(x => x.DiscordId == playerId) ?? new Player();
         }
 
-        public static Player Fetch(ulong playerlid)
+        public static Player Fetch(string playerName)
         {
-            foreach (var item in List)
+            return List.Find(x => x.Name == playerName) ?? new Player();
+        }
+
+        public static int FetchCode(ulong discordId)
+        {
+            int code = 0;
+            var player = List.Find(x => x.DiscordId == discordId);
+            if (player != null)
             {
-                if (item.discordid == playerlid)
-                {
-                    return item;
-                }
+                code = player.CodeId;
             }
-            return new Player();
+            return code;
         }
 
-        public static Player Fetch(string playername)
+        public string GetRankFieldString(bool boldName = false, bool hideRank = false)
         {
-            foreach (var item in List)
-            {
-                if (item.name == playername)
-                {
-                    return item;
-                }
-            }
-            return new Player();
+            string name = boldName ? $"**{Name}**" : Name;
+            string rank = hideRank ? $"{PlayerClass}" : Rank.ToString().PadLeft(2, ' ');
+            return $"`#{rank}`\t`{ELOString.Replace(",", "").Replace(":", ": ")}`\t`{Points.ToString().PadRight(3, ' ')}p`\t {name}\n";
         }
 
-        public static void InitialiseList(string tsv)
+        public static async Task Load()
+        {
+            try
+            {
+                var stopwatch = new System.Diagnostics.Stopwatch();
+                stopwatch.Start();
+                var playerDataTsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSITdXPzQ_5eidATjL9j7uBicp4qvDuhx55IPvbMJ_jor8JU60UWCHwaHdXcR654W8Tp6VIjg-8V7g0/pub?gid=282944341&single=true&output=tsv";
+                var playerRankingJsonUrl = "https://script.google.com/macros/s/AKfycbzgXXIUc8PGq0-h-aZkZ9gfGBnBLi-BPn3JJ9cjV5B7ZbLu2eY/exec?resource=mkoth&item=ranking";
+                var playerDataTask = new System.Net.WebClient().DownloadStringTaskAsync(playerDataTsvUrl);
+                var playerRankingTask = new System.Net.WebClient().DownloadStringTaskAsync(playerRankingJsonUrl);
+
+                var messagesTask = Globals.MKOTHGuild.PlayerID.GetMessagesAsync(100).FlattenAsync();
+                await Task.WhenAll(playerDataTask, messagesTask, playerRankingTask);
+
+                var playerData = await playerDataTask;
+                var messages = await messagesTask;
+                var playerRanking = await playerRankingTask;
+
+                List<(string playerName, int codeId)> codeList = new List<(string playerName, int codeId)>();
+                if (messages.Count() > 1)
+                {
+                    foreach (var msg in messages)
+                    {
+                        var embed = msg.Embeds.First();
+                        foreach (var field in embed.Fields)
+                        {
+                            codeList.Add((field.Name, int.Parse(field.Value)));
+                        }
+                    }
+                }
+
+                Initialise(playerData, playerRanking, codeList);
+
+                stopwatch.Stop();
+                Logger.Log("**Time used:** `" + stopwatch.ElapsedMilliseconds + " ms`", LogType.PLAYERDATALOAD);
+
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e);
+            }
+        }
+
+        private static void Initialise(string tsv, string rankingJson, List<(string playerName, int codeId)> codeList)
         {
             List.Clear();
             var lines = tsv.Split(new string[] { "\r\n" }, StringSplitOptions.None);
+
+            var rankingList = JsonConvert.DeserializeObject<RankingResponse.Rootobject>(rankingJson).response.ToList();
+
             for (int i = 1; i < lines.Length; i++)
             {
                 var item = lines[i].Split('\t');
@@ -107,70 +157,71 @@ namespace MKOTHDiscordBot
                 {
                     discordid = 0;
                 }
-                var player = new Player(item[0], item[2].Replace(" (Knight)", ""), int.Parse(item[3]), int.Parse(item[4]), int.Parse(item[5]), discordid, (item[10] == PlayerStatus.HOLIDAY) ? true : false, (item[10] == PlayerStatus.REMOVED) ? true : false);
-            }
-        }
-    }
-
-    public class PlayerCode : Player
-    {
-        int codeid;
-
-        public static List<PlayerCode> CodeList = new List<PlayerCode>();
-
-        public PlayerCode(string name, ulong discordid, int codeid) : base(name, discordid)
-        {
-            this.name = name;
-            this.discordid = discordid;
-            this.codeid = codeid;
-            CodeList.Add(this);
-        }
-
-        public static async Task Load()
-        {
-            try
-            {
-                var starttime = DateTime.Now;
-                var response = await new System.Net.WebClient().DownloadStringTaskAsync("https://docs.google.com/spreadsheets/d/e/2PACX-1vSITdXPzQ_5eidATjL9j7uBicp4qvDuhx55IPvbMJ_jor8JU60UWCHwaHdXcR654W8Tp6VIjg-8V7g0/pub?gid=282944341&single=true&output=tsv");
-                Player.InitialiseList(response);
-                var channel = Globals.MKOTHGuild.PlayerID as ISocketMessageChannel;
-                var messages = await channel.GetMessagesAsync(100, CacheMode.AllowDownload, null).FlattenAsync();
-                if (messages.Count() <= 1) return;
-                CodeList.Clear();
-                foreach (var msg in messages)
+                var (playerName, codeId) = codeList.Find(x => x.playerName == item[0]);
+                int rank = -1;
+                int points = 0;
+                string eloString = "Unknown";
+                var player = rankingList.Find(x => x.Player_Name == item[0]);
+                if (player != null)
                 {
-                    var embed = msg.Embeds.First();
-                    foreach (var field in embed.Fields)
-                    {
-                        var player = Player.Fetch(field.Name);
-                        PlayerCode playercode = new PlayerCode(field.Name, player.Discordid, int.Parse(field.Value));
-                    }
+                    int.TryParse(player.Rank, out rank);
+                    points = int.Parse(player.Points);
+                    eloString = player.Main_ELO;
                 }
-                Logger.Log("**Time used:** `" + (DateTime.Now - starttime).TotalMilliseconds + " ms`", LogType.PLAYERDATALOAD);
-            }
-            catch (Exception e)
-            {
-                Logger.LogError(e);
+
+                new Player(
+                    rank,
+                    item[0],
+                    item[2].Replace(" (Knight)", ""),
+                    points,
+                    eloString,
+                    int.Parse(item[3]), int.Parse(item[4]),
+                    int.Parse(item[5]),
+                    discordid,
+                    (item[10] == PlayerStatus.HOLIDAY) ? true : false,
+                    (item[10] == PlayerStatus.REMOVED) ? true : false,
+                    codeId);
             }
         }
 
-        public static int FetchCode(ulong discordid, DiscordSocketClient client)
+        public struct RankingResponse
         {
-            int code = 0;
-            if (CodeList.Count < 1)
-            {
-                Load().RunSynchronously();
-            }
-            foreach (var item in CodeList)
-            {
-                if (item.discordid == discordid)
-                {
-                    return item.codeid;
-                }
-            }
-            return code;
-        }
 
-        public int Codeid { get => codeid; set => codeid = value; }
+            public class Rootobject
+            {
+                public Request request { get; set; }
+                public Response[] response { get; set; }
+            }
+
+            public class Request
+            {
+                public Parameter parameter { get; set; }
+                public string contextPath { get; set; }
+                public int contentLength { get; set; }
+                public string queryString { get; set; }
+                public Parameters parameters { get; set; }
+            }
+
+            public class Parameter
+            {
+                public string item { get; set; }
+                public string resource { get; set; }
+            }
+
+            public class Parameters
+            {
+                public string[] item { get; set; }
+                public string[] resource { get; set; }
+            }
+
+            public class Response
+            {
+                public string Rank { get; set; }
+                public string Player_Name { get; set; }
+                public string Class { get; set; }
+                public string Points { get; set; }
+                public string Main_ELO { get; set; }
+            }
+        }
     }
 }

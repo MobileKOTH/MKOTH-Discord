@@ -122,7 +122,7 @@ namespace MKOTHDiscordBot
                 TestGuild.BotTest = guild.TextChannels.Single(x => x.Id.Equals(360352712619065345UL));
 
                 // Player Data
-                var playerloadtask = PlayerCode.Load();
+                Player.Load().GetAwaiter().GetResult();
 
                 if (Program.FirstArgument == "Restarted")
                 {

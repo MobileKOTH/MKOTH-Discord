@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 
-namespace MKOTHDiscordBot
+namespace MKOTHDiscordBot.Modules
 {
     using static Globals.MKOTHGuild;
 
@@ -15,7 +15,7 @@ namespace MKOTHDiscordBot
         static int banlimit = 3;
 
         [Command("Ban")]
-        [Summary("Ban a user in MKOTH Server.")]
+        [Summary("Bans a user in MKOTH Server.")]
         [RequireMKOTHGuild]
         public async Task Ban(IGuildUser user, [Remainder] string reason = "Not Provided.")
         {
@@ -23,7 +23,7 @@ namespace MKOTHDiscordBot
         }
 
         [Command("SuperBan")]
-        [Summary("Ban a user in MKOTH Server and prune their messages from the past 1 day.")]
+        [Summary("Bans a user in MKOTH Server and prune their messages from the past 1 day.")]
         [RequireMKOTHGuild]
         public async Task SuperBan(IGuildUser user, [Remainder] string reason = "Not Provided.")
         {
@@ -31,7 +31,7 @@ namespace MKOTHDiscordBot
         }
 
         [Command("Kick")]
-        [Summary("Kick a user from the MKOTH server. Cannot kick a MKOTH Member.")]
+        [Summary("Kicks a user from the MKOTH server. Cannot kick a MKOTH Member.")]
         [RequireMKOTHGuild]
         public async Task Kick(IGuildUser user, [Remainder] string reason = "Not Provided.")
         {
@@ -46,7 +46,7 @@ namespace MKOTHDiscordBot
         }
 
         [Command("ResetBan")]
-        [Summary("Reset the ban limit.")]
+        [Summary("Resets the ban limit.")]
         [RequireDeveloper]
         public async Task ResetBan()
         {
@@ -55,7 +55,7 @@ namespace MKOTHDiscordBot
         }
 
         [Command("ShowBanLimit")]
-        [Summary("Show the remaining amount of MKOTH Members the chat mods can ban.")]
+        [Summary("Shows the remaining amount of MKOTH Members the chat mods can ban.")]
         [RequireMKOTHMod]
         public async Task Showbanlimit()
         {

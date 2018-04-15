@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 
-namespace MKOTHDiscordBot
+namespace MKOTHDiscordBot.Modules
 {
     [Summary("The debug module for the chat system.")]
     [Remarks("Module Y")]
@@ -79,7 +79,7 @@ namespace MKOTHDiscordBot
                     embed.AddField(string.Format("{0:N2}%", possiblereplies[i].Matchrate * 100), $"`#{index - 1}` {trigger}\n`#{index}` {rephrase}\n`#{index + 1}` {response}");
                 }
             }
-            embed.Title = "Trigger, Rephrase and Reply Pool";
+            embed.Title = "Trigger, rephrase and reply pool";
             embed.Description = "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`";
             await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"" + message + "\"", false, embed.Build());
             await Task.CompletedTask;

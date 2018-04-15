@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using MKOTHDiscordBot.Modules;
 using MKOTHDiscordBot.Utilities;
 
 namespace MKOTHDiscordBot
@@ -43,8 +44,7 @@ namespace MKOTHDiscordBot
             Console.WriteLine("Release Build");
 #endif
             _client = new DiscordSocketClient(new DiscordSocketConfig { LogLevel = LogSeverity.Debug });
-
-            _commands = new CommandService();
+            _commands = new CommandService(new CommandServiceConfig { LogLevel = LogSeverity.Debug });
             _services = new ServiceCollection()
                 .AddSingleton(_client)
                 .AddSingleton(_commands)
@@ -54,6 +54,14 @@ namespace MKOTHDiscordBot
             _client.Log += (msg) =>
             {
                 Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine(msg.ToString());
+                Console.ResetColor();
+                return Task.CompletedTask;
+            };
+
+            _commands.Log += (msg) =>
+            {
+                Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine(msg.ToString());
                 Console.ResetColor();
                 return Task.CompletedTask;
@@ -107,7 +115,7 @@ namespace MKOTHDiscordBot
             savechatupdatemkothtimer.Start();
 
             Timer downloadplayerdatatimer = new Timer();
-            downloadplayerdatatimer.Elapsed += async (sender, evt) => { if (!TestMode) await PlayerCode.Load(); };
+            downloadplayerdatatimer.Elapsed += async (sender, evt) => { if (!TestMode) await Player.Load(); };
             downloadplayerdatatimer.Interval = 300000;
             downloadplayerdatatimer.Start();
         }
@@ -117,7 +125,7 @@ namespace MKOTHDiscordBot
             Chat.SaveHistory();
             if (!TestMode)
             {
-                var task = Management.UpdateMKOTH(null);
+                var task = Management.UpdateMKOTHAsync(null);
             }
         }
 
