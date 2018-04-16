@@ -34,7 +34,7 @@ namespace MKOTHDiscordBot.Modules
                 .WithColor(Color.Orange)
                 .WithUrl("https://docs.google.com/spreadsheets/d/1VRfWwvRSMQizzBanGNRMFVzoYFthrsNKzOgF5wKVM5I")
                 .WithTitle("Full ranking sheet")
-                .WithDescription("[MKOTH Series Data](https://docs.google.com/spreadsheets/d/1VRfWwvRSMQizzBanGNRMFVzoYFthrsNKzOgF5wKVM5I)")
+                .WithDescription("Click [here](https://docs.google.com/spreadsheets/d/1VRfWwvRSMQizzBanGNRMFVzoYFthrsNKzOgF5wKVM5I) to access the full ranking and statistics.")
                 .AddField("Top ten", topTenField);
 
             if (!player.IsUnknown && player.Rank > 10)
