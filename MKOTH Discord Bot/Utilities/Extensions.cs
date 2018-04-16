@@ -43,7 +43,7 @@ namespace MKOTHDiscordBot
 
         public static string SliceFront(this String str, int limit, string leftOverCover = "...")
         {
-            str = limit >= str.Length ? str : leftOverCover + str.Substring(str.Length - limit);
+            str = limit >= str.Length ? str : leftOverCover + str.Substring(str.Length - limit - leftOverCover.Length);
             return str;
         }
 

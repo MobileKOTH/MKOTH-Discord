@@ -94,7 +94,7 @@ namespace MKOTHDiscordBot
 
         public string GetRankFieldString(bool boldName = false, bool hideRank = false)
         {
-            string name = boldName ? $"**{Name}**" : Name;
+            string name = (boldName ? $"**{Name}**" : Name).SliceBack(28);
             string rank = hideRank ? $"{PlayerClass}" : Rank.ToString().PadLeft(2, '0');
             return $"`#{rank}`\t`{ELOString.Replace(",", "").Replace(":", ": ")}`\t`{Points.ToString().PadRight(3, ' ')}p`\t {name}\n";
         }
