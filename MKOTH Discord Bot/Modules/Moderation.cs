@@ -42,7 +42,7 @@ namespace MKOTHDiscordBot.Modules
             }
 
             await user.KickAsync(reason);
-            await SendModResponseAsync(user, reason, "Kicked");
+            await SendModResponseAsync(user, reason, "**kicked**");
         }
 
         [Command("ResetBan")]
@@ -88,7 +88,7 @@ namespace MKOTHDiscordBot.Modules
 
             banProcedure:
             await Context.Guild.AddBanAsync(user, daystoprune, para);
-            await SendModResponseAsync(user, para, "Banned");
+            await SendModResponseAsync(user, para, "**banned**");
 
             return;
         }
@@ -110,7 +110,7 @@ namespace MKOTHDiscordBot.Modules
                 Description = "Moderator: " + Context.User.Mention + " " + Context.User.ToString(),
                 Color = Color.Red
             };
-            string text = $"User {type} " + user.Mention.AddSpace() + user;
+            string text = $"User {type}: " + user.Mention.AddSpace() + user;
             await ReplyAsync(text, embed: embed.Build());
             await ((ITextChannel)ModLog).SendMessageAsync(text, embed: embed.Build());
         }

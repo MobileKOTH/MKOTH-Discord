@@ -72,16 +72,16 @@ namespace MKOTHDiscordBot.Modules
                     string trigger = Chat.History[index - 1];
                     string rephrase = Chat.History[index];
                     string response = Chat.History[index + 1];
-                    trigger = trigger.Length > 200 ? trigger.Substring(0, 200) + "..." : trigger;
-                    rephrase = rephrase.Length > 200 ? rephrase.Substring(0, 200) + "..." : rephrase;
-                    response = response.Length > 200 ? response.Substring(0, 200) + "..." : response;
+                    trigger = trigger.SliceBack(100);
+                    rephrase = rephrase.SliceBack(100);
+                    response = response.SliceBack(100);
 
                     embed.AddField(string.Format("{0:N2}%", possiblereplies[i].Matchrate * 100), $"`#{index - 1}` {trigger}\n`#{index}` {rephrase}\n`#{index + 1}` {response}");
                 }
             }
             embed.Title = "Trigger, rephrase and reply pool";
             embed.Description = "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`";
-            await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"" + message + "\"", false, embed.Build());
+            await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"" + message.SliceBack(100) + "\"", false, embed.Build());
             await Task.CompletedTask;
             return;
         }

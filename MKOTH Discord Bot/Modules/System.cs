@@ -131,7 +131,7 @@ namespace MKOTHDiscordBot.Modules
         public async Task Restart()
         {
             await ReplyAsync("Restarting...");
-            Task.Run(() => RestartStatic()).Start();
+            var restartTAsk = Task.Run(() => RestartStatic());
         }
 
         [Command("ShutDown")]
@@ -140,7 +140,7 @@ namespace MKOTHDiscordBot.Modules
         public async Task ShutDown()
         {
             await ReplyAsync("Shutting Down...");
-            Task.Run(() => ShutDownStatic()).Start();
+            var shutdownTAsk = Task.Run(() => ShutDownStatic());
         }
 
         public static void RestartStatic()

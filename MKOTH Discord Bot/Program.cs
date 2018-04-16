@@ -19,7 +19,7 @@ namespace MKOTHDiscordBot
     {
         public static bool ReplyToTestServer = true;
         public static bool TestMode = false;
-        public static string FirstArgument = "";
+        public static string FirstArgument = null;
 
         private DiscordSocketClient _client;
         private CommandService _commands;
@@ -30,7 +30,7 @@ namespace MKOTHDiscordBot
         public async Task MainAsync(string[] args)
         {
             FirstArgument = args.FirstOrDefault();
-            Console.WriteLine(FirstArgument);
+            Console.WriteLine(FirstArgument ?? "No Startup Arguments");
             Console.WriteLine(RuntimeInformation.FrameworkDescription);
             Console.WriteLine(RuntimeInformation.ProcessArchitecture);
             Console.WriteLine(RuntimeInformation.OSDescription);

@@ -84,7 +84,7 @@ namespace MKOTHDiscordBot.Modules
                 {
                     holidaymisinglistfield += $"{item.PlayerClass}: {item.Name}\n";
                 }
-                embed.Title = "Missing MKOTH Members from MKOTH Discord server";
+                embed.Title = "Missing MKOTH members from MKOTH Discord server";
                 embed.Description = "MKOTH Members who are not in the discord server but still remain active or in holiday in the MKOTH Ranking.";
                 embed.AddField(activemissinglist.Count + " Active Members", $"```{activemisinglistfield}```");
                 embed.AddField(holidaymissinglist.Count + " Holiday Members", $"```{holidaymisinglistfield}```");

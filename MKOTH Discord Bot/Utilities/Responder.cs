@@ -71,12 +71,12 @@ namespace MKOTHDiscordBot.Utilities
                 switch (status.current)
                 {
                     case StatusMessageType.HELP:
-                        await client.SetGameAsync("|.help for help");
+                        await client.SetGameAsync("|.help for general help");
                         setNextStatus();
                         return;
 
                     case StatusMessageType.INFO:
-                        await client.SetGameAsync("|.info for information");
+                        await client.SetGameAsync("|.help info for MKOTH help");
                         break;
 
                     case StatusMessageType.KING:

@@ -166,7 +166,7 @@ namespace MKOTHDiscordBot
                 {
                     int.TryParse(player.Rank, out rank);
                     points = int.Parse(player.Points);
-                    eloString = player.Main_ELO;
+                    eloString = player.Main_ELO ?? "Unknown";
                 }
 
                 new Player(
