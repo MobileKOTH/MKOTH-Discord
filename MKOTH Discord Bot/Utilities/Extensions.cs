@@ -58,6 +58,18 @@ namespace MKOTHDiscordBot
         }
         #endregion
 
+        #region TimeSpan --------------------------------------------------------------------------
+        public static string AsRoundedDuration(this TimeSpan timespan)
+        {
+            return timespan.TotalDays >= 370 * 2 ? (int)timespan.TotalDays / 365+ " years" :
+                timespan.TotalDays > 60 ? (int)timespan.TotalDays / 30 + " months" :
+                timespan.TotalHours >= 48 ? (int)timespan.TotalHours / 24 + " days" :
+                timespan.TotalMinutes >= 120 ? (int)timespan.TotalMinutes / 60 + " hours" :
+                timespan.TotalSeconds >= 120 ? (int)timespan.TotalSeconds / 60 + " minutes" :
+                (int)timespan.TotalSeconds + " seconds";
+        }
+        #endregion
+
         #region IGuildUser ------------------------------------------------------------------------
         public static string GetDisplayName(this IGuildUser user)
         {

@@ -31,6 +31,7 @@ namespace MKOTHDiscordBot
         public string Name { get; set; }
         public string Class { get; set; }
         public ulong DiscordId { get; set; }
+        public bool IsKnight { get; set; }
         public bool IsHoliday { get; set; }
         public bool IsRemoved { get; set; }
         public bool IsUnknown { get; set; } = false;
@@ -64,6 +65,26 @@ namespace MKOTHDiscordBot
             }
         }
 
+        public int RankOrClassRank
+        {
+            get
+            {
+                if (Rank > 0)
+                {
+                    return Rank;
+                }
+                switch (Class)
+                {
+                    case PlayerClass.SQUIRE:
+                        return 30;
+                    case PlayerClass.VASSAL:
+                        return 50;
+                    default:
+                        return List.Count;
+                }
+            }
+        }
+
         public static List<Player> List = new List<Player>();
 
         public Player()
@@ -71,7 +92,7 @@ namespace MKOTHDiscordBot
             IsUnknown = true;
         }
 
-        public Player(int rank, string name, string playerclass, int points, string eloString, int wins, int loss, int draws, ulong discordid, bool isHoliday, bool isRemoved, int codeId)
+        public Player(int rank, string name, string playerclass, int points, string eloString, int wins, int loss, int draws, ulong discordid, bool isKnight, bool isHoliday, bool isRemoved, int codeId)
         {
             Rank = rank;
             Name = name;
@@ -79,6 +100,7 @@ namespace MKOTHDiscordBot
             Points = points;
             ELOString = eloString;
             DiscordId = discordid;
+            IsKnight = isKnight;
             IsHoliday = isHoliday;
             IsRemoved = isRemoved;
 
@@ -198,6 +220,7 @@ namespace MKOTHDiscordBot
                     int.Parse(item[3]), int.Parse(item[4]),
                     int.Parse(item[5]),
                     discordid,
+                    item[2].Contains("Knight"),
                     (item[10] == PlayerStatus.HOLIDAY) ? true : false,
                     (item[10] == PlayerStatus.REMOVED) ? true : false,
                     codeId);

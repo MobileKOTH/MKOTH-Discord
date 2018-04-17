@@ -2,7 +2,9 @@
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Threading.Tasks;
+using System.Web;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -96,6 +98,115 @@ namespace MKOTHDiscordBot.Modules
             {
                 await Logger.SendError(e);
             }
+        }
+
+        [Command("Alt")]
+        [Summary("Checks the user's registration and server join date.")]
+        public async Task Alt(IGuildUser user)
+        {
+            var resgistrationDate = user.CreatedAt;
+            var joinedDate = user.JoinedAt.Value;
+            var difference = joinedDate - resgistrationDate;
+
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithAuthor(user)
+                .WithDescription($"**Registered:** {resgistrationDate.ToString("R")}\n" +
+                $"**Joined:** {joinedDate.ToString("R")}\n" +
+                $"**Difference:** {difference.AsRoundedDuration()}");
+
+            await ReplyAsync(string.Empty, embed: embed.Build());
+        }
+
+        [Command("Submit")]
+        [Alias("s")]
+        [Summary("Gets the commands for series submission.")]
+        public async Task Submit()
+        {// TODO: Make this like help commands.
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithTitle("Series Submission Commands")
+                .WithDescription("Use the correct type of series based on followed commands a\n" +
+                "`@User Wins Loss GameCode`\n" +
+                ".SubmitKing\n.SubmitKnight\n.SubmitRank\n.SubmitPoint\n".MarkdownCodeBlock("css"));
+            await ReplyAsync(string.Empty, embed: embed.Build());
+        }
+
+        [Command("SubmitKing")]
+        [Alias("sk")]
+        [Summary("Gets a prefilled series submission form with an valid series input, you only have to answer the Maths question.")]
+        public async Task SubmitKing(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
+        {
+            await Submit("King", opponent, wins, loss, inviteCode);
+        }
+
+        [Command("SubmitKnight")]
+        [Alias("sn")]
+        [Summary("Gets a prefilled series submission form with an valid series input, you only have to answer the Maths question. " +
+            "However a knight vs knight series will not be parsed properly.")]
+        public async Task SubmitKnight(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
+        {
+            await Submit("Knight", opponent, wins, loss, inviteCode);
+        }
+
+        [Command("SubmitRank")]
+        [Alias("sr")]
+        [Summary("Gets a prefilled series submission form with an valid series input, you only have to answer the Maths question.")]
+        public async Task SubmitRank(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
+        {
+            await Submit("Ranked", opponent, wins, loss, inviteCode);
+        }
+
+        [Command("SubmitPoint")]
+        [Alias("sp")]
+        [Summary("Gets a prefilled series submission form with an valid series input, you only have to answer the Maths question.")]
+        public async Task SubmitPoint(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
+        {
+            await Submit("Point", opponent, wins, loss, inviteCode);
+        }
+
+        public async Task Submit(string type, IUser opponent, int wins, int loss, string inviteCode)
+        {
+            var winner = Player.Fetch(Context.User.Id);
+            var loser = Player.Fetch(opponent.Id);
+            if (winner.IsUnknown || loser.IsUnknown || winner.IsRemoved || loser.IsRemoved)
+            {
+                await ReplyAsync("Unknown player(s).");
+                return;
+            }
+            if (wins < loss || wins > 3 || loss > 3 || wins < 0 || loss < 0)
+            {
+                await ReplyAsync("Invalid win/loss.");
+            }
+
+            var player1 = type == "Knight" ?
+                (winner.IsKnight ? loser : winner) :
+                (winner.RankOrClassRank > loser.RankOrClassRank ? winner : loser);
+            var player2 = player1 == winner ? loser : winner;
+            var player1wins = winner == player1 ? wins : loss;
+            var player2wins = winner == player1 ? loss : wins;
+
+            string baseURL = "https://docs.google.com/forms/d/e/1FAIpQLSdGJnCOl0l5HjxuYexVV_sOKPR1iScq3eiSxGiqKULX3zG4-Q/viewform?usp=pp_url&";
+            NameValueCollection queryString = HttpUtility.ParseQueryString(string.Empty);
+            queryString["entry.1407262204"] = type;
+            queryString["entry.920665948"] = player1.Name;
+            queryString["entry.1277512719"] = player2.Name;
+            queryString["entry.1571047506"] = player1wins.ToString();
+            queryString["entry.2093583907"] = player2wins.ToString();
+            queryString["entry.2096904446"] = 0.ToString();
+            queryString["entry.1027601864"] = winner.CodeId.ToString();
+            queryString["entry.164636590"] = inviteCode;
+
+            string filledForm = baseURL + queryString.ToString();
+            Logger.Log($"Form sent to: {Context.User}\n ```{filledForm}```", LogType.DIRECTMESSAGE);
+            await ReplyAsync(Context.User.Mention + ", your prefilled form has been sent to your direct message.");
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithTitle("Prefilled Submission Form")
+                .WithDescription("Here is your form which is also filled with your submission ID.\n" +
+                "This feature still undergoing testing, do double check the values and report errors to an Admin.\n\n" + 
+                $"Click [here]({filledForm}) for the submission form.");
+            await Context.User.SendMessageAsync( "**DO NOT SHARE THIS LINK AS IT CONTAINS YOUR SUBMISSION ID.**", embed: embed.Build());
         }
 
         public static async Task UpdateMKOTHAsync(SocketCommandContext context)

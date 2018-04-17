@@ -59,7 +59,7 @@ namespace MKOTHDiscordBot.Modules
         }
 
         [Command("SeriesForm")]
-        [Alias("sf", "SubmissionForm", "SubmitForm", "submit")]
+        [Alias("sf", "SubmissionForm", "SubmitForm")]
         [Summary("Gets the link for MKOTH series submission form")]
         public async Task SeriesForm()
         {
@@ -75,7 +75,7 @@ namespace MKOTHDiscordBot.Modules
         }
 
         [Command("SeriesPoints")]
-        [Alias("sp")]
+        [Alias("pointsystem","ps")]
         [Summary("List the MKOTH series point system rules.")]
         public async Task SeriesPoints()
         {

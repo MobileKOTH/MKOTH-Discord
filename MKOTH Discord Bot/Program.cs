@@ -99,7 +99,7 @@ namespace MKOTHDiscordBot
         {
             _client.MessageReceived += HandleMessageAsync;
             _client.Ready += () => Globals.Load(_client);
-            _client.UserJoined += (user) => { if (user.Guild.Id == Globals.MKOTHGuild.Guild.Id) HandleChatSaveUpdateMKOTH(); return Task.CompletedTask; };
+            _client.UserJoined += (user) => { if (user.Guild.Id == Globals.MKOTHGuild.Guild.Id) HandleChatSaveUpdateMKOTH(); return Task.CompletedTask;};
 
             // Discover all of the commands in this assembly and load them.
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
@@ -118,6 +118,8 @@ namespace MKOTHDiscordBot
             downloadplayerdatatimer.Elapsed += async (sender, evt) => { if (!TestMode) await Player.Load(); };
             downloadplayerdatatimer.Interval = 300000;
             downloadplayerdatatimer.Start();
+
+            SpamWatch.Start();
         }
 
         private void HandleChatSaveUpdateMKOTH()
@@ -165,11 +167,13 @@ namespace MKOTHDiscordBot
             // Chat handling in DM.
             if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
+                if (await SpamWatch.Watch(context)) return;
                 Task.Run(async () => await Chat.ReplyAsync(context, message.Content)).Start();
                 return;
             }
             else if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
+                if (await SpamWatch.Watch(context)) return;
                 Task.Run(async () => await Chat.ReplyAsync(context, message.Content.Remove(0, argPos))).Start();
                 return;
             }
@@ -177,6 +181,7 @@ namespace MKOTHDiscordBot
             if (!message.Author.IsBot && !message.HasMentionPrefix(_client.CurrentUser, ref argPos)) new Chat(context);
 
             if (!(message.HasCharPrefix('.', ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))) return;
+            if (await SpamWatch.Watch(context)) return;
             // Command handling.
             var result = await _commands.ExecuteAsync(context, argPos, _services);
             if (context.IsPrivate && message.Author.Id != Globals.BotOwner.Id)

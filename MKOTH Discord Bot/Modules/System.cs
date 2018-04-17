@@ -78,7 +78,7 @@ namespace MKOTHDiscordBot.Modules
                     .WithValue(systemInfo))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Uptime")
-                    .WithValue($"```{(DateTime.Now - Globals.DeploymentTime)}```"))
+                    .WithValue($"```{(DateTime.Now - Globals.DeploymentTime).AsRoundedDuration()}```"))
                 .WithImageUrl("https://cdn.discordapp.com/attachments/271109067261476866/330727796647395330/Untitled12111.jpg")
                 .WithFooter(text: "Copyright 2018 © Mobile Koth")
                 .WithCurrentTimestamp()
