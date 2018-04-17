@@ -17,7 +17,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("Ban")]
         [Summary("Bans a user in MKOTH Server.")]
         [RequireMKOTHGuild]
-        public async Task Ban(IGuildUser user, [Remainder] string reason = "Not Provided.")
+        public async Task Ban(IGuildUser user, [Remainder] string reason = "Not provided.")
         {
             await BanAsync(user, reason, false);
         }
@@ -25,7 +25,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("SuperBan")]
         [Summary("Bans a user in MKOTH Server and prune their messages from the past 1 day.")]
         [RequireMKOTHGuild]
-        public async Task SuperBan(IGuildUser user, [Remainder] string reason = "Not Provided.")
+        public async Task SuperBan(IGuildUser user, [Remainder] string reason = "Not provided.")
         {
             await BanAsync(user, reason, true);
         }
@@ -33,7 +33,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("Kick")]
         [Summary("Kicks a user from the MKOTH server. Cannot kick a MKOTH Member.")]
         [RequireMKOTHGuild]
-        public async Task Kick(IGuildUser user, [Remainder] string reason = "Not Provided.")
+        public async Task Kick(IGuildUser user, [Remainder] string reason = "Not provided.")
         {
             if (IsModImmuneUser(user) || user.RoleIds.Contains(Member.Id))
             {

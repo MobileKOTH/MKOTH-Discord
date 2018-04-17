@@ -24,8 +24,8 @@ namespace MKOTHDiscordBot.Modules
         }
         */
 
-        [Command("Info", RunMode = RunMode.Async)]
-        [Alias("Stats")]
+        [Command("BotInfo", RunMode = RunMode.Async)]
+        [Alias("BotStats", "SystemInfo", "sys")]
         [Summary("Displays the bot information and statistics.")]
         public async Task Info()
         {
@@ -51,7 +51,7 @@ namespace MKOTHDiscordBot.Modules
             Embed buildEmbed(string ramUsage = "```Loading...```", string systemInfo = "```Loading...```")
             {
                 return new EmbedBuilder()
-                .WithTitle("Information")
+                .WithTitle("System Information")
                 .WithDescription("Official MKOTH Management Bot. In early development and testing phase.")
                 .WithUrl("https://mobilekoth.wordpress.com/")
                 .WithThumbnailUrl("https://cdn.discordapp.com/attachments/341163606605299716/360336022745382912/13615239_1204861226212220_2613382245523520956_n.png")

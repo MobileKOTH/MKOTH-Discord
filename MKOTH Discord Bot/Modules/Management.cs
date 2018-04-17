@@ -78,13 +78,13 @@ namespace MKOTHDiscordBot.Modules
                 string holidaymisinglistfield = "";
                 foreach (var item in activemissinglist)
                 {
-                    activemisinglistfield += $"{item.PlayerClass}: {item.Name}\n";
+                    activemisinglistfield += $"{item.Class}: {item.Name}\n";
                 }
                 foreach (var item in holidaymissinglist)
                 {
-                    holidaymisinglistfield += $"{item.PlayerClass}: {item.Name}\n";
+                    holidaymisinglistfield += $"{item.Class}: {item.Name}\n";
                 }
-                embed.Title = "Missing MKOTH members from MKOTH Discord server";
+                embed.Title = "Missing MKOTH Members from MKOTH Discord Server";
                 embed.Description = "MKOTH Members who are not in the discord server but still remain active or in holiday in the MKOTH Ranking.";
                 embed.AddField(activemissinglist.Count + " Active Members", $"```{activemisinglistfield}```");
                 embed.AddField(holidaymissinglist.Count + " Holiday Members", $"```{holidaymisinglistfield}```");
@@ -162,7 +162,7 @@ namespace MKOTHDiscordBot.Modules
                             }
                             await serveruser.ModifyAsync(x => { x.Nickname = player.Name; });
                         }
-                        switch (player.PlayerClass)
+                        switch (player.Class)
                         {
                             case PlayerClass.KING:
                                 if (!serveruser.Roles.Contains(King))

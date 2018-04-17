@@ -80,7 +80,7 @@ namespace MKOTHDiscordBot.Utilities
                         break;
 
                     case StatusMessageType.KING:
-                        var kingname = Player.List.First(x => x.PlayerClass == PlayerClass.KING).Name;
+                        var kingname = Player.List.First(x => x.Class == PlayerClass.KING).Name;
                         var kingstatus = "King: " + kingname.SliceBack(18);
                         await client.SetGameAsync(kingstatus);
                         break;

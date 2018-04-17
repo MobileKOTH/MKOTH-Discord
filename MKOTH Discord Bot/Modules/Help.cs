@@ -44,6 +44,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("Help")]
         [Alias("H", "Info")]
         [Summary("Use with an input `<para>`(module or command name) to find the details and usage about a module or a command.")]
+        [Remarks("help")]
         public async Task MKOTHHelp([Remainder]string para)
         {
             para = para.ToLower();
@@ -54,7 +55,7 @@ namespace MKOTHDiscordBot.Modules
             {
                 string commandList = "";
                 module.Commands.ToList().ForEach(x => commandList += $".{x.Name.AddSpace() + x.GetCommandParametersInfo()}\n");
-                embed.WithAuthor("📦 Module information")
+                embed.WithAuthor("📦 Module Information")
                     .WithTitle(module.Name)
                     .WithDescription(module.Summary ?? "In Development".MarkdownCodeBlock())
                     .AddField("Commands", commandList.MarkdownCodeBlock("css"));
@@ -63,7 +64,6 @@ namespace MKOTHDiscordBot.Modules
 
             para = para.StartsWith(".") ? para.TrimStart('.') : para;
             var command = commands.Commands.ToList().FindAll(x => x.Name.ToLower() == para || x.Aliases.ToList().Find(y => y.ToLower() == para) != null);
-            command = para == "info" ? command.FindAll(x => x.Name == "Info").ToList() : command;
             if (command.Count > 0)
             {
                 var baseCommand = command.First();
@@ -75,7 +75,7 @@ namespace MKOTHDiscordBot.Modules
                     commandDescription + (x.Summary == null ? "" : x.Summary.AddSpace()) : commandDescription;
                 });
                 commandDescription = commandDescription == "" ? "In Development".MarkdownCodeBlock() : commandDescription;
-                embed.WithAuthor("📃 Command information")
+                embed.WithAuthor("📃 Command Information")
                     .WithTitle(baseCommand.Name)
                     .WithDescription(commandDescription);
                 if (baseCommand.Aliases.Count > 0)
@@ -108,6 +108,14 @@ namespace MKOTHDiscordBot.Modules
 
             helpReplyProcedure:
             await ReplyAsync(string.Empty, false, embed.Build());
+        }
+
+        [Command("Info")]
+        [Alias("MkothHelp")]
+        [Summary("Redirect to MKOTH help, equivalent to `.help information`")]
+        public async Task Info()
+        {
+            await MKOTHHelp("information");
         }
     }
 }

@@ -29,7 +29,7 @@ namespace MKOTHDiscordBot
     public class Player
     {
         public string Name { get; set; }
-        public string PlayerClass { get; set; }
+        public string Class { get; set; }
         public ulong DiscordId { get; set; }
         public bool IsHoliday { get; set; }
         public bool IsRemoved { get; set; }
@@ -44,6 +44,26 @@ namespace MKOTHDiscordBot
 
         public int CodeId { get; set; }
 
+        public string PlayerClassIcon
+        {
+            get
+            {
+                switch (Class)
+                {
+                    case PlayerClass.KING:
+                        return "👑";
+                    case PlayerClass.NOBLE:
+                        return "🥂";
+                    case PlayerClass.SQUIRE:
+                        return "⚔";
+                    case PlayerClass.VASSAL:
+                        return "🗡";
+                    default:
+                        return "🔪";
+                }
+            }
+        }
+
         public static List<Player> List = new List<Player>();
 
         public Player()
@@ -55,7 +75,7 @@ namespace MKOTHDiscordBot
         {
             Rank = rank;
             Name = name;
-            PlayerClass = playerclass;
+            Class = playerclass;
             Points = points;
             ELOString = eloString;
             DiscordId = discordid;
@@ -95,8 +115,8 @@ namespace MKOTHDiscordBot
         public string GetRankFieldString(bool boldName = false, bool hideRank = false)
         {
             string name = (boldName ? $"**{Name}**" : Name).SliceBack(28);
-            string rank = hideRank ? $"{PlayerClass}" : Rank.ToString().PadLeft(2, '0');
-            return $"`#{rank}`\t`{ELOString.Replace(",", "").Replace(":", ": ")}`\t`{Points.ToString().PadRight(3, ' ')}p`\t {name}\n";
+            string rank = hideRank ? $"{Class}" : Rank.ToString().PadLeft(2, '0');
+            return $"`#{rank}`\t`{ELOString.Replace(",", "").Replace(":", ": ")}`\t`{Points.ToString().PadRight(3, ' ')}p`\t {PlayerClassIcon} {name}\n";
         }
 
         public static async Task Load()
