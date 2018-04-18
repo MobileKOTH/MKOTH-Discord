@@ -15,10 +15,10 @@ namespace MKOTHDiscordBot.Modules
     {
         [Command("Ranking")]
         [Alias("Rank", "lb", "Rankings", "Leaderboard")]
-        [Summary("Gets the officially updated ranking infomation.")]
-        public async Task Ranking()
+        [Summary("Gets the officially updated ranking infomation. Use with a input `<user>` to check the player's rank.")]
+        public async Task Ranking(IGuildUser user = null)
         {
-            var player = Player.Fetch(Context.User.Id);
+            var player = Player.Fetch((user ?? (IGuildUser)Context.User).Id);
             string topTenField = "";
             Player.List
                 .Where(x => x.Rank >= 1)
@@ -52,7 +52,7 @@ namespace MKOTHDiscordBot.Modules
                 var previous = orderedRank[playerindex - 1];
                 var next = playerindex + 1 >= orderedRank.Count ? null : orderedRank[playerindex + 1];
                 string playerField = previous.GetRankFieldString(false, true) + player.GetRankFieldString(true, true) + (next == null ? "" : next.GetRankFieldString(false, true));
-                embed.AddField("You are in holiday mode", playerField);
+                embed.AddField((user == null ? "You are" : "The player is") + " in holiday mode", playerField);
             }
 
             await ReplyAsync("You can also visit <#347259261921001472> to find out the ranks.", embed: embed.Build());

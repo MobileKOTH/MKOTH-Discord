@@ -193,6 +193,28 @@ namespace MKOTHDiscordBot
             }
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
             {
+                
+                if (result.Error == CommandError.BadArgCount || result.Error == CommandError.ParseFailed || result.Error == CommandError.ObjectNotFound)
+                {
+                    if (_commands.Search(context, argPos).Commands.Count(x => x.Command.Remarks != null) > 0 && result.Error == CommandError.ObjectNotFound)
+                    {
+                        await context.Channel.SendMessageAsync("Execution failed, please refer to the command infomation.");
+                        await _commands.Commands
+                        .Where(x => x.Name == "Help")
+                        .Single(x => x.Parameters.Count == 1)
+                        .ExecuteAsync(context, new object[1] { "." + _commands.Search(context, argPos).Commands.First().Command.Name }, null, _services);
+                        return;
+                    }
+                    else if (result.Error != CommandError.ObjectNotFound)
+                    {
+                        await context.Channel.SendMessageAsync(result.ErrorReason);
+                        await _commands.Commands
+                        .Where(x => x.Name == "Help")
+                        .Single(x => x.Parameters.Count == 1)
+                        .ExecuteAsync(context, new object[1] { "." + _commands.Search(context, argPos).Commands.First().Command.Name }, null, _services);
+                        return;
+                    }
+                }
                 await context.Channel.SendMessageAsync(result.ErrorReason);
                 return;
             }

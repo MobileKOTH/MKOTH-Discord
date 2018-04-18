@@ -44,7 +44,6 @@ namespace MKOTHDiscordBot.Modules
         [Command("Help")]
         [Alias("H", "Info")]
         [Summary("Use with an input `<para>`(module or command name) to find the details and usage about a module or a command.")]
-        [Remarks("help")]
         public async Task MKOTHHelp([Remainder]string para)
         {
             para = para.ToLower();
@@ -98,6 +97,13 @@ namespace MKOTHDiscordBot.Modules
                 string usage = "";
                 command.ForEach(x => usage += $".{x.Name.AddSpace() + x.GetCommandParametersInfo()}\n");
                 embed.AddField("Usage", usage.MarkdownCodeBlock("css"));
+
+                string example = "";
+                command.ForEach(x => example += x.Remarks != null ? x.Remarks.AddLine() : "");
+                if (example != "")
+                {
+                    embed.AddField("Example", example.MarkdownCodeBlock("ts"));
+                }
 
                 embed.WithFooter($"📦 {baseCommand.Module.Name} module");
 

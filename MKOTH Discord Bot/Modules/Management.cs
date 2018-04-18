@@ -118,23 +118,10 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync(string.Empty, embed: embed.Build());
         }
 
-        [Command("Submit")]
-        [Alias("s")]
-        [Summary("Gets the commands for series submission.")]
-        public async Task Submit()
-        {// TODO: Make this like help commands.
-            var embed = new EmbedBuilder()
-                .WithColor(Color.Orange)
-                .WithTitle("Series Submission Commands")
-                .WithDescription("Use the correct type of series based on followed commands a\n" +
-                "`@User Wins Loss GameCode`\n" +
-                ".SubmitKing\n.SubmitKnight\n.SubmitRank\n.SubmitPoint\n".MarkdownCodeBlock("css"));
-            await ReplyAsync(string.Empty, embed: embed.Build());
-        }
-
         [Command("SubmitKing")]
         [Alias("sk")]
         [Summary("Gets a prefilled series submission form with an valid series input, you only have to answer the Maths question.")]
+        [Remarks(".submitking @User#1234 2 1 ABCDEF")]
         public async Task SubmitKing(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
         {
             await Submit("King", opponent, wins, loss, inviteCode);
@@ -143,15 +130,17 @@ namespace MKOTHDiscordBot.Modules
         [Command("SubmitKnight")]
         [Alias("sn")]
         [Summary("Gets a prefilled series submission form with an valid series input, you only have to answer the Maths question. " +
-            "However a knight vs knight series will not be parsed properly.")]
+            "However, the players for a knight vs knight series may not be properly ordered.")]
+        [Remarks(".submitknight @User#1234 2 1 ABCDEF")]
         public async Task SubmitKnight(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
         {
             await Submit("Knight", opponent, wins, loss, inviteCode);
         }
 
-        [Command("SubmitRank")]
-        [Alias("sr")]
+        [Command("SubmitRanked")]
+        [Alias("sr", "submitrank")]
         [Summary("Gets a prefilled series submission form with an valid series input, you only have to answer the Maths question.")]
+        [Remarks(".submitranked @User#1234 2 1 ABCDEF")]
         public async Task SubmitRank(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
         {
             await Submit("Ranked", opponent, wins, loss, inviteCode);
@@ -160,13 +149,29 @@ namespace MKOTHDiscordBot.Modules
         [Command("SubmitPoint")]
         [Alias("sp")]
         [Summary("Gets a prefilled series submission form with an valid series input, you only have to answer the Maths question.")]
+        [Remarks(".submitpoint @User#1234 2 1 ABCDEF")]
         public async Task SubmitPoint(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
         {
             await Submit("Point", opponent, wins, loss, inviteCode);
         }
 
-        public async Task Submit(string type, IUser opponent, int wins, int loss, string inviteCode)
+        [Command("Submit")]
+        [Alias("s", "submitseries")]
+        [Summary("Gets a prefilled series submission form with an valid series input, you only have to answer the Maths question.")]
+        [Remarks(".submit king @User#1234 2 1 ABCDEF\n" +
+            ".submit knight @User#1234 2 1 ABCDEF\n" +
+            ".submit ranked @User#1234 2 1 ABCDEF\n" +
+            ".submit point @User#1234 2 1 ABCDEF\n")]
+        public async Task Submit(string seriesType, IUser opponent, int wins, int loss, string inviteCode)
         {
+            var seriesTypes = new string[4] { "King", "Knight", "Ranked", "Point" };
+            if (seriesTypes.Count(x => x.ToLower().StartsWith(seriesType.ToLower())) == 0)
+            {
+                await ReplyAsync("Invalid series type.");
+                return;
+            }
+            seriesType = seriesTypes.FirstOrDefault(x => x.ToLower() == seriesType.ToLower());
+
             var winner = Player.Fetch(Context.User.Id);
             var loser = Player.Fetch(opponent.Id);
             if (winner.IsUnknown || loser.IsUnknown || winner.IsRemoved || loser.IsRemoved)
@@ -177,9 +182,10 @@ namespace MKOTHDiscordBot.Modules
             if (wins < loss || wins > 3 || loss > 3 || wins < 0 || loss < 0)
             {
                 await ReplyAsync("Invalid win/loss.");
+                return;
             }
 
-            var player1 = type == "Knight" ?
+            var player1 = seriesType == "Knight" ?
                 (winner.IsKnight ? loser : winner) :
                 (winner.RankOrClassRank > loser.RankOrClassRank ? winner : loser);
             var player2 = player1 == winner ? loser : winner;
@@ -188,7 +194,7 @@ namespace MKOTHDiscordBot.Modules
 
             string baseURL = "https://docs.google.com/forms/d/e/1FAIpQLSdGJnCOl0l5HjxuYexVV_sOKPR1iScq3eiSxGiqKULX3zG4-Q/viewform?usp=pp_url&";
             NameValueCollection queryString = HttpUtility.ParseQueryString(string.Empty);
-            queryString["entry.1407262204"] = type;
+            queryString["entry.1407262204"] = seriesType;
             queryString["entry.920665948"] = player1.Name;
             queryString["entry.1277512719"] = player2.Name;
             queryString["entry.1571047506"] = player1wins.ToString();
