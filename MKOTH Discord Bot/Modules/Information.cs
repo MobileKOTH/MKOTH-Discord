@@ -16,9 +16,9 @@ namespace MKOTHDiscordBot.Modules
         [Command("Ranking")]
         [Alias("Rank", "lb", "Rankings", "Leaderboard")]
         [Summary("Gets the officially updated ranking infomation. Use with a input `<user>` to check the player's rank.")]
-        public async Task Ranking(IGuildUser user = null)
+        public async Task Ranking(IUser user = null)
         {
-            var player = Player.Fetch((user ?? (IGuildUser)Context.User).Id);
+            var player = Player.Fetch((user ?? Context.User).Id);
             string topTenField = "";
             Player.List
                 .Where(x => x.Rank >= 1)

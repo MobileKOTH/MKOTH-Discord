@@ -8,7 +8,7 @@ using Discord.WebSocket;
 
 namespace MKOTHDiscordBot.Utilities
 {
-    public enum StatusMessageType { HELP, INFO, KING, GAMESCOUNT };
+    public enum StatusMessageType { HELP, INFO, KING, GAMESCOUNT, SUBMIT };
 
     public static class Responder
     {
@@ -16,7 +16,8 @@ namespace MKOTHDiscordBot.Utilities
         {
             StatusMessageType.INFO,
             StatusMessageType.KING,
-            StatusMessageType.GAMESCOUNT
+            StatusMessageType.GAMESCOUNT,
+            StatusMessageType.SUBMIT,
         };
         private static (StatusMessageType current, StatusMessageType last) status = (StatusMessageType.HELP, statusSequence.Last());
 
@@ -77,6 +78,10 @@ namespace MKOTHDiscordBot.Utilities
 
                     case StatusMessageType.INFO:
                         await client.SetGameAsync("| .info for MKOTH help");
+                        break;
+
+                    case StatusMessageType.SUBMIT:
+                        await client.SetGameAsync("| .submit to submit series");
                         break;
 
                     case StatusMessageType.KING:

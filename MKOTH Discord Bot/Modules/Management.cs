@@ -120,7 +120,7 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("SubmitKing")]
         [Alias("sk")]
-        [Summary("Gets a prefilled series submission form with an valid series input, you only have to answer the Maths question.")]
+        [Summary("Gets a prefilled series submission form with a valid series input, you only have to answer the Maths question.")]
         [Remarks(".submitking @User#1234 2 1 ABCDEF")]
         public async Task SubmitKing(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
         {
@@ -129,7 +129,7 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("SubmitKnight")]
         [Alias("sn")]
-        [Summary("Gets a prefilled series submission form with an valid series input, you only have to answer the Maths question. " +
+        [Summary("Gets a prefilled series submission form with a valid series input, you only have to answer the Maths question. " +
             "However, the players for a knight vs knight series may not be properly ordered.")]
         [Remarks(".submitknight @User#1234 2 1 ABCDEF")]
         public async Task SubmitKnight(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
@@ -139,7 +139,7 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("SubmitRanked")]
         [Alias("sr", "submitrank")]
-        [Summary("Gets a prefilled series submission form with an valid series input, you only have to answer the Maths question.")]
+        [Summary("Gets a prefilled series submission form with a valid series input, you only have to answer the Maths question.")]
         [Remarks(".submitranked @User#1234 2 1 ABCDEF")]
         public async Task SubmitRank(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
         {
@@ -148,7 +148,7 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("SubmitPoint")]
         [Alias("sp")]
-        [Summary("Gets a prefilled series submission form with an valid series input, you only have to answer the Maths question.")]
+        [Summary("Gets a prefilled series submission form with a valid series input, you only have to answer the Maths question.")]
         [Remarks(".submitpoint @User#1234 2 1 ABCDEF")]
         public async Task SubmitPoint(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
         {
@@ -157,12 +157,12 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Submit")]
         [Alias("s", "submitseries")]
-        [Summary("Gets a prefilled series submission form with an valid series input, you only have to answer the Maths question.")]
+        [Summary("Gets a prefilled series submission form with a valid series input, you only have to answer the Maths question.")]
         [Remarks(".submit king @User#1234 2 1 ABCDEF\n" +
             ".submit knight @User#1234 2 1 ABCDEF\n" +
             ".submit ranked @User#1234 2 1 ABCDEF\n" +
             ".submit point @User#1234 2 1 ABCDEF\n")]
-        public async Task Submit(string seriesType, IUser opponent, int wins, int loss, string inviteCode)
+        public async Task Submit(string seriesType, IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
         {
             var seriesTypes = new string[4] { "King", "Knight", "Ranked", "Point" };
             if (seriesTypes.Count(x => x.ToLower().StartsWith(seriesType.ToLower())) == 0)
@@ -170,7 +170,7 @@ namespace MKOTHDiscordBot.Modules
                 await ReplyAsync("Invalid series type.");
                 return;
             }
-            seriesType = seriesTypes.FirstOrDefault(x => x.ToLower() == seriesType.ToLower());
+            seriesType = seriesTypes.FirstOrDefault(x => x.ToLower().StartsWith(seriesType.ToLower()));
 
             var winner = Player.Fetch(Context.User.Id);
             var loser = Player.Fetch(opponent.Id);
@@ -208,9 +208,10 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync(Context.User.Mention + ", your prefilled form has been sent to your direct message.");
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
+                .WithUrl(filledForm)
                 .WithTitle("Prefilled Submission Form")
                 .WithDescription("Here is your form which is also filled with your submission ID.\n" +
-                "This feature still undergoing testing, do double check the values and report errors to an Admin.\n\n" + 
+                "This feature still undergoing testing, do double check the values and report errors to an admin.\n\n" + 
                 $"Click [here]({filledForm}) for the submission form.");
             await Context.User.SendMessageAsync( "**DO NOT SHARE THIS LINK AS IT CONTAINS YOUR SUBMISSION ID.**", embed: embed.Build());
         }
