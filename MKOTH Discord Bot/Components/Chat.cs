@@ -25,7 +25,7 @@ namespace MKOTHDiscordBot
         {
             if (context.IsPrivate) return;
             if (context.User.IsWebhook) return;
-            if (context.Channel.Id != 347258242277310465UL) return;
+            if (context.Channel.Id != Globals.MKOTHGuild.Official.Id) return;
             message = context.Message.Content;
             if (context.Message.MentionedUsers.Count > 0)
             {
@@ -43,6 +43,10 @@ namespace MKOTHDiscordBot
             }
             message = message.Replace("@", "`@`");
             if (new string[] { ".", ">", "?", "!" }.Any(x => message.StartsWith(x)) || message == "")
+            {
+                return;
+            }
+            if (History.Last() == message)
             {
                 return;
             }
@@ -88,7 +92,7 @@ namespace MKOTHDiscordBot
             List<TrashReply> rephrasepool = new List<TrashReply>();
             List<TrashReply> replypool = new List<TrashReply>();
             List<TrashReply> responsepool = new List<TrashReply>();
-            if (context.Channel.Id == 347258242277310465UL)
+            if (context.Channel.Id == Globals.MKOTHGuild.Official.Id)
             {
                 possiblereplies.Add(context.User.Mention + ", lets talk in <#347166773642133515> shall we?");
                 possiblereplies.Add(context.User.Mention + ", we do not want to flood the prestigious <#347258242277310465> with our trash talks.");
@@ -97,22 +101,20 @@ namespace MKOTHDiscordBot
                 possiblereplies.Add(context.User.Mention + ", I will tell mods to mute if you keep pinging me here :rage:");
                 possiblereplies.Add(context.User.Mention + ", is'nt it no bot use in <#347258242277310465> :thinking: ");
                 possiblereplies.Add(context.User.Mention + ", why am I replying to you here in <#347258242277310465>");
-                reply = possiblereplies[((int)((new Random().NextDouble() * possiblereplies.Count())))];
+                reply = possiblereplies.SelectRandom();
                 await Responder.SendToContext(context, reply);
                 return;
             }
-            if (context.Channel.Id == 347272877134839810UL)
+            if (context.Channel.Id == Globals.MKOTHGuild.Suggestions.Id)
             {
                 possiblereplies.Add(context.User.Mention + ", I don't think you will need to talk to me for giving suggestions <:monekeyfacepalm:352423604216135680>");
                 possiblereplies.Add(context.User.Mention + ", <:monkeyrage:352681458919407617><:monkeyrage:352681458919407617><:monkeyrage:352681458919407617><:monkeyrage:352681458919407617>, you are probably not giving a proper suggestion!");
-                reply = possiblereplies[((int)((new Random().NextDouble() * possiblereplies.Count())))];
+                reply = possiblereplies.SelectRandom();
                 await Responder.SendToContext(context, reply);
                 return;
             }
 
-            var typetask = Responder.TriggerTyping(context);
-
-            ProcessResponses(ref message, rephrasepool, replypool);
+            message = TrimMessage(message);
             string[] words = message.ToLower().Split(' ');
             if (words.Length == 1)
             {
@@ -121,6 +123,9 @@ namespace MKOTHDiscordBot
                     return;
                 }
             }
+            await Responder.TriggerTyping(context);
+
+            ProcessResponses(message, rephrasepool, replypool);
 
             int wordcount = words.Length;
             string poollog = "";
@@ -185,7 +190,7 @@ namespace MKOTHDiscordBot
                 }
             };
 
-            reply = possiblereplies[((int)(new Random().NextDouble() * possiblereplies.Count()))];
+            reply = possiblereplies.SelectRandom();
 
             Logger.Log(
                 "**Time used:** `" + ((DateTime.Now - starttime).TotalMilliseconds).ToString() + " ms`".AddMarkDownLine() +
@@ -205,7 +210,7 @@ namespace MKOTHDiscordBot
             }
         }
 
-        private static string TrimMessage(string message)
+        public static string TrimMessage(string message)
         {
             message = message.Replace(".", "");
             message = message.Replace(",", "");
@@ -214,48 +219,65 @@ namespace MKOTHDiscordBot
             return message;
         }
 
-        public static void ProcessResponses(ref string message, List<TrashReply> triggers, List<TrashReply> replies)
+        public static void ProcessResponses(string message, List<TrashReply> triggers, List<TrashReply> replies)
         {
-            message = TrimMessage(message);
-            string[] words = message.ToLower().Split(' ');
-
-            int wordcount = words.Length;
-            double matchcount = 0;
-
             List<string> historyClone;
             lock (History)
             {
                 historyClone = new List<string>(History);
             }
-            foreach (var history in historyClone)
+
+            string[] words = message.ToLower().Split(' ');
+
+            int splitCount = 1 + words.Length / 33;
+            splitCount = splitCount > Environment.ProcessorCount ? Environment.ProcessorCount : splitCount;
+
+            var histories = historyClone.Split(splitCount);
+            var workers = new Task[splitCount];
+            for (int i = 0; i < splitCount; i++)
             {
-                replies.Add(new TrashReply(history, matchcount / wordcount));
-                matchcount = 0;
-                if (history.Split(' ').Length > wordcount * 4) continue;
-                foreach (var word in words)
+                var set =  new List<string>(histories[i]);
+                workers[i] = (Task.Run(() => process(set)));
+            }
+            Task.WaitAll(workers);
+
+            void process(List<string> historySet)
+            {
+                int wordcount = words.Length;
+                double matchcount = 0;
+                foreach (var history in historySet)
                 {
-                    if (history.ToLower().Contains(word))
+                    lock(replies)
                     {
-                        matchcount++;
+                        replies.Add(new TrashReply(history, matchcount / wordcount));
+                    }
+                    matchcount = 0;
+                    if (history.Split(' ').Length > wordcount * 4) continue;
+                    foreach (var word in words)
+                    {
+                        if (history.ToLower().Contains(word))
+                        {
+                            matchcount++;
+                        }
+                    }
+                    lock(triggers)
+                    {
+                        triggers.Add(new TrashReply(history, matchcount / wordcount));
                     }
                 }
-                triggers.Add(new TrashReply(history, matchcount / wordcount));
             }
         }
     }
 
     public class TrashReply
     {
-        private string message = "";
-        private double matchrate = 0;
+        public string Message { get; set; }
+        public double Matchrate { get; set; }
 
         public TrashReply(string message, double matchrate)
         {
-            this.Message = message;
-            this.Matchrate = matchrate;
+            Message = message;
+            Matchrate = matchrate;
         }
-
-        public string Message { get => message; set => message = value; }
-        public double Matchrate { get => matchrate; set => matchrate = value; }
     }
 }

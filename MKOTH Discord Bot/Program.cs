@@ -43,8 +43,15 @@ namespace MKOTHDiscordBot
 #else
             Console.WriteLine("Release Build");
 #endif
-            _client = new DiscordSocketClient(new DiscordSocketConfig { LogLevel = LogSeverity.Debug });
-            _commands = new CommandService(new CommandServiceConfig { LogLevel = LogSeverity.Debug });
+            _client = new DiscordSocketClient(new DiscordSocketConfig
+            {
+                LogLevel = LogSeverity.Debug,
+                AlwaysDownloadUsers = true,
+            });
+            _commands = new CommandService(new CommandServiceConfig
+            {
+                LogLevel = LogSeverity.Debug
+            });
             _services = new ServiceCollection()
                 .AddSingleton(_client)
                 .AddSingleton(_commands)
@@ -193,37 +200,37 @@ namespace MKOTHDiscordBot
             }
             if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
             {
-                
                 if (result.Error == CommandError.BadArgCount || result.Error == CommandError.ParseFailed || result.Error == CommandError.ObjectNotFound)
                 {
                     if (_commands.Search(context, argPos).Commands.Count(x => x.Command.Remarks != null) > 0 && result.Error == CommandError.ObjectNotFound)
                     {
                         await context.Channel.SendMessageAsync("Execution failed, please refer to the command infomation.");
-                        await _commands.Commands
-                        .Where(x => x.Name == "Help")
-                        .Single(x => x.Parameters.Count == 1)
-                        .ExecuteAsync(context, new object[1] { "." + _commands.Search(context, argPos).Commands.First().Command.Name }, null, _services);
+                        sendHelp();
                         return;
                     }
                     else if (result.Error != CommandError.ObjectNotFound)
                     {
                         await context.Channel.SendMessageAsync(result.ErrorReason);
-                        await _commands.Commands
-                        .Where(x => x.Name == "Help")
-                        .Single(x => x.Parameters.Count == 1)
-                        .ExecuteAsync(context, new object[1] { "." + _commands.Search(context, argPos).Commands.First().Command.Name }, null, _services);
+                        sendHelp();
                         return;
                     }
                 }
                 await context.Channel.SendMessageAsync(result.ErrorReason);
                 return;
+
+                async void sendHelp()
+                {
+                    await _commands.Commands
+                        .Where(x => x.Name == "Help")
+                        .Single(x => x.Parameters.Count == 1)
+                        .ExecuteAsync(context, new object[1] { "." + _commands.Search(context, argPos).Commands.First().Command.Name }, null, _services);
+                }
             }
             else if (result.Error == CommandError.UnknownCommand)
             {// Chat reply.
                 if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) && !context.IsPrivate)
                 {
-                    string msg = message.Content.Remove(0, argPos);
-                    Task.Run(async () => await Chat.ReplyAsync(context, msg)).Start();
+                    Task.Run(async () => await Chat.ReplyAsync(context, message.Content.Remove(0, argPos))).Start();
                 }
             }
         }

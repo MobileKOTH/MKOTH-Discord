@@ -58,6 +58,24 @@ namespace MKOTHDiscordBot
         }
         #endregion
 
+        #region IEnumberable ----------------------------------------------------------------------
+        public static T SelectRandom<T>(this IEnumerable<T> collection)
+        {
+            return collection.ElementAt(((int)((new Random().NextDouble() * collection.Count()))));
+        }
+
+        public static List<List<T>> Split<T>(this List<T> list, int splitCount)
+        {
+            int size = list.Count / splitCount;
+            var lists = new List<List<T>>();
+            for (int i = 0; i + 1 < list.Count; i+= size)
+            {
+                lists.Add(list.GetRange(i, Math.Min(size, list.Count - i)));
+            }
+            return lists;
+        }
+        #endregion
+
         #region TimeSpan --------------------------------------------------------------------------
         public static string AsRoundedDuration(this TimeSpan timespan)
         {

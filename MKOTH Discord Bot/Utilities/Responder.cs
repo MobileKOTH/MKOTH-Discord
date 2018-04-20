@@ -30,12 +30,12 @@ namespace MKOTHDiscordBot.Utilities
                     Globals.CurrentTypingSecond = 10;
                     await context.Channel.TriggerTypingAsync();
                 }
-                await Task.CompletedTask;
             }
             catch (Exception e)
             {
                 Logger.LogError(e);
             }
+            await Task.CompletedTask;
         }
 
         public static async Task SendToContext(SocketCommandContext context, string reply)

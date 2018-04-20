@@ -121,7 +121,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("SubmitKing")]
         [Alias("sk")]
         [Summary("Gets a prefilled series submission form with a valid series input, you only have to answer the Maths question.")]
-        [Remarks(".submitking @User#1234 2 1 ABCDEF")]
+        [Remarks(".submitking @User#1234 2 1 ABCDEFG")]
         public async Task SubmitKing(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
         {
             await Submit("King", opponent, wins, loss, inviteCode);
@@ -131,7 +131,7 @@ namespace MKOTHDiscordBot.Modules
         [Alias("sn")]
         [Summary("Gets a prefilled series submission form with a valid series input, you only have to answer the Maths question. " +
             "However, the players for a knight vs knight series may not be properly ordered.")]
-        [Remarks(".submitknight @User#1234 2 1 ABCDEF")]
+        [Remarks(".submitknight @User#1234 2 1 ABCDEFG")]
         public async Task SubmitKnight(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
         {
             await Submit("Knight", opponent, wins, loss, inviteCode);
@@ -140,7 +140,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("SubmitRanked")]
         [Alias("sr", "submitrank")]
         [Summary("Gets a prefilled series submission form with a valid series input, you only have to answer the Maths question.")]
-        [Remarks(".submitranked @User#1234 2 1 ABCDEF")]
+        [Remarks(".submitranked @User#1234 2 1 ABCDEFG")]
         public async Task SubmitRank(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
         {
             await Submit("Ranked", opponent, wins, loss, inviteCode);
@@ -149,7 +149,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("SubmitPoint")]
         [Alias("sp")]
         [Summary("Gets a prefilled series submission form with a valid series input, you only have to answer the Maths question.")]
-        [Remarks(".submitpoint @User#1234 2 1 ABCDEF")]
+        [Remarks(".submitpoint @User#1234 2 1 ABCDEFG")]
         public async Task SubmitPoint(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
         {
             await Submit("Point", opponent, wins, loss, inviteCode);
@@ -158,10 +158,10 @@ namespace MKOTHDiscordBot.Modules
         [Command("Submit")]
         [Alias("s", "submitseries")]
         [Summary("Gets a prefilled series submission form with a valid series input, you only have to answer the Maths question.")]
-        [Remarks(".submit king @User#1234 2 1 ABCDEF\n" +
-            ".submit knight @User#1234 2 1 ABCDEF\n" +
-            ".submit ranked @User#1234 2 1 ABCDEF\n" +
-            ".submit point @User#1234 2 1 ABCDEF\n")]
+        [Remarks(".submit king @User#1234 2 1 ABCDEFG\n" +
+            ".submit knight @User#1234 2 1 ABCDEFG\n" +
+            ".submit ranked @User#1234 2 1 ABCDEFG\n" +
+            ".submit point @User#1234 2 1 ABCDEFG\n")]
         public async Task Submit(string seriesType, IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
         {
             var seriesTypes = new string[4] { "King", "Knight", "Ranked", "Point" };

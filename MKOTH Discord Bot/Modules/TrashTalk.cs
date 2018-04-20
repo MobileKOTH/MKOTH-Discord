@@ -25,7 +25,7 @@ namespace MKOTHDiscordBot.Modules
             List<TrashReply> triggers = new List<TrashReply>();
             List<TrashReply> replies = new List<TrashReply>();
             List<TrashReply> possiblereplies = new List<TrashReply>();
-            Chat.ProcessResponses(ref message, triggers, replies);
+            message = Chat.TrimMessage(message);
             string[] words = message.ToLower().Split(' ');
             if (words.Length == 1)
             {
@@ -34,6 +34,7 @@ namespace MKOTHDiscordBot.Modules
                     msg = await ReplyAsync("Too little content");
                 }
             }
+            Chat.ProcessResponses(message, triggers, replies);
 
             int wordcount = words.Length;
             bool foundreply = false;
