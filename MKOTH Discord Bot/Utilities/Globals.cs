@@ -19,8 +19,7 @@ namespace MKOTHDiscordBot
             {
                 public const string
                     DATA = @"\Data\",
-                    LOGS = @"\Logs\",
-                    CHAT = @"\Chat\";
+                    LOGS = @"\Logs\";
             }
 
             private static class FileNames
@@ -38,7 +37,6 @@ namespace MKOTHDiscordBot
             public static readonly string 
                 Root = Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\",
                 DataFolder = Root + FoldersNames.DATA,
-                ChatFolder = DataFolder + FoldersNames.CHAT,
                 LogsFolder = Root + FoldersNames.LOGS;
 
             /// <summary>

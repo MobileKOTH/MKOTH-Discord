@@ -16,10 +16,11 @@ namespace MKOTHDiscordBot
     {
         public static List<string> History { get; set; } = new List<string>();
 
-        private static List<int> executionTimeHistory = new List<int>();
+        private static int lastSaveIndex = 0;
 
         private string message;
         private static SocketUser previousUser;
+        private static DateTime lastSameUserChatTime = DateTime.Now;
 
         public Chat(SocketCommandContext context)
         {
@@ -53,6 +54,7 @@ namespace MKOTHDiscordBot
 
             lock (History)
             {
+                lastSameUserChatTime = DateTime.Now;
                 if (previousUser != null)
                 {
                     if (previousUser.Id == context.User.Id)
@@ -68,20 +70,28 @@ namespace MKOTHDiscordBot
 
         public static void LoadHistory()
         {
-            string json = File.ReadAllText(Globals.Directories.DataFolder + "ChatHistory.json");
+            string json = "[" + File.ReadAllText(Globals.Directories.DataFolder + "ChatHistory.strings") + "]";
             History = JsonConvert.DeserializeObject<List<string>>(json);
+            lastSaveIndex = History.Count;
         }
 
         public static void SaveHistory()
         {
-            DateTime start = DateTime.Now;
-            var json = string.Empty;
-            lock (History)
+            if (History.Count > lastSaveIndex && ((DateTime.Now - lastSameUserChatTime).TotalSeconds < 10))
             {
-                json = JsonConvert.SerializeObject(History, Formatting.Indented);
+                var saveRange = History.GetRange(lastSaveIndex, History.Count - lastSaveIndex);
+                lastSaveIndex = History.Count;
+                var saveString = "";
+                saveRange.ForEach(x => saveString += JsonConvert.SerializeObject(x) + ",".AddLine());
+                DateTime start = DateTime.Now;
+                using (StreamWriter sw = File.AppendText(Globals.Directories.DataFolder + "ChatHistory.strings"))
+                {
+                    sw.Write(saveString);
+                }
+                Logger.Log("**Time used:** `" + (DateTime.Now - start).TotalMilliseconds.ToString() + " ms`".AddMarkDownLine() +
+                    "**Lines:** " + saveRange.Count , LogType.CHATSAVETIME);
+                LoadHistory();
             }
-            File.WriteAllText(Globals.Directories.DataFolder + "ChatHistory.json", json);
-            Logger.Log("**Time used:** `" + (DateTime.Now - start).TotalMilliseconds.ToString() + " ms`", LogType.CHATSAVETIME);
         }
 
         public static async Task ReplyAsync(SocketCommandContext context, string message)

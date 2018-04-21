@@ -104,6 +104,7 @@ namespace MKOTHDiscordBot
 
         public async Task InitialiseAsync()
         {
+            // Discord client events.
             _client.MessageReceived += HandleMessageAsync;
             _client.Ready += () => Globals.Load(_client);
             _client.UserJoined += (user) => { if (user.Guild.Id == Globals.MKOTHGuild.Guild.Id) HandleChatSaveUpdateMKOTH(); return Task.CompletedTask;};
@@ -113,7 +114,7 @@ namespace MKOTHDiscordBot
 
             Timer statustimer = new Timer();
             statustimer.Elapsed += async(sender, evt) => { if (!TestMode) await Responder.ChangeStatus(_client); };
-            statustimer.Interval = 15000; // in miliseconds
+            statustimer.Interval = 15000;
             statustimer.Start();
 
             Timer savechatupdatemkothtimer = new Timer();
