@@ -10,6 +10,18 @@ namespace MKOTHDiscordBot
 {
     public static class Extensions
     {
+        #region Int -------------------------------------------------------------------------------
+        public static bool IsInRange(this int number, int lower, int upper)
+        {
+            return (number >= lower && number <= upper);
+        }
+
+        public static bool IsInRangeOffset(this int number, int reference, int offset)
+        {
+            return IsInRange(number, reference - offset, reference + offset);
+        }
+        #endregion
+
         #region String ----------------------------------------------------------------------------
         public static string AddLine(this String str)
         {

@@ -133,11 +133,13 @@
   <ItemGroup>
     <Compile Include="Components\Chat.cs" />
     <Compile Include="Components\Player.cs" />
+    <Compile Include="Components\Vote.cs" />
     <Compile Include="Modules\System.cs" />
     <Compile Include="Modules\TrashTalk.cs" />
     <Compile Include="Preconditions\RequireBotTestAttribute.cs" />
     <Compile Include="Preconditions\RequireDeveloperAttribute.cs" />
     <Compile Include="Preconditions\RequireMKOTHGuildAttribute.cs" />
+    <Compile Include="Preconditions\RequireMKOTHMemberAttribute.cs" />
     <Compile Include="Preconditions\RequireMKOTHModAttribute.cs" />
     <Compile Include="Utilities\Globals.cs" />
     <Compile Include="Utilities\Extensions.cs" />
@@ -159,9 +161,7 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Interfaces\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.1">
       <Visible>False</Visible>

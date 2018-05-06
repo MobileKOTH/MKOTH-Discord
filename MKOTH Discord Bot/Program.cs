@@ -106,6 +106,7 @@ namespace MKOTHDiscordBot
         {
             // Discord client events.
             _client.MessageReceived += HandleMessageAsync;
+            _client.ReactionAdded += HandleReactionAsync;
             _client.Ready += () => Globals.Load(_client);
             _client.UserJoined += (user) => { if (user.Guild.Id == Globals.MKOTHGuild.Guild.Id) HandleChatSaveUpdateMKOTH(); return Task.CompletedTask;};
 
@@ -128,16 +129,19 @@ namespace MKOTHDiscordBot
             downloadplayerdatatimer.Start();
 
             SpamWatch.Start();
-        }
 
-        private void HandleChatSaveUpdateMKOTH()
-        {
-            Chat.SaveHistory();
-            if (!TestMode)
+            void HandleChatSaveUpdateMKOTH()
             {
-                var task = Management.UpdateMKOTHAsync(null);
+                Chat.SaveHistory();
+                if (!TestMode)
+                {
+                    var task = Management.UpdateMKOTHAsync(null);
+                }
             }
         }
+
+        private async Task HandleReactionAsync (Cacheable<IUserMessage, ulong> cache, ISocketMessageChannel channel, SocketReaction reaction) 
+            => await Vote.HandleReaction(reaction);
 
         private async Task HandleMessageAsync(SocketMessage messageParam)
         {

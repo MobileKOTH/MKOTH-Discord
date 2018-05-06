@@ -67,6 +67,7 @@ namespace MKOTHDiscordBot
             public static SocketGuild Guild;
             public static SocketTextChannel Official, Casual, Suggestions, PlayerID, ModLog;
             public static SocketRole ChatMods, VIP, Stupid, Member, Peasant, Vassal, Squire, Noble, King;
+            public static Emote UpArrowEmote, DownArrowEmote;
         }
 
         public static class TestGuild
@@ -113,6 +114,9 @@ namespace MKOTHDiscordBot
                 MKOTHGuild.Squire = guild.Roles.Single(x => x.Name.Contains("MKOTH Squire"));
                 MKOTHGuild.Noble = guild.Roles.Single(x => x.Name.Contains("MKOTH Nobles"));
                 MKOTHGuild.King = guild.Roles.Single(x => x.Name.Contains("MKOTH King"));
+
+                MKOTHGuild.UpArrowEmote = guild.Emotes.Single(x => x.Name == "uparrow");
+                MKOTHGuild.DownArrowEmote = guild.Emotes.Single(x => x.Name == "downarrow");
 
                 // Test Server
                 TestGuild.Guild = client.GetGuild(270838709287387136UL);

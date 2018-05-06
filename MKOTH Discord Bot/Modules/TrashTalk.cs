@@ -86,5 +86,15 @@ namespace MKOTHDiscordBot.Modules
             await Task.CompletedTask;
             return;
         }
+
+        [Command("TrashMessage", RunMode = RunMode.Async)]
+        [Summary("Displays the message content of the trash Id.")]
+        [Alias("tm")]
+        [RequireBotTest]
+        public async Task TrashMessage(int id)
+        {
+            var message = Chat.History[id];
+            await ReplyAsync($"`Message Id: #{id}`\n\n", embed: new EmbedBuilder().WithDescription(message.SliceBack(1900)).Build());
+        }
     }
 }

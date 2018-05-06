@@ -102,19 +102,7 @@ namespace MKOTHDiscordBot
             List<TrashReply> rephrasepool = new List<TrashReply>();
             List<TrashReply> replypool = new List<TrashReply>();
             List<TrashReply> responsepool = new List<TrashReply>();
-            if (context.Channel.Id == Globals.MKOTHGuild.Official.Id)
-            {
-                possiblereplies.Add(context.User.Mention + ", lets talk in <#347166773642133515> shall we?");
-                possiblereplies.Add(context.User.Mention + ", we do not want to flood the prestigious <#347258242277310465> with our trash talks.");
-                possiblereplies.Add(context.User.Mention + ", no bot use in this channel :(");
-                possiblereplies.Add(context.User.Mention + ", don't talk to me here!");
-                possiblereplies.Add(context.User.Mention + ", I will tell mods to mute if you keep pinging me here :rage:");
-                possiblereplies.Add(context.User.Mention + ", is'nt it no bot use in <#347258242277310465> :thinking: ");
-                possiblereplies.Add(context.User.Mention + ", why am I replying to you here in <#347258242277310465>");
-                reply = possiblereplies.SelectRandom();
-                await Responder.SendToContext(context, reply);
-                return;
-            }
+
             if (context.Channel.Id == Globals.MKOTHGuild.Suggestions.Id)
             {
                 possiblereplies.Add(context.User.Mention + ", I don't think you will need to talk to me for giving suggestions <:monekeyfacepalm:352423604216135680>");

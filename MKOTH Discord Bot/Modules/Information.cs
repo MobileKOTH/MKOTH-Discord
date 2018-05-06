@@ -27,23 +27,26 @@ namespace MKOTHDiscordBot.Modules
                 .ToList()
                 .ForEach(x =>
                 {
-                    topTenField += x.GetRankFieldString(x.Rank == player.Rank);
+                    topTenField += x.GetRankFieldString(identify: x.Rank == player.Rank);
                 });
 
             EmbedBuilder embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
+                .WithThumbnailUrl("https://cdn.discordapp.com/attachments/341163606605299716/352026213306335234/crown.png")
                 .WithUrl("https://docs.google.com/spreadsheets/d/1VRfWwvRSMQizzBanGNRMFVzoYFthrsNKzOgF5wKVM5I")
-                .WithTitle("MKOTH Ranking")
-                .WithDescription("Click [here](https://docs.google.com/spreadsheets/d/1VRfWwvRSMQizzBanGNRMFVzoYFthrsNKzOgF5wKVM5I) to access the full ranking and statistics.")
+                .WithAuthor("MKOTH Leaderboard", "https://cdn.discordapp.com/attachments/341163606605299716/352026221481164801/ranking.png")
+                .WithDescription(
+                "You can also visit <#347259261921001472> to find out the ranks.\n" +
+                "Click [here](https://docs.google.com/spreadsheets/d/1VRfWwvRSMQizzBanGNRMFVzoYFthrsNKzOgF5wKVM5I) to access the full ranking and statistics.")
                 .AddField("Top ten", topTenField);
 
             if (!player.IsUnknown && player.Rank > 10)
             {
                 var orderedRank = Player.List.OrderBy(x => x.Rank);
                 var previous = orderedRank.First(x => x.Rank == player.Rank - 1);
-                var next = orderedRank.First(x => x.Rank == player.Rank + 1);
+                var next = orderedRank.FirstOrDefault(x => x.Rank == player.Rank + 1);
                 string playerField = previous.GetRankFieldString() + player.GetRankFieldString(true) + (next == null ? "" : next.GetRankFieldString());
-                embed.AddField("Your rank", playerField);
+                embed.AddField((user == null ? "Your rank" : "The player's rank"), playerField);
             }
             if (player.IsHoliday)
             {
@@ -55,7 +58,7 @@ namespace MKOTHDiscordBot.Modules
                 embed.AddField((user == null ? "You are" : "The player is") + " in holiday mode", playerField);
             }
 
-            await ReplyAsync("You can also visit <#347259261921001472> to find out the ranks.", embed: embed.Build());
+            await ReplyAsync("", embed: embed.Build());
         }
 
         [Command("SeriesForm")]
@@ -67,11 +70,13 @@ namespace MKOTHDiscordBot.Modules
                 .WithColor(Color.Orange)
                 .WithUrl("https://docs.google.com/forms/d/e/1FAIpQLSdGJnCOl0l5HjxuYexVV_sOKPR1iScq3eiSxGiqKULX3zG4-Q/viewform")
                 .WithTitle("MKOTH Series Submission")
-                .WithDescription("Remember to get your personal submission identification code via `.myid` command.\n\n" +
+                .WithDescription(
+                "**Make sure you and your opponent have enough points if the series requires, or else the series will be downgraded to point series!**\n" +
+                "Please read the series submission rules at <#347259261921001472>.\n" +
+                "Remember to get your personal submission identification code via `.myid` command.\n\n" +
                 "Click [here](https://docs.google.com/forms/d/e/1FAIpQLSdGJnCOl0l5HjxuYexVV_sOKPR1iScq3eiSxGiqKULX3zG4-Q/viewform) for the submission form.");
 
-            await ReplyAsync("**Make sure you and your opponent have enough points if the series requires, or else the series will be made into point series!**\n" +
-                "Please read series submission rules at <#347259261921001472>.", embed: embed.Build());
+            await ReplyAsync(string.Empty, embed: embed.Build());
         }
 
         [Command("SeriesPoints")]
@@ -107,11 +112,13 @@ namespace MKOTHDiscordBot.Modules
                 .WithColor(Color.Orange)
                 .WithUrl("https://docs.google.com/forms/d/e/1FAIpQLSfj9lTpuVJmet-ceh8ac3IVBNAPR-XpR_sLeOefEZt5vH4vUw/viewform")
                 .WithTitle("MKOTH Sign Up")
-                .WithDescription("Please familiarise with the ranking system and series rules of MKOTH before signing up.\n\n" +
-                "Click [here](https://mobilekoth.wordpress.com/ranking-system) for the information of the ranking system and series rules.\n" +
+                .WithDescription(
+                "**Alternate accounts will result in a permanent ban.**\n" +
+                "Please familiarise with the ranking system and series rules of MKOTH at <#347259261921001472> or " +
+                "[MKOTH Webpage](https://mobilekoth.wordpress.com/ranking-system/) before signing up.\n\n" +
                 "Click [here](https://docs.google.com/forms/d/e/1FAIpQLSfj9lTpuVJmet-ceh8ac3IVBNAPR-XpR_sLeOefEZt5vH4vUw/viewform) for the sign up form.");
 
-            await ReplyAsync("**Alternate accounts will result in a permanent ban.**", embed: embed.Build());
+            await ReplyAsync("", embed: embed.Build());
         }
 
         [Command("Invite")]

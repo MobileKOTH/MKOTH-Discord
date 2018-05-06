@@ -25,7 +25,7 @@ namespace MKOTHDiscordBot.Modules
         */
 
         [Command("BotInfo", RunMode = RunMode.Async)]
-        [Alias("BotStats", "SystemInfo", "sys")]
+        [Alias("BotStats", "SystemInfo", "sys", "system")]
         [Summary("Displays the bot information and statistics.")]
         public async Task Info()
         {
@@ -103,7 +103,7 @@ namespace MKOTHDiscordBot.Modules
         }
 
         [Command("Ping")]
-        [Summary("With an input `<reflection>`(any text) to reflect the input from the bot.")]
+        [Summary("With an input `<reflection>`(any text) to reflect the input from you.")]
         public async Task Ping([Remainder] string reflection)
         {
             EmbedBuilder embed = new EmbedBuilder();

@@ -2,9 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Threading.Tasks;
-using System.Web;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -15,6 +13,7 @@ namespace MKOTHDiscordBot.Modules
     using static Globals.MKOTHGuild;
 
     [Summary("Contains the utilities for MKOTH needs and management.")]
+    [Remarks("Module C")]
     public class Management : ModuleBase<SocketCommandContext>
     {
         [Command("UpdateMKOTH", RunMode = RunMode.Async)]
@@ -45,12 +44,12 @@ namespace MKOTHDiscordBot.Modules
             {
                 await Context.User.SendMessageAsync("Your Identification for submission form is below. Please keep the code secret.");
                 await Context.User.SendMessageAsync(code.ToString());
-                Logger.Log("Sent code to " + Context.User.Username.AddTab().AddLine() + $"Discord Id: {Context.User.Id}" + code.ToString(), LogType.DIRECTMESSAGE);
+                Logger.Log("Sent code to " + Context.User.Username.AddTab().AddMarkDownLine() + $"Discord Id: {Context.User.Id}".AddMarkDownLine() + code.ToString(), LogType.DIRECTMESSAGE);
             }
             else
             {
                 await Context.User.SendMessageAsync("Your Identification is not found, please dm an admin for assistance");
-                Logger.Log("Sent code to " + Context.User.Username.AddTab().AddLine() + $"Discord Id: {Context.User.Id}" + "Code not found/not member", LogType.DIRECTMESSAGE);
+                Logger.Log("Sent code to " + Context.User.Username.AddTab().AddMarkDownLine() + $"Discord Id: {Context.User.Id}" + "Code not found/not member", LogType.DIRECTMESSAGE);
             }
         }
 
@@ -107,6 +106,7 @@ namespace MKOTHDiscordBot.Modules
             var resgistrationDate = user.CreatedAt;
             var joinedDate = user.JoinedAt.Value;
             var difference = joinedDate - resgistrationDate;
+            var activity = user.Activity;
 
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
@@ -114,6 +114,11 @@ namespace MKOTHDiscordBot.Modules
                 .WithDescription($"**Registered:** {resgistrationDate.ToString("R")}\n" +
                 $"**Joined:** {joinedDate.ToString("R")}\n" +
                 $"**Difference:** {difference.AsRoundedDuration()}");
+
+            if (activity != null)
+            {
+                embed.Description += $"\n\nThe user is currently **{Enum.GetName(typeof(ActivityType), activity.Type).ToLower()}:** {activity.Name}";
+            }
 
             await ReplyAsync(string.Empty, embed: embed.Build());
         }
@@ -193,7 +198,7 @@ namespace MKOTHDiscordBot.Modules
             var player2wins = winner == player1 ? loss : wins;
 
             string baseURL = "https://docs.google.com/forms/d/e/1FAIpQLSdGJnCOl0l5HjxuYexVV_sOKPR1iScq3eiSxGiqKULX3zG4-Q/viewform?usp=pp_url&";
-            NameValueCollection queryString = HttpUtility.ParseQueryString(string.Empty);
+            var queryString = global::System.Web.HttpUtility.ParseQueryString(string.Empty);
             queryString["entry.1407262204"] = seriesType;
             queryString["entry.920665948"] = player1.Name;
             queryString["entry.1277512719"] = player2.Name;
@@ -205,15 +210,21 @@ namespace MKOTHDiscordBot.Modules
 
             string filledForm = baseURL + queryString.ToString();
             Logger.Log($"Form sent to: {Context.User}\n ```{filledForm}```", LogType.DIRECTMESSAGE);
-            await ReplyAsync(Context.User.Mention + ", your prefilled form has been sent to your direct message.");
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithUrl(filledForm)
                 .WithTitle("Prefilled Submission Form")
-                .WithDescription("Here is your form which is also filled with your submission ID.\n" +
-                "This feature still undergoing testing, do double check the values and report errors to an admin.\n\n" + 
+                .WithDescription("Here is your **partially** completed series submission form. **You still have to submit it** through the google form by clicking the link below.\n" +
+                "This feature still undergoing testing, do check the prefilled values and report errors to an admin.\n\n" +
                 $"Click [here]({filledForm}) for the submission form.");
-            await Context.User.SendMessageAsync( "**DO NOT SHARE THIS LINK AS IT CONTAINS YOUR SUBMISSION ID.**", embed: embed.Build());
+            var msg = await Context.User.SendMessageAsync("**DO NOT SHARE THIS LINK AS IT CONTAINS YOUR SUBMISSION ID.**", embed: embed.Build());
+
+            embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithDescription("Please note that you still have to complete the submission from there.\n\n" +
+                $"Click [here]({"https://discordapp.com/channels/@me/" + msg.Channel.Id}) to go to our direct message.");
+
+            await ReplyAsync(Context.User.Mention +", your prefilled form has been sent to your direct message.", embed: embed.Build());
         }
 
         public static async Task UpdateMKOTHAsync(SocketCommandContext context)

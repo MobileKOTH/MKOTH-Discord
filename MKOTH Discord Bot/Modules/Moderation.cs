@@ -9,14 +9,35 @@ namespace MKOTHDiscordBot.Modules
     using static Globals.MKOTHGuild;
 
     [Summary("Performs user moderations for MKOTH chat.")]
-    [RequireMKOTHMod]
+    [Remarks("Module D")]
+    [RequireMKOTHMember]
     public class Moderation : ModuleBase<SocketCommandContext>
     {
         static int banlimit = 3;
 
+        [Command("Mute")]
+        [Summary("Starts a petition to mute someone. Any MKOTH Member can initiate a mute with mute time of 10 minutes, along with a 67% approval rate. " +
+            "A MKOTH chat moderator can have longer mute time and only needs 32% approval rate.")]
+        [RequireDeveloper]
+        public async Task Mute(IGuildUser user, int muteTimeMinutes, [Remainder]string reason)
+        {
+            var isMod = ChatMods.Members.Count(x => x.Id == Context.User.Id) > 0 ? true : false;
+            muteTimeMinutes = isMod ? muteTimeMinutes : 10;
+
+            var vote = new Vote(
+                Context,
+                "Mute User Vote",
+                "**" + user.GetDisplayName() + $"** has been demanded to be muted for {muteTimeMinutes} minutes, cast your opinions by reacting below. " +
+                $"This vote is initiated by a {(isMod ? "***moderator***" : "***member***")}, it needs a {(isMod ? "32" : "67")}% approval rate. " +
+                "Only MKOTH Members' vote casts are considered.");
+
+            await Task.CompletedTask;
+        }
+
         [Command("Ban")]
         [Summary("Bans a user in MKOTH Server.")]
         [RequireMKOTHGuild]
+        [RequireMKOTHMod]
         public async Task Ban(IGuildUser user, [Remainder] string reason = "Not provided.")
         {
             await BanAsync(user, reason, false);
@@ -25,6 +46,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("SuperBan")]
         [Summary("Bans a user in MKOTH Server and prune their messages from the past 1 day.")]
         [RequireMKOTHGuild]
+        [RequireMKOTHMod]
         public async Task SuperBan(IGuildUser user, [Remainder] string reason = "Not provided.")
         {
             await BanAsync(user, reason, true);
@@ -33,6 +55,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("Kick")]
         [Summary("Kicks a user from the MKOTH server. Cannot kick a MKOTH Member.")]
         [RequireMKOTHGuild]
+        [RequireMKOTHMod]
         public async Task Kick(IGuildUser user, [Remainder] string reason = "Not provided.")
         {
             if (IsModImmuneUser(user) || user.RoleIds.Contains(Member.Id))
@@ -45,6 +68,14 @@ namespace MKOTHDiscordBot.Modules
             await SendModResponseAsync(user, reason, "**kicked**");
         }
 
+        [Command("ShowBanLimit")]
+        [Summary("Shows the remaining amount of MKOTH Members the chat mods can ban.")]
+        [RequireMKOTHMod]
+        public async Task Showbanlimit()
+        {
+            await ReplyAsync("Ban limit: " + banlimit);
+        }
+
         [Command("ResetBan")]
         [Summary("Resets the ban limit.")]
         [RequireDeveloper]
@@ -52,14 +83,6 @@ namespace MKOTHDiscordBot.Modules
         {
             banlimit = 3;
             await ReplyAsync("Ban limit reset.");
-        }
-
-        [Command("ShowBanLimit")]
-        [Summary("Shows the remaining amount of MKOTH Members the chat mods can ban.")]
-        [RequireMKOTHMod]
-        public async Task Showbanlimit()
-        {
-            await ReplyAsync("Ban limit: " + banlimit);
         }
 
         private async Task BanAsync(IGuildUser user, string para, bool prune)

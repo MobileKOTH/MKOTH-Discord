@@ -7,7 +7,7 @@ using Discord.Commands;
 
 namespace MKOTHDiscordBot.Modules
 {
-    [Summary("Provides guidance of using the MKOTH Discord Bot.")]
+    [Summary("Provides the guidance of using the MKOTH Discord Bot.")]
     [Remarks("Module A")]
     public class Help : ModuleBase<SocketCommandContext>
     {
@@ -21,7 +21,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("Help")]
         [Alias("H", "Manual")]
         [Summary("Displays the help information.")]
-        public async Task MKOTHHelp()
+        public async Task HelpCommand()
         {
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
@@ -44,7 +44,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("Help")]
         [Alias("H", "Info")]
         [Summary("Use with an input `<para>`(module or command name) to find the details and usage about a module or a command.")]
-        public async Task MKOTHHelp([Remainder]string para)
+        public async Task HelpCommand([Remainder]string para)
         {
             para = para.ToLower();
             var embed = new EmbedBuilder().WithColor(Color.Orange);
@@ -65,6 +65,17 @@ namespace MKOTHDiscordBot.Modules
             var command = commands.Commands.ToList().FindAll(x => x.Name.ToLower() == para || x.Aliases.ToList().Find(y => y.ToLower() == para) != null);
             if (command.Count > 0)
             {
+                command.Sort((a, b) =>
+                {
+                    if (a.Name == para)
+                    {
+                        return -1;
+                    }
+                    else
+                    {
+                        return 1;
+                    }
+                });
                 var baseCommand = command.First();
                 string commandDescription = "";
                 command.ForEach(x =>
@@ -117,11 +128,12 @@ namespace MKOTHDiscordBot.Modules
         }
 
         [Command("Info")]
-        [Alias("MkothHelp")]
-        [Summary("Redirect to MKOTH help, equivalent to `.help information`")]
+        [Alias("MkothHelp", "Mkoth Help", "Mkoth Info", "Information", "Mkoth Information", "MkothInfo")]
+        [Summary("Redirect to MKOTH related helps, equivalent to `.help information` and `.help management`.")]
         public async Task Info()
         {
-            await MKOTHHelp("information");
+            await HelpCommand("information");
+            await HelpCommand("management");
         }
     }
 }
