@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26430.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MKOTH Discord Bot", "MKOTH Discord Bot\MKOTH Discord Bot.csproj", "{55066602-6B3D-4D1E-8452-5607E7191F0E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MKOTHDiscordBot", "MKOTHDiscordBot\MKOTHDiscordBot.csproj", "{55066602-6B3D-4D1E-8452-5607E7191F0E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +18,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C55E13F6-9216-451E-8809-828C1D5A6CAF}
 	EndGlobalSection
 EndGlobal
