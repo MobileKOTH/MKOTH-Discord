@@ -70,26 +70,29 @@ namespace MKOTHDiscordBot
 
         public static void LoadHistory()
         {
-            string json = "[" + File.ReadAllText(Globals.Directories.DataFolder + "ChatHistory.strings") + "]";
+            string json = "[" + File.ReadAllText(Globals.Directories.ChatHistoryFile) + "]";
             History = JsonConvert.DeserializeObject<List<string>>(json);
             lastSaveIndex = History.Count;
+            previousUser = null;
         }
 
         public static void SaveHistory()
         {
-            if (History.Count > lastSaveIndex && ((DateTime.Now - lastSameUserChatTime).TotalSeconds < 10))
+            var idleTime = (DateTime.Now - lastSameUserChatTime).TotalSeconds;
+            if (History.Count > lastSaveIndex && idleTime > 10)
             {
                 var saveRange = History.GetRange(lastSaveIndex, History.Count - lastSaveIndex);
                 lastSaveIndex = History.Count;
                 var saveString = "";
                 saveRange.ForEach(x => saveString += JsonConvert.SerializeObject(x) + ",".AddLine());
                 DateTime start = DateTime.Now;
-                using (StreamWriter sw = File.AppendText(Globals.Directories.DataFolder + "ChatHistory.strings"))
+                using (StreamWriter sw = File.AppendText(Globals.Directories.ChatHistoryFile))
                 {
                     sw.Write(saveString);
                 }
                 Logger.Log("**Time used:** `" + (DateTime.Now - start).TotalMilliseconds.ToString() + " ms`".AddMarkDownLine() +
-                    "**Lines:** " + saveRange.Count , LogType.CHATSAVETIME);
+                    "**Lines:** " + saveRange.Count.ToString().AddMarkDownLine() +
+                    $"**Height:** History - {History.Count} Last Save - {History.Count - saveRange.Count} Idle Time - {idleTime} seconds", LogType.CHATSAVETIME);
                 LoadHistory();
             }
         }

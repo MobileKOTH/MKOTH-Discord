@@ -14,7 +14,7 @@ namespace MKOTHDiscordBot.Modules
     public class Information : ModuleBase<SocketCommandContext>
     {
         [Command("Ranking")]
-        [Alias("Rank", "lb", "Rankings", "Leaderboard")]
+        [Alias("Rank", "lb", "Rankings", "Leaderboard", "Ranks")]
         [Summary("Gets the officially updated ranking infomation. Use with a input `<user>` to check the player's rank.")]
         public async Task Ranking(IUser user = null)
         {

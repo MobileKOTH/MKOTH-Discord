@@ -28,7 +28,8 @@ namespace MKOTHDiscordBot
                     CONFIG_JSON = "Config.json",
                     GENERALLOGS_MD = "General Logs.md",
                     ERRORLOGS_MD = "Error Logs.md",
-                    CHATLOGS_TXT = "Chat Logs.md";
+                    CHATLOGS_TXT = "Chat Logs.md",
+                    CHATHISTORY_DAT = "ChatHistory.dat";
             }
 
             /// <summary>
@@ -46,7 +47,8 @@ namespace MKOTHDiscordBot
                 ConfigFile = Root + FileNames.CONFIG_JSON,
                 GeneralLogsFile = LogsFolder + FileNames.GENERALLOGS_MD,
                 ErrorLogsFile = LogsFolder + FileNames.ERRORLOGS_MD,
-                ChatLogsFile = LogsFolder + FileNames.CHATLOGS_TXT;
+                ChatLogsFile = LogsFolder + FileNames.CHATLOGS_TXT,
+                ChatHistoryFile = DataFolder + FileNames.CHATHISTORY_DAT;
         }
 
         private static ProgramConfiguration _config = JsonConvert.DeserializeObject<ProgramConfiguration>(File.ReadAllText(Directories.ConfigFile));

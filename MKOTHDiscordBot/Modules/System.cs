@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Management;
 using System.Reflection;
+using System.IO;
+using System.Linq;
 
 namespace MKOTHDiscordBot.Modules
 {
@@ -111,6 +113,28 @@ namespace MKOTHDiscordBot.Modules
                 embed.WithDescription("Pong!")
                 .AddField("Reflect", reflection)
                 .WithColor(Color.Orange).Build());
+        }
+
+        [Command("Logs")]
+        [Summary("Dumps the latest general system logs")]
+        [RequireDeveloper]
+        public async Task Logs()
+        {
+            var blocks = File.ReadAllText(Globals.Directories.GeneralLogsFile).Split(new string[1] { "\r\n\r\n" }, StringSplitOptions.None)
+                .Reverse()
+                .Take(20);
+            string output = "";
+            foreach (var item in blocks)
+            {
+                output += item + "\n\n";
+            }
+            output = output.SliceBack(1900);
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Purple)
+                .WithTitle("System Logs")
+                .WithDescription(output);
+
+            await ReplyAsync(string.Empty, embed: embed.Build());
         }
 
         [Command("SetTest")]

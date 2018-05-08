@@ -96,5 +96,13 @@ namespace MKOTHDiscordBot.Modules
             var message = Chat.History[id];
             await ReplyAsync($"`Message Id: #{id}`\n\n", embed: new EmbedBuilder().WithDescription(message.SliceBack(1900)).Build());
         }
+
+        [Command("SaveChat")]
+        [RequireDeveloper]
+        public async Task SaveChat()
+        {
+            Chat.SaveHistory();
+            await ReplyAsync("Done.");
+        }
     }
 }
