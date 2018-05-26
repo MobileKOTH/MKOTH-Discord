@@ -109,6 +109,7 @@ namespace MKOTHDiscordBot
             _client.ReactionAdded += HandleReactionAsync;
             _client.Ready += () => Globals.Load(_client);
             _client.UserJoined += (user) => { if (user.Guild.Id == Globals.MKOTHGuild.Guild.Id) HandleChatSaveUpdateMKOTH(); return Task.CompletedTask;};
+            _client.Disconnected += (e) => Task.Run(() => FirstArgument = e.Message);
 
             // Discover all of the commands in this assembly and load them.
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());

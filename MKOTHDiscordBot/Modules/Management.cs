@@ -237,7 +237,7 @@ namespace MKOTHDiscordBot.Modules
             try
             {
                 embed.Title = "Role Pools";
-                embed.Description = $"{ChatMods.Name}\n{Member.Name}\n{Peasant.Name}\n{Vassal.Name}\n{Squire.Name}\n{Noble.Name}\n{King.Name}\n";
+                embed.Description = $"{ChatMods.Name}\n{Member.Name}\n{Peasant.Name}\n{Vassal.Name}\n{Squire.Name}\n{Noble.Name}\n{King.Name}\n{Knight.Name}\n";
                 if (context != null)
                 {
                     msg = await context.Channel.SendMessageAsync("Updating Member Roles and Names", embed: embed.Build());
@@ -253,6 +253,7 @@ namespace MKOTHDiscordBot.Modules
                     if (!player.IsUnknown && !player.IsRemoved && !serveruser.Roles.Contains(Member))
                     {
                         await serveruser.AddRoleAsync(Member);
+                        await serveruser.RemoveRoleAsync(Pending);
                         if (context != null)
                         {
                             await msg.ModifyAsync(x =>
@@ -266,6 +267,7 @@ namespace MKOTHDiscordBot.Modules
                     if (!player.IsUnknown && player.IsRemoved && serveruser.Roles.Contains(Member))
                     {
                         await serveruser.RemoveRoleAsync(Member);
+                        await serveruser.AddRoleAsync(Pending);
                         if (context != null)
                         {
                             await msg.ModifyAsync(x =>
@@ -278,8 +280,27 @@ namespace MKOTHDiscordBot.Modules
                     }
                     else if (!player.IsUnknown && !player.IsRemoved && !serveruser.Roles.Contains(Stupid))
                     {
+                        if (Globals.Config.Moderators.Contains(serveruser.Id) && !serveruser.Roles.Contains(ChatMods))
+                        {
+                            await serveruser.AddRoleAsync(ChatMods);
+                        }
+                        if (Globals.Config.Moderators.Contains(serveruser.Id) && !serveruser.GetDisplayName().Contains("ᴹᵒᵈ"))
+                        {
+                            await serveruser.ModifyAsync(x => { x.Nickname = player.Name + " ᴹᵒᵈ"; });
+                        }
+
+                        if (player.IsKnight && !serveruser.Roles.Contains(Knight))
+                        {
+                            await serveruser.AddRoleAsync(Knight);
+                        }
+                        else if (!player.IsKnight && serveruser.Roles.Contains(Knight))
+                        {
+                            await serveruser.RemoveRoleAsync(Knight);
+                        }
+
                         if (serveruser.GetDisplayName() != player.Name && !serveruser.Roles.Contains(ChatMods))
                         {
+                            await serveruser.ModifyAsync(x => { x.Nickname = player.Name; });
                             if (context != null)
                             {
                                 await msg.ModifyAsync(x =>
@@ -289,7 +310,6 @@ namespace MKOTHDiscordBot.Modules
                                     x.Embed = embed.Build();
                                 });
                             }
-                            await serveruser.ModifyAsync(x => { x.Nickname = player.Name; });
                         }
                         switch (player.Class)
                         {
@@ -317,6 +337,7 @@ namespace MKOTHDiscordBot.Modules
                                     await serveruser.AddRoleAsync(Squire);
                                     await serveruser.RemoveRoleAsync(Noble);
                                     await serveruser.RemoveRoleAsync(Vassal);
+                                    await serveruser.RemoveRoleAsync(Peasant);
                                     updateRoleProgressStatus();
                                 }
                                 break;
@@ -336,6 +357,7 @@ namespace MKOTHDiscordBot.Modules
                                 {
                                     await serveruser.AddRoleAsync(Peasant);
                                     await serveruser.RemoveRoleAsync(Vassal);
+                                    await serveruser.RemoveRoleAsync(Squire);
                                     updateRoleProgressStatus();
                                 }
                                 break;

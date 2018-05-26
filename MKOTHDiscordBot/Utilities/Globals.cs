@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Timers;
@@ -68,7 +69,7 @@ namespace MKOTHDiscordBot
         {
             public static SocketGuild Guild;
             public static SocketTextChannel Official, Casual, Suggestions, PlayerID, ModLog;
-            public static SocketRole ChatMods, VIP, Stupid, Member, Peasant, Vassal, Squire, Noble, King;
+            public static SocketRole ChatMods, VIP, Stupid, Member, Peasant, Vassal, Squire, Noble, King, Knight, Pending;
             public static Emote UpArrowEmote, DownArrowEmote;
         }
 
@@ -113,9 +114,11 @@ namespace MKOTHDiscordBot
                 MKOTHGuild.Member = guild.Roles.Single(x => x.Name.Contains("MKOTH Members"));
                 MKOTHGuild.Peasant = guild.Roles.Single(x => x.Name.Contains("MKOTH Peasants"));
                 MKOTHGuild.Vassal = guild.Roles.Single(x => x.Name.Contains("MKOTH Vassals"));
-                MKOTHGuild.Squire = guild.Roles.Single(x => x.Name.Contains("MKOTH Squire"));
+                MKOTHGuild.Squire = guild.Roles.Single(x => x.Name.Contains("MKOTH Squires"));
                 MKOTHGuild.Noble = guild.Roles.Single(x => x.Name.Contains("MKOTH Nobles"));
                 MKOTHGuild.King = guild.Roles.Single(x => x.Name.Contains("MKOTH King"));
+                MKOTHGuild.Knight = guild.Roles.Single(x => x.Name.Contains("MKOTH Knights"));
+                MKOTHGuild.Pending = guild.Roles.Single(x => x.Name.Contains("Pending"));
 
                 MKOTHGuild.UpArrowEmote = guild.Emotes.Single(x => x.Name == "uparrow");
                 MKOTHGuild.DownArrowEmote = guild.Emotes.Single(x => x.Name == "downarrow");
@@ -133,6 +136,10 @@ namespace MKOTHDiscordBot
                 {
                     TestGuild.BotTest.SendMessageAsync("The Bot has restarted");
                 }
+                else if (Program.FirstArgument != null)
+                {
+                    TestGuild.BotTest.SendMessageAsync("Some thing happened: " + Program.FirstArgument.MarkdownCodeBlock());
+                }
 
                 Logger.Debug(BuildVersion, nameof(BuildVersion));
             }
@@ -142,6 +149,7 @@ namespace MKOTHDiscordBot
                 Console.WriteLine(e.Message.AddLine() + e.StackTrace);
                 Console.WriteLine("Failed loading context!");
                 client.LogoutAsync();
+                client.StopAsync();
                 Console.ReadKey();
                 Environment.Exit(0);
             }
@@ -158,6 +166,7 @@ namespace MKOTHDiscordBot
         {
             public int BuildNumber { get; set; }
             public string Token { get; set; }
+            public List<ulong> Moderators { get; set; }
         }
 
         public static void IncreaseBuild() => _config.BuildNumber++;
