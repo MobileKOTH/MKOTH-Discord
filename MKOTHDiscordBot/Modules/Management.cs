@@ -208,15 +208,16 @@ namespace MKOTHDiscordBot.Modules
             queryString["entry.1027601864"] = winner.CodeId.ToString();
             queryString["entry.164636590"] = inviteCode;
 
-            string filledForm = baseURL + queryString.ToString();
-            Logger.Log($"Form sent to: {Context.User}\n ```{filledForm}```", LogType.DIRECTMESSAGE);
+            string filledFormURLEncoded = baseURL + queryString.ToString();
+            var filledFormURLDecoded = Uri.EscapeUriString(global::System.Web.HttpUtility.UrlDecode(filledFormURLEncoded));
+            Logger.Log($"Form sent to: {Context.User}\n ```{filledFormURLEncoded}\n{filledFormURLDecoded}```", LogType.DIRECTMESSAGE);
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
-                .WithUrl(filledForm)
+                .WithUrl(filledFormURLDecoded)
                 .WithTitle("Prefilled Submission Form")
                 .WithDescription("Here is your **partially** completed series submission form. **You still have to submit it** through the google form by clicking the link below.\n" +
                 "This feature still undergoing testing, do check the prefilled values and report errors to an admin.\n\n" +
-                $"Click [here]({filledForm}) for the submission form.");
+                $"Click [here]({filledFormURLDecoded}) for the submission form.");
             var msg = await Context.User.SendMessageAsync("**DO NOT SHARE THIS LINK AS IT CONTAINS YOUR SUBMISSION ID.**", embed: embed.Build());
 
             embed = new EmbedBuilder()

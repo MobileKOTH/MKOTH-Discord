@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace MKOTHDiscordBot.Modules
 {
-    [Summary("Contains the diagnostics and maintainance information of the bot.")]
+    [Summary("Contains the diagnostics and maintenance information of the bot.")]
     public class System : ModuleBase<SocketCommandContext>
     {
         /*
