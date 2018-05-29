@@ -147,17 +147,16 @@ namespace MKOTHDiscordBot
             {
                 var stopwatch = new System.Diagnostics.Stopwatch();
                 stopwatch.Start();
+                var webClient = new System.Net.WebClient
+                {
+                    Encoding = System.Text.Encoding.UTF8
+                };
                 var playerDataTsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSITdXPzQ_5eidATjL9j7uBicp4qvDuhx55IPvbMJ_jor8JU60UWCHwaHdXcR654W8Tp6VIjg-8V7g0/pub?gid=282944341&single=true&output=tsv";
                 var playerRankingJsonUrl = "https://script.google.com/macros/s/AKfycbzgXXIUc8PGq0-h-aZkZ9gfGBnBLi-BPn3JJ9cjV5B7ZbLu2eY/exec?resource=mkoth&item=ranking";
-                var playerDataTask = new System.Net.WebClient().DownloadStringTaskAsync(playerDataTsvUrl);
-                var playerRankingTask = new System.Net.WebClient().DownloadStringTaskAsync(playerRankingJsonUrl);
+                var playerData = await webClient.DownloadStringTaskAsync(playerDataTsvUrl);
+                var playerRanking = await webClient.DownloadStringTaskAsync(playerRankingJsonUrl);
 
-                var messagesTask = Globals.MKOTHGuild.PlayerID.GetMessagesAsync(100).FlattenAsync();
-                await Task.WhenAll(playerDataTask, messagesTask, playerRankingTask);
-
-                var playerData = await playerDataTask;
-                var messages = await messagesTask;
-                var playerRanking = await playerRankingTask;
+                var messages = await Globals.MKOTHGuild.PlayerID.GetMessagesAsync(100).FlattenAsync();
 
                 List<(string playerName, int codeId)> codeList = new List<(string playerName, int codeId)>();
                 if (messages.Count() > 1)
