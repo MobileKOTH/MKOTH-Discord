@@ -210,7 +210,7 @@ namespace MKOTHDiscordBot.Modules
 
             string filledFormURLEncoded = baseURL + queryString.ToString();
             var filledFormURLDecoded = Uri.EscapeUriString(global::System.Web.HttpUtility.UrlDecode(filledFormURLEncoded));
-            Logger.Log($"Form sent to: {Context.User}\n ```{filledFormURLEncoded}\n{filledFormURLDecoded}```", LogType.DIRECTMESSAGE);
+            Logger.Log($"Form sent to: {Context.User}\n \nfilledFormURLEncoded: {filledFormURLEncoded}\n\nfilledFormURLDecoded: {filledFormURLDecoded}\n", LogType.DIRECTMESSAGE);
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithUrl(filledFormURLDecoded)

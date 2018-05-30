@@ -138,7 +138,7 @@ namespace MKOTHDiscordBot
                 }
                 else if (Program.FirstArgument != null)
                 {
-                    TestGuild.BotTest.SendMessageAsync("Some thing happened: " + Program.FirstArgument.MarkdownCodeBlock());
+                    TestGuild.BotTest.SendMessageAsync("Some thing happened: " + Program.FirstArgument);
                 }
 
                 Logger.Debug(BuildVersion, nameof(BuildVersion));
