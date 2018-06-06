@@ -318,6 +318,7 @@ namespace MKOTHDiscordBot.Modules
                                 if (!serveruser.Roles.Contains(King))
                                 {
                                     await serveruser.AddRoleAsync(King);
+                                    await serveruser.AddRoleAsync(Noble);
                                     updateRoleProgressStatus();
                                 }
                                 break;

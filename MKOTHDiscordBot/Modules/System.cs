@@ -54,12 +54,13 @@ namespace MKOTHDiscordBot.Modules
             {
                 return new EmbedBuilder()
                 .WithTitle("System Information")
-                .WithDescription("Official MKOTH Management Bot. In early development and testing phase.")
-                .WithUrl("https://mobilekoth.wordpress.com/")
+                .WithDescription("[__**Official MKOTH Website**__](https://MobileKOTH.github.io)\n\nOfficial MKOTH Management Bot. In early development and testing phase.")
+                .WithUrl("https://github.com/MobileKOTH")
                 .WithThumbnailUrl("https://cdn.discordapp.com/attachments/341163606605299716/360336022745382912/13615239_1204861226212220_2613382245523520956_n.png")
                 .WithAuthor(new EmbedAuthorBuilder()
                     .WithName("Developed by " + Globals.BotOwner.Username)
-                    .WithIconUrl(Globals.BotOwner.GetAvatarUrl()))
+                    .WithIconUrl(Globals.BotOwner.GetAvatarUrl())
+                    .WithUrl("https://github.com/Cerlancism"))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Help")
                     .WithValue("```.Help```"))
@@ -81,6 +82,11 @@ namespace MKOTHDiscordBot.Modules
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Uptime")
                     .WithValue($"```{(DateTime.Now - Globals.DeploymentTime).AsRoundedDuration()}```"))
+                .AddField(new EmbedFieldBuilder()
+                    .WithName("Repositories")
+                    .WithValue(
+                    "[**GitHub:** MKOTH-GSuite](https://github.com/MobileKOTH/MKOTH-GSuite)\n" +
+                    "[**GitHub:** MKOTH-Discord](https://github.com/MobileKOTH/MKOTH-Discord)"))
                 .WithImageUrl("https://cdn.discordapp.com/attachments/271109067261476866/330727796647395330/Untitled12111.jpg")
                 .WithFooter(text: "Copyright 2018 © Mobile Koth")
                 .WithCurrentTimestamp()
