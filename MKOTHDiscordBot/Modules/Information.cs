@@ -126,7 +126,7 @@ namespace MKOTHDiscordBot.Modules
         [Summary("Gets the Discord invite link to this server.")]
         public async Task Invite()
         {
-            await ReplyAsync("https://discord.gg/JBDHjHF");
+            await ReplyAsync("https://discord.me/mkoth");
         }
     }
 }
