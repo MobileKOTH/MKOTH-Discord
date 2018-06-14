@@ -68,7 +68,7 @@ namespace MKOTHDiscordBot
         public static class MKOTHGuild
         {
             public static SocketGuild Guild;
-            public static SocketTextChannel Official, Casual, Suggestions, PlayerID, ModLog;
+            public static SocketTextChannel Official, Casual, Suggestions, PlayerID, ModLog, Leave;
             public static SocketRole ChatMods, VIP, Stupid, Member, Peasant, Vassal, Squire, Noble, King, Knight, Pending;
             public static Emote UpArrowEmote, DownArrowEmote;
         }
@@ -106,7 +106,8 @@ namespace MKOTHDiscordBot
                 MKOTHGuild.Casual = guild.TextChannels.Single(x => x.Id.Equals(347166773642133515UL));
                 MKOTHGuild.Suggestions = guild.TextChannels.Single(x => x.Id.Equals(347272877134839810UL));
                 MKOTHGuild.PlayerID = guild.TextChannels.Single(x => x.Id.Equals(357201006301282309UL));
-                MKOTHGuild.ModLog = guild.TextChannels.Single(x => x.Id.Equals(349960496591667202));
+                MKOTHGuild.ModLog = guild.TextChannels.Single(x => x.Id.Equals(349960496591667202UL));
+                MKOTHGuild.Leave = guild.TextChannels.Single(x => x.Id.Equals(347273557061009409UL));
 
                 MKOTHGuild.ChatMods = guild.Roles.Single(x => x.Name.Contains("Chat Mods"));
                 MKOTHGuild.Stupid = guild.Roles.Single(x => x.Name.Contains("I am stupid"));

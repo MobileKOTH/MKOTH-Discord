@@ -38,7 +38,7 @@ namespace MKOTHDiscordBot.Modules
         [Summary("Bans a user in MKOTH Server.")]
         [RequireMKOTHGuild]
         [RequireMKOTHMod]
-        public async Task Ban(IGuildUser user, [Remainder] string reason = "Not provided.")
+        public async Task Ban(IGuildUser user, [Remainder] string reason = "no reason")
         {
             await BanAsync(user, reason, false);
         }
@@ -47,7 +47,7 @@ namespace MKOTHDiscordBot.Modules
         [Summary("Bans a user in MKOTH Server and prune their messages from the past 1 day.")]
         [RequireMKOTHGuild]
         [RequireMKOTHMod]
-        public async Task SuperBan(IGuildUser user, [Remainder] string reason = "Not provided.")
+        public async Task SuperBan(IGuildUser user, [Remainder] string reason = "no reason")
         {
             await BanAsync(user, reason, true);
         }
@@ -99,6 +99,9 @@ namespace MKOTHDiscordBot.Modules
             {
                 if (banlimit > 0)
                 {
+                    var inviteLink = "https://discord.me/mkoth";
+                    await user.SendMessageAsync($"You are banned from the MKOTH Server by {Context.User.Username} for {para}. " +
+                        $"If your ban is lifted, join back using the invite link below:\n\n" + inviteLink);
                     banlimit--;
                     goto banProcedure;
                 }

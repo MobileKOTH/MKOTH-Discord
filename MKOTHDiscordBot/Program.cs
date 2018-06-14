@@ -108,35 +108,82 @@ namespace MKOTHDiscordBot
             _client.MessageReceived += HandleMessageAsync;
             _client.ReactionAdded += HandleReactionAsync;
             _client.Ready += () => Globals.Load(_client);
-            _client.UserJoined += (user) => { if (user.Guild.Id == Globals.MKOTHGuild.Guild.Id) HandleChatSaveUpdateMKOTH(); return Task.CompletedTask;};
+            _client.UserJoined += (user) => HandleChatSaveUpdateMKOTH(user);
+            _client.UserLeft += async (user) => await HandleLeaver(user);
             _client.Disconnected += (e) => Task.Run(() => FirstArgument = e.Message + e.StackTrace.MarkdownCodeBlock("diff"));
 
             // Discover all of the commands in this assembly and load them.
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
 
             Timer statustimer = new Timer();
-            statustimer.Elapsed += async(sender, evt) => { if (!TestMode) await Responder.ChangeStatus(_client); };
+            statustimer.Elapsed += async(_, __) => { if (!TestMode) await Responder.ChangeStatus(_client); };
             statustimer.Interval = 15000;
             statustimer.Start();
 
             Timer savechatupdatemkothtimer = new Timer();
-            savechatupdatemkothtimer.Elapsed += (sender, evt) => HandleChatSaveUpdateMKOTH();
+            savechatupdatemkothtimer.Elapsed += (_, __) => HandleChatSaveUpdateMKOTH();
             savechatupdatemkothtimer.Interval = 60000;
             savechatupdatemkothtimer.Start();
 
             Timer downloadplayerdatatimer = new Timer();
-            downloadplayerdatatimer.Elapsed += async (sender, evt) => { if (!TestMode) await Player.Load(); };
+            downloadplayerdatatimer.Elapsed += async (_, __) => { if (!TestMode) await Player.Load(); };
             downloadplayerdatatimer.Interval = 300000;
             downloadplayerdatatimer.Start();
 
             SpamWatch.Start();
 
-            void HandleChatSaveUpdateMKOTH()
+            Task HandleChatSaveUpdateMKOTH(SocketGuildUser user = null)
             {
+                if (user != null && user?.Guild.Id != Globals.MKOTHGuild.Guild.Id)
+                {
+                    return Task.CompletedTask;
+                }
                 Chat.SaveHistory();
                 if (!TestMode)
                 {
-                    var task = Management.UpdateMKOTHAsync(null);
+                    var task = Management.UpdateMKOTHAsync();
+                }
+                return Task.CompletedTask;
+            }
+
+            async Task HandleLeaver(SocketGuildUser user)
+            {
+                try
+                {
+                    if (user.Guild.Id != Globals.MKOTHGuild.Guild.Id)
+                    {
+                        return;
+                    }
+                    var inviteLink = "https://discord.me/mkoth";
+                    var bans = await Globals.MKOTHGuild.Guild.GetBansAsync();
+                    if (Player.List.Exists(x => x.DiscordId == user.Id && !x.IsRemoved))
+                    {
+                        if (bans.ToList().Exists(x => x.User.Id == user.Id))
+                        {
+                            await Responder.SendToChannel(Globals.MKOTHGuild.Leave,
+                                $"{user.Mention} {user.GetDisplayName()}#{user.DiscriminatorValue}, a MKOTH Member has left and banned from the server.");
+                        }
+                        else
+                        {
+                            await Responder.SendToChannel(Globals.MKOTHGuild.Leave,
+                                $"{user.Mention} {user.GetDisplayName()}#{user.DiscriminatorValue}, a MKOTH Member has left from the server.");
+                            await user.SendMessageAsync("You left the MKOTH Server, note that you are still part of the community unless you are officially removed. " +
+                                "You are welcomed join back anytime using the link below:\n\n" + inviteLink);
+                        }
+                    }
+                    else
+                    {
+                        await Responder.SendToChannel(Globals.MKOTHGuild.Leave,
+                                $"{user.Mention} {user.GetDisplayName()}#{user.DiscriminatorValue}, a public user has left from the server.");
+                        if (!bans.ToList().Exists(x => x.User.Id == user.Id))
+                        {
+                            await user.SendMessageAsync("Thank you for your interests in MKOTH, if you are keen to join back in the future, use the invite link below:\n\n" + inviteLink);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    await Logger.SendError(e);
                 }
             }
         }

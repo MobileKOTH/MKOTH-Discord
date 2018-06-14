@@ -228,7 +228,7 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync(Context.User.Mention +", your prefilled form has been sent to your direct message.", embed: embed.Build());
         }
 
-        public static async Task UpdateMKOTHAsync(SocketCommandContext context)
+        public static async Task UpdateMKOTHAsync(SocketCommandContext context = null)
         {
             var starttime = DateTime.Now;
 
