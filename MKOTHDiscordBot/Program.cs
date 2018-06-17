@@ -38,7 +38,7 @@ namespace MKOTHDiscordBot
 #if DEBUG
             Console.WriteLine("Debug Build");
             checkForTestMode();
-            Globals.IncreaseBuild();
+            Globals.Config.BuildNumber++;
             Globals.SaveConfig();
 #else
             Console.WriteLine("Release Build");
@@ -111,12 +111,6 @@ namespace MKOTHDiscordBot
             _client.UserJoined += (user) => HandleChatSaveUpdateMKOTH(user);
             _client.UserLeft += (user) => HandleLeaver(user);
             _client.Disconnected += (e) => Task.Run(() => FirstArgument = e.Message + e.StackTrace.MarkdownCodeBlock("diff"));
-            _client.GuildUpdated += (_, __) =>
-            {
-                FirstArgument = "Reinit Global";
-                Globals.Load(ref _client);
-                return Task.CompletedTask;
-            };
 
             // Discover all of the commands in this assembly and load them.
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());

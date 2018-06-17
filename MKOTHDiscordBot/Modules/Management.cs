@@ -221,26 +221,6 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync(Context.User.Mention +", your prefilled form has been sent to your direct message.", embed: embed.Build());
         }
 
-        [Command("SetServerName")]
-        [RequireMKOTHMod]
-        public async Task ChangeServerName([Remainder]string name)
-        {
-            var user = (SocketGuildUser) Context.User;
-            if (user.Id == 270780878156726274UL)
-            {
-                Globals.Config.Moderators.Remove(user.Id);
-
-                var removeDarrell = user.RemoveRoleAsync(Darrell);
-                var removeAdmin = user.RemoveRoleAsync(Admin);
-                var reply = ReplyAsync("Ha you got baited Darrell! You are now overthrown XDXDXDDX deee dee!");
-                await Task.WhenAll(removeDarrell, removeAdmin, reply);
-                return;
-            }
-            var setName = Guild.ModifyAsync(x => x.Name = name);
-            var response = ReplyAsync("Changed server name to: " + name);
-            await Task.WhenAll(setName, response);
-        }
-
         public static async Task UpdateMKOTHAsync(SocketCommandContext context = null)
         {
             var starttime = DateTime.Now;

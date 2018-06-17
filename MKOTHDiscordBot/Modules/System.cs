@@ -96,29 +96,23 @@ namespace MKOTHDiscordBot.Modules
         }
 
         [Command("Ping")]
-        [Summary("Checks the bot's connection and command response.")]
-        public async Task Ping()
+        [Summary("Checks the bot's connection and command response, use with an input `<echo>`(any text) to echo the input from you.")]
+        public async Task Ping([Remainder] string echo = null)
         {
             var msg = await ReplyAsync("`loading...`");
             await msg.ModifyAsync(x =>
             {
-                x.Content = "`Bot delay: " + (msg.Timestamp - Context.Message.Timestamp).TotalMilliseconds + " ms`\n";
-                x.Embed = new EmbedBuilder()
+                x.Content = "`Bot delay: " + (msg.Timestamp - Context.Message.Timestamp).TotalMilliseconds + " ms`\n" +
+                "`Bot client latency: " + Context.Client.Latency + " ms`\n";
+                var embed = new EmbedBuilder()
                 .WithDescription("Pong!")
-                .WithColor(Color.Orange)
-                .Build();
+                .WithColor(Color.Orange);
+                if (echo != null)
+                {
+                    embed.AddField("Echo", echo);
+                }
+                x.Embed = embed.Build();
             });
-        }
-
-        [Command("Ping")]
-        [Summary("With an input `<reflection>`(any text) to reflect the input from you.")]
-        public async Task Ping([Remainder] string reflection)
-        {
-            EmbedBuilder embed = new EmbedBuilder();
-            await ReplyAsync("`Bot client latency: " + Context.Client.Latency + " ms`\n", false,
-                embed.WithDescription("Pong!")
-                .AddField("Reflect", reflection)
-                .WithColor(Color.Orange).Build());
         }
 
         [Command("Logs")]
@@ -136,7 +130,7 @@ namespace MKOTHDiscordBot.Modules
             }
             output = output.SliceBack(1900);
             var embed = new EmbedBuilder()
-                .WithColor(Color.Purple)
+                .WithColor(Color.Orange)
                 .WithTitle("System Logs")
                 .WithDescription(output);
 
