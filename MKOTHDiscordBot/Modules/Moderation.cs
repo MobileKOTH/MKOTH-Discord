@@ -99,8 +99,8 @@ namespace MKOTHDiscordBot.Modules
             {
                 if (banlimit > 0)
                 {
-                    var inviteLink = "https://discord.me/mkoth";
-                    await user.SendMessageAsync($"You are banned from the MKOTH Server by {Context.User.Username} for {para}. " +
+                    var inviteLink = "https://discord.me/MKOTH";
+                    await user.SendMessageAsync($"You are banned from the MKOTH Server by **{Context.User.Username}** for {para}. " +
                         $"If your ban is lifted, join back using the invite link below:\n\n" + inviteLink);
                     banlimit--;
                     goto banProcedure;

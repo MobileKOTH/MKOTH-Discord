@@ -68,6 +68,11 @@ namespace MKOTHDiscordBot
         {
             return $"`{str}`";
         }
+
+        public static int GetWordCount(this String str)
+        {
+            return str.Split(' ').Length;
+        }
         #endregion
 
         #region IEnumberable ----------------------------------------------------------------------

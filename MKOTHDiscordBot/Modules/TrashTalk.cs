@@ -22,9 +22,6 @@ namespace MKOTHDiscordBot.Modules
             EmbedBuilder embed = new EmbedBuilder();
             IUserMessage msg;
 
-            List<TrashReply> triggers = new List<TrashReply>();
-            List<TrashReply> replies = new List<TrashReply>();
-            List<TrashReply> possiblereplies = new List<TrashReply>();
             message = Chat.TrimMessage(message);
             string[] words = message.ToLower().Split(' ');
             if (words.Length == 1)
@@ -34,55 +31,43 @@ namespace MKOTHDiscordBot.Modules
                     msg = await ReplyAsync("Too little content");
                 }
             }
-            Chat.ProcessResponses(message, triggers, replies);
 
-            int wordcount = words.Length;
-            bool foundreply = false;
-            double wordcountmatch = wordcount;
-            double matchrate = 0.9;
-            do
+            var (triggers, _) = Chat.ProcessResponses(message);
+            var (possiblereplies, matchRate) = Chat.GetPossibleReplies(message, triggers);
+            if (matchRate <= 0)
             {
-                if (wordcount > 4)
-                {
-                    matchrate -= 0.15;
-                }
-                else
-                {
-                    matchrate = wordcountmatch / wordcount;
-                }
-                foreach (var trashreply in triggers)
-                {
-                    if (trashreply.Matchrate >= matchrate)
-                    {
-                        possiblereplies.Add(trashreply);
-                        foundreply = true;
-                    }
-                }
-                if (matchrate <= 0)
-                {
-                    msg = await ReplyAsync("No trigger key found for: \n" + message);
-                    return;
-                }
-                wordcountmatch--;
-            } while (!foundreply);
-            for (int i = 0; i < (possiblereplies.Count > 25 ? 25 : possiblereplies.Count); i++)
-            {
-                lock (Chat.History)
-                {
-                    int index = Chat.History.IndexOf(possiblereplies[i].Message);
-                    string trigger = Chat.History[index - 1];
-                    string rephrase = Chat.History[index];
-                    string response = Chat.History[index + 1];
-                    trigger = trigger.SliceBack(100);
-                    rephrase = rephrase.SliceBack(100);
-                    response = response.SliceBack(100);
+                await ReplyAsync($"No trigger key found for:\n \"{message}\"");
+            }
 
-                    embed.AddField(string.Format("{0:N2}%", possiblereplies[i].Matchrate * 100), $"`#{index - 1}` {trigger}\n`#{index}` {rephrase}\n`#{index + 1}` {response}");
-                }
+            List<string> historyClone;
+            lock (Chat.History)
+            {
+                historyClone = new List<string>(Chat.History);
+            }
+            for (int i = 0; i < possiblereplies.Take(25).Count(); i++)
+            {
+                int index = historyClone.IndexOf(possiblereplies[i].Message);
+                string trigger = historyClone[index - 1];
+                string rephrase = historyClone[index];
+                string response = historyClone[index + 1];
+                historyClone[index] = null;
+                trigger = trigger.SliceBack(100);
+                rephrase = rephrase.SliceBack(100);
+                response = response.SliceBack(100);
+
+                embed.AddField(
+                    string.Format("{0:N2}%",
+                    possiblereplies[i].Matchrate * 100),
+                    $"`#{index - 1}` {trigger}\n" +
+                    $"`#{index}` {rephrase}\n" +
+                    $"`#{index + 1}` {response}");
+
+                var omission = possiblereplies.Take(25).Count() < possiblereplies.Count ? possiblereplies.Count - possiblereplies.Take(25).Count() : 0;
+                embed.WithFooter($"Results: {possiblereplies.Take(25).Count()}" + (omission > 0 ? $", omitted: {omission}" : ""));
             }
             embed.Title = "Trigger, rephrase and reply pool";
             embed.Description = "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`";
-            await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"" + message.SliceBack(100) + "\"", false, embed.Build());
+            await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"{message.SliceBack(100)}\"", false, embed.Build());
             await Task.CompletedTask;
             return;
         }

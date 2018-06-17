@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Management;
+using System.Text;
 
 namespace MKOTHDiscordBot.Modules
 {
@@ -19,7 +20,7 @@ namespace MKOTHDiscordBot.Modules
         public async Task Ranking(IUser user = null)
         {
             var player = Player.Fetch((user ?? Context.User).Id);
-            string topTenField = "";
+            var topTenField = new StringBuilder();
             Player.List
                 .Where(x => x.Rank >= 1)
                 .OrderBy(x => x.Rank)
@@ -27,7 +28,7 @@ namespace MKOTHDiscordBot.Modules
                 .ToList()
                 .ForEach(x =>
                 {
-                    topTenField += x.GetRankFieldString(identify: x.Rank == player.Rank);
+                    topTenField.Append(x.GetRankFieldString(identify: x.Rank == player.Rank));
                 });
 
             EmbedBuilder embed = new EmbedBuilder()
@@ -124,9 +125,6 @@ namespace MKOTHDiscordBot.Modules
         [Command("Invite")]
         [Alias("InviteLink")]
         [Summary("Gets the Discord invite link to this server.")]
-        public async Task Invite()
-        {
-            await ReplyAsync("https://discord.me/mkoth");
-        }
+        public async Task Invite() => await ReplyAsync("https://discord.me/MKOTH");
     }
 }

@@ -69,7 +69,7 @@ namespace MKOTHDiscordBot
         {
             public static SocketGuild Guild;
             public static SocketTextChannel Official, Casual, Suggestions, PlayerID, ModLog, Leave;
-            public static SocketRole ChatMods, VIP, Stupid, Member, Peasant, Vassal, Squire, Noble, King, Knight, Pending;
+            public static SocketRole ChatMods, VIP, Stupid, Member, Peasant, Vassal, Squire, Noble, King, Knight, Pending, Darrell, Admin;
             public static Emote UpArrowEmote, DownArrowEmote;
         }
 
@@ -79,7 +79,7 @@ namespace MKOTHDiscordBot
             public static SocketTextChannel BotTest;
         }
 
-        public static Task Load(DiscordSocketClient client)
+        public static Task Load(ref DiscordSocketClient client)
         {
             try
             {
@@ -120,6 +120,8 @@ namespace MKOTHDiscordBot
                 MKOTHGuild.King = guild.Roles.Single(x => x.Name.Contains("MKOTH King"));
                 MKOTHGuild.Knight = guild.Roles.Single(x => x.Name.Contains("MKOTH Knights"));
                 MKOTHGuild.Pending = guild.Roles.Single(x => x.Name.Contains("Pending"));
+                MKOTHGuild.Darrell = guild.Roles.Single(x => x.Name.Contains("Darrell :)"));
+                MKOTHGuild.Admin = guild.Roles.Single(x => x.Name.Contains("Admin"));
 
                 MKOTHGuild.UpArrowEmote = guild.Emotes.Single(x => x.Name == "uparrow");
                 MKOTHGuild.DownArrowEmote = guild.Emotes.Single(x => x.Name == "downarrow");

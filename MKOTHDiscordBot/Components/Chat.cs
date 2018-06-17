@@ -101,22 +101,14 @@ namespace MKOTHDiscordBot
         {
             DateTimeOffset starttime = DateTime.Now;
             string reply = "";
-            List<string> possiblereplies = new List<string>();
-            List<TrashReply> rephrasepool = new List<TrashReply>();
-            List<TrashReply> replypool = new List<TrashReply>();
-            List<TrashReply> responsepool = new List<TrashReply>();
 
             if (context.Channel.Id == Globals.MKOTHGuild.Suggestions.Id)
             {
-                possiblereplies.Add(context.User.Mention + ", I don't think you will need to talk to me for giving suggestions <:monekeyfacepalm:352423604216135680>");
-                possiblereplies.Add(context.User.Mention + ", <:monkeyrage:352681458919407617><:monkeyrage:352681458919407617><:monkeyrage:352681458919407617><:monkeyrage:352681458919407617>, you are probably not giving a proper suggestion!");
-                reply = possiblereplies.SelectRandom();
-                await Responder.SendToContext(context, reply);
                 return;
             }
 
             message = TrimMessage(message);
-            string[] words = message.ToLower().Split(' ');
+            var words = message.ToLower().Split(' ');
             if (words.Length == 1)
             {
                 if (words[0].Length < 2)
@@ -126,78 +118,28 @@ namespace MKOTHDiscordBot
             }
             await Responder.TriggerTyping(context);
 
-            ProcessResponses(message, rephrasepool, replypool);
+            var (rephrasePool, replyPool) = ProcessResponses(message);
 
-            int wordcount = words.Length;
-            string poollog = "";
-            double randomsource = new Random().NextDouble();
-            switch (wordcount)
-            {
-                case 1:
-                case 2:
-                    responsepool = (randomsource > 0.2) ? rephrasepool : replypool;
-                    poollog = (randomsource > 0.2) ? nameof(rephrasepool) : nameof(replypool);
-                    break;
-
-                case 3:
-                    responsepool = (randomsource > 0.66) ? rephrasepool : replypool;
-                    poollog = (randomsource > 0.66) ? nameof(rephrasepool) : nameof(replypool);
-                    break;
-
-                default:
-                    responsepool = replypool;
-                    poollog = nameof(replypool);
-                    break;
-            }
-
-            bool foundreply = false;
-            double wordcountmatch = wordcount;
-            double matchrate = 0.9;
-            do
-            {
-                if (wordcount > 4)
-                {
-                    matchrate -= 0.15;
-                }
-                else
-                {
-                    matchrate = wordcountmatch / wordcount;
-                }
-                foreach (var trashreply in responsepool)
-                {
-                    if (trashreply.Matchrate >= matchrate)
-                    {
-                        possiblereplies.Add(trashreply.Message);
-                        foundreply = true;
-                    }
-                }
-                if (wordcountmatch <= 0)
-                {
-                    Logger.Log("**No chat results:** ".AddMarkDownLine() + message, LogType.NOREPLYFOUND);
-                    break;
-                }
-                wordcountmatch--;
-            } while (!foundreply);
+            var wordcount = words.Length;
+            var (responsePool, poolLog) = GetResponsePool(wordcount, rephrasePool, replyPool);
+            var (possibleReplies, matchRate) = GetPossibleReplies(message, responsePool);
 
             Console.ForegroundColor = ConsoleColor.Yellow;
-            possiblereplies.Take(10).ToList().ForEach(x => Console.WriteLine(x));
+            possibleReplies.Take(10).ToList().ForEach(x => Console.WriteLine(x));
             Console.ResetColor();
 
-            if (possiblereplies.Count() == 0)
+            if (possibleReplies.Count() == 0)
             {
-                lock (History)
-                {
-                    possiblereplies.AddRange(History);
-                }
+                possibleReplies.AddRange(responsePool);
             };
 
-            reply = possiblereplies.SelectRandom();
+            reply = possibleReplies.SelectRandom().Message;
 
             Logger.Log(
                 "**Time used:** `" + ((DateTime.Now - starttime).TotalMilliseconds).ToString() + " ms`".AddMarkDownLine() +
                 "**Chat Trigger:** " + message.AddMarkDownLine() +
-                "**Match Rate:** " + matchrate.ToString().AddMarkDownLine() +
-                "**Pool:** " + poollog.AddMarkDownLine() +
+                "**Match Rate:** " + matchRate.ToString().AddMarkDownLine() +
+                "**Pool:** " + poolLog.AddMarkDownLine() +
                 "**Reply:** " + reply, LogType.TRASHREPLY);
 
             await Responder.SendToContext(context, reply);
@@ -220,8 +162,10 @@ namespace MKOTHDiscordBot
             return message;
         }
 
-        public static void ProcessResponses(string message, List<TrashReply> triggers, List<TrashReply> replies)
+        public static (List<TrashReply> triggers, List<TrashReply> replies) ProcessResponses(string message)
         {
+            List<TrashReply> triggers = new List<TrashReply>();
+            List<TrashReply> replies = new List<TrashReply>();
             List<string> historyClone;
             lock (History)
             {
@@ -241,6 +185,7 @@ namespace MKOTHDiscordBot
                 workers[i] = (Task.Run(() => process(set)));
             }
             Task.WaitAll(workers);
+            return (triggers, replies);
 
             void process(List<string> historySet)
             {
@@ -248,7 +193,7 @@ namespace MKOTHDiscordBot
                 double matchcount = 0;
                 foreach (var history in historySet)
                 {
-                    lock(replies)
+                    lock (replies)
                     {
                         replies.Add(new TrashReply(history, matchcount / wordcount));
                     }
@@ -267,6 +212,70 @@ namespace MKOTHDiscordBot
                     }
                 }
             }
+        }
+
+        public static (List<TrashReply> responsePool, string poolLog) GetResponsePool(int wordCount, List<TrashReply> rephrasePool, List<TrashReply> replyPool)
+        {
+            var responsePool = new List<TrashReply>();
+            string poollog = "";
+            double randomsource = new Random().NextDouble();
+            switch (wordCount)
+            {
+                case 1:
+                case 2:
+                    responsePool = (randomsource > 0.2) ? rephrasePool : replyPool;
+                    poollog = (randomsource > 0.2) ? nameof(rephrasePool) : nameof(replyPool);
+                    break;
+
+                case 3:
+                    responsePool = (randomsource > 0.66) ? rephrasePool : replyPool;
+                    poollog = (randomsource > 0.66) ? nameof(rephrasePool) : nameof(replyPool);
+                    break;
+
+                default:
+                    responsePool = replyPool;
+                    poollog = nameof(replyPool);
+                    break;
+            }
+
+            return (responsePool, poollog);
+        }
+
+        public static (List<TrashReply> possibleReplies, double matchRate) GetPossibleReplies(string message, List<TrashReply> responsePool)
+        {
+            var possibleReplies = new List<TrashReply>();
+
+            bool foundreply = false;
+            var wordcount = message.GetWordCount();
+            double wordcountmatch = wordcount;
+            double matchRate = 0.9;
+            do
+            {
+                if (wordcount > 4)
+                {
+                    matchRate -= 0.15;
+                }
+                else
+                {
+                    matchRate = wordcountmatch / wordcount;
+                }
+                foreach (var trashreply in responsePool)
+                {
+                    if (trashreply.Matchrate >= matchRate)
+                    {
+                        possibleReplies.Add(trashreply);
+                        foundreply = true;
+                    }
+                }
+                if (wordcountmatch <= 0)
+                {
+                    Logger.Log("**No chat results:** ".AddMarkDownLine() + message, LogType.NOREPLYFOUND);
+                    break;
+                }
+                wordcountmatch--;
+            } while (!foundreply);
+
+            return (possibleReplies, matchRate);
         }
     }
 

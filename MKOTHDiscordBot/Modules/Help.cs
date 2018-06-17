@@ -13,10 +13,7 @@ namespace MKOTHDiscordBot.Modules
     {
         private CommandService commands;
 
-        public Help(CommandService _commands)
-        {
-            commands = _commands;
-        }
+        public Help(CommandService _commands) => commands = _commands;
 
         [Command("Help")]
         [Alias("H", "Manual")]
@@ -130,10 +127,6 @@ namespace MKOTHDiscordBot.Modules
         [Command("Info")]
         [Alias("MkothHelp", "Mkoth Help", "Mkoth Info", "Information", "Mkoth Information", "MkothInfo")]
         [Summary("Redirect to MKOTH related helps, equivalent to `.help information` and `.help management`.")]
-        public async Task Info()
-        {
-            await HelpCommand("information");
-            await HelpCommand("management");
-        }
+        public async Task Info() => await Task.WhenAll(HelpCommand("information"), HelpCommand("management"));
     }
 }

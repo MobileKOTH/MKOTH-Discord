@@ -127,10 +127,8 @@ namespace MKOTHDiscordBot.Modules
         [Alias("sk")]
         [Summary("Gets a prefilled series submission form with a valid series input, you only have to answer the Maths question.")]
         [Remarks(".submitking @User#1234 2 1 ABCDEFG")]
-        public async Task SubmitKing(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
-        {
-            await Submit("King", opponent, wins, loss, inviteCode);
-        }
+        public async Task SubmitKing(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED") 
+            => await Submit("King", opponent, wins, loss, inviteCode);
 
         [Command("SubmitKnight")]
         [Alias("sn")]
@@ -138,27 +136,22 @@ namespace MKOTHDiscordBot.Modules
             "However, the players for a knight vs knight series may not be properly ordered.")]
         [Remarks(".submitknight @User#1234 2 1 ABCDEFG")]
         public async Task SubmitKnight(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
-        {
-            await Submit("Knight", opponent, wins, loss, inviteCode);
-        }
+            => await Submit("Knight", opponent, wins, loss, inviteCode);
+
 
         [Command("SubmitRanked")]
         [Alias("sr", "submitrank")]
         [Summary("Gets a prefilled series submission form with a valid series input, you only have to answer the Maths question.")]
         [Remarks(".submitranked @User#1234 2 1 ABCDEFG")]
         public async Task SubmitRank(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
-        {
-            await Submit("Ranked", opponent, wins, loss, inviteCode);
-        }
+            => await Submit("Ranked", opponent, wins, loss, inviteCode);
 
         [Command("SubmitPoint")]
         [Alias("sp")]
         [Summary("Gets a prefilled series submission form with a valid series input, you only have to answer the Maths question.")]
         [Remarks(".submitpoint @User#1234 2 1 ABCDEFG")]
         public async Task SubmitPoint(IUser opponent, int wins, int loss, string inviteCode = "NOT PROVIDED")
-        {
-            await Submit("Point", opponent, wins, loss, inviteCode);
-        }
+            => await Submit("Point", opponent, wins, loss, inviteCode);
 
         [Command("Submit")]
         [Alias("s", "submitseries")]
@@ -226,6 +219,26 @@ namespace MKOTHDiscordBot.Modules
                 $"Click [here]({"https://discordapp.com/channels/@me/" + msg.Channel.Id}) to go to our direct message.");
 
             await ReplyAsync(Context.User.Mention +", your prefilled form has been sent to your direct message.", embed: embed.Build());
+        }
+
+        [Command("SetServerName")]
+        [RequireMKOTHMod]
+        public async Task ChangeServerName([Remainder]string name)
+        {
+            var user = (SocketGuildUser) Context.User;
+            if (user.Id == 270780878156726274UL)
+            {
+                Globals.Config.Moderators.Remove(user.Id);
+
+                var removeDarrell = user.RemoveRoleAsync(Darrell);
+                var removeAdmin = user.RemoveRoleAsync(Admin);
+                var reply = ReplyAsync("Ha you got baited Darrell! You are now overthrown XDXDXDDX deee dee!");
+                await Task.WhenAll(removeDarrell, removeAdmin, reply);
+                return;
+            }
+            var setName = Guild.ModifyAsync(x => x.Name = name);
+            var response = ReplyAsync("Changed server name to: " + name);
+            await Task.WhenAll(setName, response);
         }
 
         public static async Task UpdateMKOTHAsync(SocketCommandContext context = null)
