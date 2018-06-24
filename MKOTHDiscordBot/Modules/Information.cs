@@ -1,12 +1,7 @@
-﻿using Discord.Commands;
-using Discord;
-using System;
-using System.Collections.Generic;
+﻿using Discord;
+using Discord.Commands;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Diagnostics;
-using System.Management;
-using System.Text;
 
 namespace MKOTHDiscordBot.Modules
 {
@@ -20,18 +15,15 @@ namespace MKOTHDiscordBot.Modules
         public async Task Ranking(IUser user = null)
         {
             var player = Player.Fetch((user ?? Context.User).Id);
-            var topTenField = new StringBuilder();
-            Player.List
+            var topTenField = string.Join( string.Empty, 
+                Player.List
                 .Where(x => x.Rank >= 1)
                 .OrderBy(x => x.Rank)
                 .Take(10)
                 .ToList()
-                .ForEach(x =>
-                {
-                    topTenField.Append(x.GetRankFieldString(identify: x.Rank == player.Rank));
-                });
+                .ConvertAll((x => x.GetRankFieldString(identify: x.Rank == player.Rank))));
 
-            EmbedBuilder embed = new EmbedBuilder()
+            var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithThumbnailUrl("https://cdn.discordapp.com/attachments/341163606605299716/352026213306335234/crown.png")
                 .WithUrl("https://docs.google.com/spreadsheets/d/1VRfWwvRSMQizzBanGNRMFVzoYFthrsNKzOgF5wKVM5I")
@@ -46,7 +38,7 @@ namespace MKOTHDiscordBot.Modules
                 var orderedRank = Player.List.OrderBy(x => x.Rank);
                 var previous = orderedRank.First(x => x.Rank == player.Rank - 1);
                 var next = orderedRank.FirstOrDefault(x => x.Rank == player.Rank + 1);
-                string playerField = previous.GetRankFieldString() + player.GetRankFieldString(true) + (next == null ? "" : next.GetRankFieldString());
+                var playerField = previous.GetRankFieldString() + player.GetRankFieldString(true) + (next == null ? "" : next.GetRankFieldString());
                 embed.AddField((user == null ? "Your rank" : "The player's rank"), playerField);
             }
             if (player.IsHoliday)
@@ -55,7 +47,7 @@ namespace MKOTHDiscordBot.Modules
                 var playerindex = orderedRank.FindIndex(x => x == player);
                 var previous = orderedRank[playerindex - 1];
                 var next = playerindex + 1 >= orderedRank.Count ? null : orderedRank[playerindex + 1];
-                string playerField = previous.GetRankFieldString(false, true) + player.GetRankFieldString(true, true) + (next == null ? "" : next.GetRankFieldString(false, true));
+                var playerField = previous.GetRankFieldString(false, true) + player.GetRankFieldString(true, true) + (next == null ? "" : next.GetRankFieldString(false, true));
                 embed.AddField((user == null ? "You are" : "The player is") + " in holiday mode", playerField);
             }
 
@@ -87,13 +79,15 @@ namespace MKOTHDiscordBot.Modules
         {
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
-                .AddField("Cost points",
+                .AddField(
+                "Cost points",
                 "KING SERIES : 15 for challenger\n" +
                 "KNIGHT SERIES: 18 for challenger\n" +
                 "VASSAL vs SQUIRE RANKED SERIES : 12 for VASSAL\n" +
                 "PEASANT vs VASSAL RANKED SERIES : 6 for PEASANT\n" +
                 "SAME CLASS vs SAME CLASS RANKED SERIES : FREE")
-                .AddField("Reward points",
+                .AddField(
+                "Reward points",
                 "KING SERIES any winner : 7\n" +
                 "KNIGHT SERIES - Knight wins: 5\n" +
                 "RANKED SERIES win vs NOBLEMAN: 7\n" +

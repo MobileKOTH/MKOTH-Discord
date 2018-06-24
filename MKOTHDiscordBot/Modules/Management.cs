@@ -38,11 +38,11 @@ namespace MKOTHDiscordBot.Modules
             }
             if (!Context.IsPrivate)
             {
-                await ReplyAsync(Context.User.Mention + ", your code will now be sent to your direct message.");
+                await ReplyAsync(Context.User.Mention + ", your submission ID will now be sent to your direct message.");
             }
             if (code != 0)
             {
-                await Context.User.SendMessageAsync("Your Identification for submission form is below. Please keep the code secret.");
+                await Context.User.SendMessageAsync("Your identification for submission form is below. Please keep the code secret.");
                 await Context.User.SendMessageAsync(code.ToString());
                 Logger.Log("Sent code to " + Context.User.Username.AddTab().AddMarkDownLine() + $"Discord Id: {Context.User.Id}".AddMarkDownLine() + code.ToString(), LogType.DIRECTMESSAGE);
             }
@@ -75,16 +75,9 @@ namespace MKOTHDiscordBot.Modules
                 var activemissinglist = playerlist.Where(x => !x.IsHoliday).ToList();
                 var holidaymissinglist = playerlist.Where(x => x.IsHoliday).ToList();
 
-                string activemisinglistfield = "";
-                string holidaymisinglistfield = "";
-                foreach (var item in activemissinglist)
-                {
-                    activemisinglistfield += $"{item.Class}: {item.Name}\n";
-                }
-                foreach (var item in holidaymissinglist)
-                {
-                    holidaymisinglistfield += $"{item.Class}: {item.Name}\n";
-                }
+                string activemisinglistfield = string.Join("", activemissinglist.ConvertAll(x => $"{x.Class}: {x.Name}\n"));
+                string holidaymisinglistfield = string.Join("", holidaymissinglist.ConvertAll(x => $"{x.Class}: {x.Name}\n")); ;
+
                 embed.Title = "Missing MKOTH Members from MKOTH Discord Server";
                 embed.Description = "MKOTH Members who are not in the discord server but still remain active or in holiday in the MKOTH Ranking.";
                 embed.AddField(activemissinglist.Count + " Active Members", $"```{activemisinglistfield}```");
