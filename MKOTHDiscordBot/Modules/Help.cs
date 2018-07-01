@@ -127,6 +127,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("Info")]
         [Alias("MkothHelp", "Mkoth Help", "Mkoth Info", "Information", "Mkoth Information", "MkothInfo")]
         [Summary("Redirect to MKOTH related helps, equivalent to `.help information` and `.help management`.")]
-        public async Task Info() => await Task.WhenAll(HelpCommand("information"), HelpCommand("management"));
+        public async Task Info() 
+            => await Task.WhenAll(HelpCommand("information"), HelpCommand("management"));
     }
 }

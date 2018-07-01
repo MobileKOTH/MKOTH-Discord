@@ -51,8 +51,7 @@ namespace MKOTHDiscordBot.Modules
                 string.Format("```Free RAM: {0:N2} / {1:N2} GB\nCPU Load: {2}%```", freeRAMGB, ramSizeGB, cpuUsagePercent)));
 
             Embed buildEmbed(string ramUsage = "```Loading...```", string systemInfo = "```Loading...```")
-            {
-                return new EmbedBuilder()
+                => new EmbedBuilder()
                 .WithTitle("System Information")
                 .WithDescription("[__**Official MKOTH Website**__](https://MobileKOTH.github.io)\n\nOfficial MKOTH Management Bot. In early development and testing phase.")
                 .WithUrl("https://github.com/MobileKOTH")
@@ -92,7 +91,6 @@ namespace MKOTHDiscordBot.Modules
                 .WithCurrentTimestamp()
                 .WithColor(Color.Orange)
                 .Build();
-            }
         }
 
         [Command("Ping")]

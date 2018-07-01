@@ -40,17 +40,19 @@ namespace MKOTHDiscordBot.Modules
             }
 
             List<string> historyClone;
+            List<string> historyClone2;
             lock (Chat.History)
             {
                 historyClone = new List<string>(Chat.History);
+                historyClone2 = new List<string>(Chat.History);
             }
             for (int i = 0; i < possiblereplies.Take(25).Count(); i++)
             {
                 int index = historyClone.IndexOf(possiblereplies[i].Message);
-                string trigger = historyClone[index - 1];
-                string rephrase = historyClone[index];
-                string response = historyClone[index + 1];
                 historyClone[index] = null;
+                string trigger = historyClone2[index - 1];
+                string rephrase = historyClone2[index];
+                string response = historyClone2[index + 1];
                 trigger = trigger.SliceBack(100);
                 rephrase = rephrase.SliceBack(100);
                 response = response.SliceBack(100);

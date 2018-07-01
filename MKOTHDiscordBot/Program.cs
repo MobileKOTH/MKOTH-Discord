@@ -42,7 +42,10 @@ namespace MKOTHDiscordBot
             Globals.SaveConfig();
 #else
             Console.WriteLine("Release Build");
+
+            
 #endif
+
             _client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Debug,
@@ -281,6 +284,10 @@ namespace MKOTHDiscordBot
                         .Single(x => x.Parameters.Count == 1)
                         .ExecuteAsync(context, new object[1] { "." + _commands.Search(context, argPos).Commands.First().Command.Name }, null, _services);
                 }
+            }
+            else if(result.Error == CommandError.Unsuccessful || result.Error == CommandError.Exception)
+            {
+                await context.Channel.SendMessageAsync(result.ErrorReason);
             }
             else if (result.Error == CommandError.UnknownCommand)
             {// Chat reply.

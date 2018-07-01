@@ -89,11 +89,6 @@ namespace MKOTHDiscordBot
         }
 
         public async Task UpdateMessage(Embed embed)
-        {
-            await Message.ModifyAsync(x =>
-            {
-                x.Embed = embed;
-            });
-        }
+            => await Message.ModifyAsync(x => x.Embed = embed);
     }
 }

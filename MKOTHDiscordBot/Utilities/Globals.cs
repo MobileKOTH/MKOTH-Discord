@@ -66,38 +66,38 @@ namespace MKOTHDiscordBot
 
         public static class MKOTHGuild
         {
-            public static SocketGuild Guild { get => Client.GetGuild(271109067261476866UL); }
+            public static SocketGuild Guild => Client.GetGuild(271109067261476866UL);
 
-            public static SocketTextChannel Official { get => Guild.TextChannels.Single(x => x.Id.Equals(347258242277310465UL)); }
-            public static SocketTextChannel Casual { get => Guild.TextChannels.Single(x => x.Id.Equals(347166773642133515UL)); }
-            public static SocketTextChannel Suggestions { get => Guild.TextChannels.Single(x => x.Id.Equals(347272877134839810UL)); }
-            public static SocketTextChannel PlayerID { get => Guild.TextChannels.Single(x => x.Id.Equals(357201006301282309UL)); }
-            public static SocketTextChannel ModLog { get => Guild.TextChannels.Single(x => x.Id.Equals(349960496591667202UL)); }
-            public static SocketTextChannel Leave { get => Guild.TextChannels.Single(x => x.Id.Equals(347273557061009409UL)); }
+            public static SocketTextChannel Official => Guild.TextChannels.Single(x => x.Id.Equals(347258242277310465UL));
+            public static SocketTextChannel Casual => Guild.TextChannels.Single(x => x.Id.Equals(347166773642133515UL));
+            public static SocketTextChannel Suggestions => Guild.TextChannels.Single(x => x.Id.Equals(347272877134839810UL));
+            public static SocketTextChannel PlayerID => Guild.TextChannels.Single(x => x.Id.Equals(357201006301282309UL));
+            public static SocketTextChannel ModLog => Guild.TextChannels.Single(x => x.Id.Equals(349960496591667202UL));
+            public static SocketTextChannel Leave => Guild.TextChannels.Single(x => x.Id.Equals(347273557061009409UL));
 
-            public static SocketRole ChatMods { get => Guild.Roles.Single(x => x.Name.Contains("Chat Mods")); }
-            public static SocketRole VIP { get => Guild.Roles.Single(x => x.Name.Contains("Peers of the Realm")); }
-            public static SocketRole Stupid { get => Guild.Roles.Single(x => x.Name.Contains("I am stupid")); }
-            public static SocketRole Member { get => Guild.Roles.Single(x => x.Name.Contains("MKOTH Members")); }
-            public static SocketRole Peasant { get => Guild.Roles.Single(x => x.Name.Contains("MKOTH Peasants")); }
-            public static SocketRole Vassal { get => Guild.Roles.Single(x => x.Name.Contains("MKOTH Vassals")); }
-            public static SocketRole Squire { get => Guild.Roles.Single(x => x.Name.Contains("MKOTH Squires")); }
-            public static SocketRole Noble { get => Guild.Roles.Single(x => x.Name.Contains("MKOTH Nobles")); }
-            public static SocketRole King { get => Guild.Roles.Single(x => x.Name.Contains("MKOTH King")); }
-            public static SocketRole Knight { get => Guild.Roles.Single(x => x.Name.Contains("MKOTH Knights")); }
-            public static SocketRole Pending { get => Guild.Roles.Single(x => x.Name.Contains("Pending")); }
-            public static SocketRole Darrell { get => Guild.Roles.Single(x => x.Name.Contains("Darrell :)")); }
-            public static SocketRole Admin { get => Guild.Roles.Single(x => x.Name.Contains("Admin")); }
+            public static SocketRole ChatMods => Guild.Roles.Single(x => x.Name.Contains("Chat Mods"));
+            public static SocketRole VIP => Guild.Roles.Single(x => x.Name.Contains("Peers of the Realm"));
+            public static SocketRole Stupid => Guild.Roles.Single(x => x.Name.Contains("I am stupid"));
+            public static SocketRole Member => Guild.Roles.Single(x => x.Name.Contains("MKOTH Members"));
+            public static SocketRole Peasant => Guild.Roles.Single(x => x.Name.Contains("MKOTH Peasants"));
+            public static SocketRole Vassal => Guild.Roles.Single(x => x.Name.Contains("MKOTH Vassals"));
+            public static SocketRole Squire => Guild.Roles.Single(x => x.Name.Contains("MKOTH Squires"));
+            public static SocketRole Noble => Guild.Roles.Single(x => x.Name.Contains("MKOTH Nobles"));
+            public static SocketRole King => Guild.Roles.Single(x => x.Name.Contains("MKOTH King"));
+            public static SocketRole Knight => Guild.Roles.Single(x => x.Name.Contains("MKOTH Knights"));
+            public static SocketRole Pending => Guild.Roles.Single(x => x.Name.Contains("Pending"));
+            public static SocketRole Darrell => Guild.Roles.Single(x => x.Name.Contains("Darrell :)"));
+            public static SocketRole Admin => Guild.Roles.Single(x => x.Name.Contains("Admin"));
 
-            public static Emote UpArrowEmote { get => Guild.Emotes.Single(x => x.Name == "uparrow"); }
-            public static Emote DownArrowEmote { get => Guild.Emotes.Single(x => x.Name == "downarrow"); }
+            public static Emote UpArrowEmote => Guild.Emotes.Single(x => x.Name == "uparrow");
+            public static Emote DownArrowEmote => Guild.Emotes.Single(x => x.Name == "downarrow");
         }
 
         public static class TestGuild
         {
-            public static SocketGuild Guild { get => Client.GetGuild(270838709287387136UL); }
+            public static SocketGuild Guild => Client.GetGuild(270838709287387136UL);
 
-            public static SocketTextChannel BotTest { get => Guild.TextChannels.Single(x => x.Id.Equals(360352712619065345UL)); }
+            public static SocketTextChannel BotTest => Guild.TextChannels.Single(x => x.Id.Equals(360352712619065345UL));
         }
 
         public static Task Load(ref DiscordSocketClient client)

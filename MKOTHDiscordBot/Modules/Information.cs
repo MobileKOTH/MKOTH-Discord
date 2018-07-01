@@ -15,8 +15,7 @@ namespace MKOTHDiscordBot.Modules
         public async Task Ranking(IUser user = null)
         {
             var player = Player.Fetch((user ?? Context.User).Id);
-            var topTenField = string.Join( string.Empty, 
-                Player.List
+            var topTenField = string.Join( string.Empty, Player.List
                 .Where(x => x.Rank >= 1)
                 .OrderBy(x => x.Rank)
                 .Take(10)
@@ -51,7 +50,7 @@ namespace MKOTHDiscordBot.Modules
                 embed.AddField((user == null ? "You are" : "The player is") + " in holiday mode", playerField);
             }
 
-            await ReplyAsync("", embed: embed.Build());
+            await ReplyAsync(string.Empty, embed: embed.Build());
         }
 
         [Command("SeriesForm")]
@@ -119,6 +118,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("Invite")]
         [Alias("InviteLink")]
         [Summary("Gets the Discord invite link to this server.")]
-        public async Task Invite() => await ReplyAsync("https://discord.me/MKOTH");
+        public async Task Invite() 
+            => await ReplyAsync("https://discord.me/MKOTH");
     }
 }
