@@ -30,10 +30,13 @@ namespace MKOTHDiscordBot.Modules
                 "Most commands will also come with alias(abbreviation) to ease typing, e.g `.h` is the same for `.help`. " +
                 "Alias for a command can be found in the command details of it.");
 
-            commands.Modules.OrderBy(x => x.Remarks ?? "Module Z").ToList().ForEach(x =>
-            {
-                embed.AddField(x.Name, x.Summary ?? "In Development".MarkdownCodeBlock());
-            });
+            commands.Modules
+                .OrderBy(x => x.Remarks ?? "Module Z")
+                .ToList()
+                .ForEach(x =>
+                {
+                    embed.AddField(x.Name, x.Summary ?? "In Development".MarkdownCodeBlock());
+                });
 
             await ReplyAsync(string.Empty, false, embed.Build());
         }
@@ -46,11 +49,15 @@ namespace MKOTHDiscordBot.Modules
             para = para.ToLower();
             var embed = new EmbedBuilder().WithColor(Color.Orange);
 
-            var module = commands.Modules.ToList().Find(x => x.Name.ToLower().StartsWith(para));
+            var module = commands.Modules
+                .ToList()
+                .Find(x => x.Name.ToLower().StartsWith(para));
             if (module != null)
             {
                 string commandList = "";
-                module.Commands.ToList().ForEach(x => commandList += $".{x.Name.AddSpace() + x.GetCommandParametersInfo()}\n");
+                module.Commands
+                    .ToList()
+                    .ForEach(x => commandList += $".{x.Name.AddSpace() + x.GetCommandParametersInfo()}\n");
                 embed.WithAuthor("📦 Module Information")
                     .WithTitle(module.Name)
                     .WithDescription(module.Summary ?? "In Development".MarkdownCodeBlock())
@@ -59,7 +66,9 @@ namespace MKOTHDiscordBot.Modules
             }
 
             para = para.StartsWith(".") ? para.TrimStart('.') : para;
-            var command = commands.Commands.ToList().FindAll(x => x.Name.ToLower() == para || x.Aliases.ToList().Find(y => y.ToLower() == para) != null);
+            var command = commands.Commands
+                .ToList()
+                .FindAll(x => x.Name.ToLower() == para || x.Aliases.ToList().Find(y => y.ToLower() == para) != null);
             if (command.Count > 0)
             {
                 command.Sort((a, b) =>
@@ -95,8 +104,12 @@ namespace MKOTHDiscordBot.Modules
                     embed.AddField("Alias", alias);
                 }
                 string restrictions = null;
-                baseCommand.Module.Preconditions.ToList().ForEach(x => restrictions += x.ToString().MarkdownCodeLine().AddLine());
-                baseCommand.Preconditions.ToList().ForEach(x => restrictions += x.ToString().MarkdownCodeLine().AddLine());
+                baseCommand.Module.Preconditions
+                    .ToList()
+                    .ForEach(x => restrictions += x.ToString().MarkdownCodeLine().AddLine());
+                baseCommand.Preconditions
+                    .ToList()
+                    .ForEach(x => restrictions += x.ToString().MarkdownCodeLine().AddLine());
                 if (restrictions != null)
                 {
                     embed.AddField("Restrictions", restrictions);

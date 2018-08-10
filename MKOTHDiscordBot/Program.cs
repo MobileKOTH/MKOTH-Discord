@@ -34,7 +34,9 @@ namespace MKOTHDiscordBot
             Console.WriteLine(RuntimeInformation.FrameworkDescription);
             Console.WriteLine(RuntimeInformation.ProcessArchitecture);
             Console.WriteLine(RuntimeInformation.OSDescription);
+
             Chat.LoadHistory();
+
 #if DEBUG
             Console.WriteLine("Debug Build");
             checkForTestMode();
@@ -42,8 +44,6 @@ namespace MKOTHDiscordBot
             Globals.SaveConfig();
 #else
             Console.WriteLine("Release Build");
-
-            
 #endif
 
             _client = new DiscordSocketClient(new DiscordSocketConfig

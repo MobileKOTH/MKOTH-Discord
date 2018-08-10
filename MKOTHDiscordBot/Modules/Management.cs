@@ -8,10 +8,12 @@ using Discord.Commands;
 using Discord.WebSocket;
 using MKOTHDiscordBot.Utilities;
 
+using HttpUtility = System.Web.HttpUtility;
+
+using static MKOTHDiscordBot.Globals.MKOTHGuild;
+
 namespace MKOTHDiscordBot.Modules
 {
-    using static Globals.MKOTHGuild;
-
     [Summary("Contains the utilities for MKOTH needs and management.")]
     [Remarks("Module C")]
     public class Management : ModuleBase<SocketCommandContext>
@@ -149,7 +151,8 @@ namespace MKOTHDiscordBot.Modules
         [Command("Submit")]
         [Alias("s", "submitseries")]
         [Summary("Gets a prefilled series submission form with a valid series input, you only have to answer the Maths question.")]
-        [Remarks(".submit king @User#1234 2 1 ABCDEFG\n" +
+        [Remarks(
+            ".submit king @User#1234 2 1 ABCDEFG\n" +
             ".submit knight @User#1234 2 1 ABCDEFG\n" +
             ".submit ranked @User#1234 2 1 ABCDEFG\n" +
             ".submit point @User#1234 2 1 ABCDEFG\n")]
@@ -184,7 +187,7 @@ namespace MKOTHDiscordBot.Modules
             var player2wins = winner == player1 ? loss : wins;
 
             string baseURL = "https://docs.google.com/forms/d/e/1FAIpQLSdGJnCOl0l5HjxuYexVV_sOKPR1iScq3eiSxGiqKULX3zG4-Q/viewform?usp=pp_url&";
-            var queryString = global::System.Web.HttpUtility.ParseQueryString(string.Empty);
+            var queryString = HttpUtility.ParseQueryString(string.Empty);
             queryString["entry.1407262204"] = seriesType;
             queryString["entry.920665948"] = player1.Name;
             queryString["entry.1277512719"] = player2.Name;
@@ -195,7 +198,7 @@ namespace MKOTHDiscordBot.Modules
             queryString["entry.164636590"] = inviteCode;
 
             string filledFormURLEncoded = baseURL + queryString.ToString();
-            var filledFormURLDecoded = Uri.EscapeUriString(global::System.Web.HttpUtility.UrlDecode(filledFormURLEncoded));
+            var filledFormURLDecoded = Uri.EscapeUriString(HttpUtility.UrlDecode(filledFormURLEncoded));
             Logger.Log($"Form sent to: {Context.User}\n \nfilledFormURLEncoded: {filledFormURLEncoded}\n\nfilledFormURLDecoded: {filledFormURLDecoded}\n", LogType.DIRECTMESSAGE);
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
