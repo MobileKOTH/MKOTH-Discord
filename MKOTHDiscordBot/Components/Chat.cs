@@ -125,7 +125,7 @@ namespace MKOTHDiscordBot
             var (possibleReplies, matchRate) = GetPossibleReplies(message, responsePool);
 
             Console.ForegroundColor = ConsoleColor.Yellow;
-            possibleReplies.Take(10).ToList().ForEach(x => Console.WriteLine(x));
+            possibleReplies.Take(10).ToList().ForEach(x => Logger.Debug(x, "Trash Replies"));
             Console.ResetColor();
 
             if (possibleReplies.Count() == 0)

@@ -163,26 +163,37 @@ namespace MKOTHDiscordBot
                     {
                         if (bans.ToList().Exists(x => x.User.Id == user.Id))
                         {
-                            var response = Responder.SendToChannel(Globals.MKOTHGuild.Leave,
-                                $"{user.Mention} {user.GetDisplayName()}#{user.DiscriminatorValue}, a MKOTH Member has left and **banned** from the server.");
+                            SendLeaveMessage("a MKOTH Member has left and **banned** from the server.");
                         }
                         else
                         {
-                            var response = Responder.SendToChannel(Globals.MKOTHGuild.Leave,
-                                $"{user.Mention} {user.GetDisplayName()}#{user.DiscriminatorValue}, a MKOTH Member has left from the server.");
-                            var dm = user.SendMessageAsync("You left the MKOTH Server, note that you are still part of the community unless you are officially removed. " +
+                            SendLeaveMessage("a MKOTH Member has left from the server.");
+                            _ = user.SendMessageAsync("You left the MKOTH Server, note that you are still part of the community unless you are officially removed. " +
                                 "You are welcomed join back anytime using the link below:\n\n" + inviteLink);
                         }
                     }
                     else
                     {
-                        var response = Responder.SendToChannel(Globals.MKOTHGuild.Leave,
-                                $"{user.Mention} {user.GetDisplayName()}#{user.DiscriminatorValue}, a public user has left from the server.");
-                        if (!bans.ToList().Exists(x => x.User.Id == user.Id))
+                        if (bans.ToList().Exists(x => x.User.Id == user.Id))
                         {
-                            var dm = user.SendMessageAsync("Thank you for your interests in MKOTH, if you are keen to join back in the future, use the invite link below:\n\n" + 
+                            SendLeaveMessage("a public user has left and **banned** from the server.");
+                        }
+                        else
+                        {
+                            SendLeaveMessage("a public user has left from the server.");
+                            _ = user.SendMessageAsync("Thank you for your interests in MKOTH, if you are keen to join back in the future, use the invite link below:\n\n" +
                                 inviteLink);
                         }
+                    }
+
+                    void SendLeaveMessage(string message)
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithColor(Color.Orange)
+                            .WithAuthor($"{user.GetDisplayName()}#{user.DiscriminatorValue}", user.GetAvatarUrl())
+                            .WithDescription($"{user.Mention}, {message}");
+
+                        _ = Responder.SendToChannel(Globals.MKOTHGuild.Leave, string.Empty, embed.Build());
                     }
                 }
                 catch (Exception e)
@@ -233,21 +244,21 @@ namespace MKOTHDiscordBot
             // Chat handling in DM.
             if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
-                if (await SpamWatch.Watch(context)) return;
-                Task.Run(async () => await Chat.ReplyAsync(context, message.Content)).Start();
+                if (SpamWatch.Watch(message.Author.Id, () => _ = Responder.SendToContext(context, "You are now rate limited"))) return;
+                _ = Chat.ReplyAsync(context, message.Content);
                 return;
             }
             else if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
-                if (await SpamWatch.Watch(context)) return;
-                Task.Run(async () => await Chat.ReplyAsync(context, message.Content.Remove(0, argPos))).Start();
+                if (SpamWatch.Watch(message.Author.Id, () => _ = Responder.SendToContext(context, "You are now rate limited"))) return;
+                _ = Chat.ReplyAsync(context, message.Content.Remove(0, argPos));
                 return;
             }
 
             if (!message.Author.IsBot && !message.HasMentionPrefix(_client.CurrentUser, ref argPos)) new Chat(context);
 
             if (!(message.HasCharPrefix('.', ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))) return;
-            if (await SpamWatch.Watch(context)) return;
+            if (SpamWatch.Watch(message.Author.Id, () => _ = Responder.SendToContext(context, "You are now rate limited"))) return;
             // Command handling.
             var result = await _commands.ExecuteAsync(context, argPos, _services);
             if (context.IsPrivate && message.Author.Id != Globals.BotOwner.Id)
@@ -293,7 +304,7 @@ namespace MKOTHDiscordBot
             {// Chat reply.
                 if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) && !context.IsPrivate)
                 {
-                    Task.Run(async () => await Chat.ReplyAsync(context, message.Content.Remove(0, argPos))).Start();
+                    _ = Chat.ReplyAsync(context, message.Content.Remove(0, argPos));
                 }
             }
         }
