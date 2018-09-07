@@ -97,7 +97,7 @@ namespace MKOTHDiscordBot
                 {
                     ResponderErrors = 0;
                     await SendError(new Exception("The application has experienced too many errors and is attempting to auto restart"));
-                    Modules.System.RestartStatic();
+                    Modules.System.RestartStatic(Globals.TestGuild.BotTest.Id);
                 }
             }
             catch (Exception e)

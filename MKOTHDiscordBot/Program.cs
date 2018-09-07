@@ -18,17 +18,22 @@ namespace MKOTHDiscordBot
         public static bool ReplyToTestServer = true;
         public static bool TestMode = false;
         public static string FirstArgument = null;
+        public static string SecondArgument = null;
 
-        private DiscordSocketClient _client;
-        private CommandService _commands;
-        private IServiceProvider _services;
+        private DiscordSocketClient client;
+        private CommandService commands;
+        private IServiceProvider services;
 
-        public static void Main(string[] args) => new Program().MainAsync(args).GetAwaiter().GetResult();
+        public static void Main(string[] args) 
+            => new Program().MainAsync(args)
+            .GetAwaiter()
+            .GetResult();
 
         public async Task MainAsync(string[] args)
         {
             FirstArgument = args.FirstOrDefault();
-            Console.WriteLine(FirstArgument ?? "No Startup Arguments");
+            SecondArgument = args.Length > 1 ? args[1] : null;
+            Console.WriteLine(args.Length > 0 ? "Arguments: " + string.Join(", ", args) : "No start up arguments");
             Console.WriteLine(RuntimeInformation.FrameworkDescription);
             Console.WriteLine(RuntimeInformation.ProcessArchitecture);
             Console.WriteLine(RuntimeInformation.OSDescription);
@@ -44,22 +49,22 @@ namespace MKOTHDiscordBot
             Console.WriteLine("Release Build");
 #endif
 
-            _client = new DiscordSocketClient(new DiscordSocketConfig
+            client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Debug,
                 AlwaysDownloadUsers = true,
             });
-            _commands = new CommandService(new CommandServiceConfig
+            commands = new CommandService(new CommandServiceConfig
             {
                 LogLevel = LogSeverity.Debug
             });
-            _services = new ServiceCollection()
-                .AddSingleton(_client)
-                .AddSingleton(_commands)
+            services = new ServiceCollection()
+                .AddSingleton(client)
+                .AddSingleton(commands)
                 .BuildServiceProvider();
             await InitialiseAsync();
 
-            _client.Log += (msg) =>
+            client.Log += (msg) =>
             {
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine(msg.ToString());
@@ -67,7 +72,7 @@ namespace MKOTHDiscordBot
                 return Task.CompletedTask;
             };
 
-            _commands.Log += (msg) =>
+            commands.Log += (msg) =>
             {
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine(msg.ToString());
@@ -75,8 +80,8 @@ namespace MKOTHDiscordBot
                 return Task.CompletedTask;
             };
 
-            await _client.LoginAsync(TokenType.Bot, Globals.Config.Token);
-            await _client.StartAsync();
+            await client.LoginAsync(TokenType.Bot, Globals.Config.Token);
+            await client.StartAsync();
 
             await Task.Delay(-1);
 #if DEBUG
@@ -106,19 +111,19 @@ namespace MKOTHDiscordBot
         public async Task InitialiseAsync()
         {
             // Discord client events.
-            _client.MessageReceived += HandleMessageAsync;
-            _client.ReactionAdded += Handlers.Reaction.Handle;
-            _client.ReactionRemoved += Handlers.Reaction.Handle;
-            _client.Ready += () => Globals.Load(ref _client);
-            _client.UserJoined += (user) => HandleChatSaveUpdateMKOTH(user);
-            _client.UserLeft += Handlers.Leaver.Handle;
-            _client.Disconnected += (e) => Task.Run(() => FirstArgument = e.Message + e.StackTrace.MarkdownCodeBlock("diff"));
+            client.MessageReceived += HandleMessageAsync;
+            client.ReactionAdded += Handlers.Reaction.Handle;
+            client.ReactionRemoved += Handlers.Reaction.Handle;
+            client.Ready += () => Globals.Load(ref client);
+            client.UserJoined += (user) => HandleChatSaveUpdateMKOTH(user);
+            client.UserLeft += Handlers.Leaver.Handle;
+            client.Disconnected += (e) => Task.Run(() => FirstArgument = e.Message + e.StackTrace.MarkdownCodeBlock("diff"));
 
             // Discover all of the commands in this assembly and load them.
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
+            await commands.AddModulesAsync(Assembly.GetEntryAssembly());
 
             Timer statustimer = new Timer();
-            statustimer.Elapsed += async(_, __) => { if (!TestMode) await Responder.ChangeStatus(_client); };
+            statustimer.Elapsed += async(_, __) => { if (!TestMode) await Responder.ChangeStatus(client); };
             statustimer.Interval = 15000;
             statustimer.Start();
 
@@ -153,11 +158,14 @@ namespace MKOTHDiscordBot
         {
             var message = messageParam as SocketUserMessage;
             // No handle to own or null message.
-            if (message.Author.Id == _client.CurrentUser.Id) return;
+            if (message.Author.Id == client.CurrentUser.Id) return;
             if (message == null) return;
 
-            var context = new SocketCommandContext(_client, message);
+            var context = new SocketCommandContext(client, message);
             int argPos = 0;
+
+            Action rateLimitMessage = () => _ = Responder.SendToContext(context, "You are now rate limited");
+            
             // Debug log non dm messages.
             if (!context.IsPrivate)
             {
@@ -183,25 +191,25 @@ namespace MKOTHDiscordBot
                 if (TestMode) return;
             }
             // Chat handling in DM.
-            if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(_client.CurrentUser, ref argPos))
+            if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(client.CurrentUser, ref argPos))
             {
-                if (SpamWatch.Watch(message.Author.Id, () => _ = Responder.SendToContext(context, "You are now rate limited"))) return;
+                if (SpamWatch.Watch(message.Author.Id, rateLimitMessage)) return;
                 _ = Chat.ReplyAsync(context, message.Content);
                 return;
             }
-            else if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && message.HasMentionPrefix(_client.CurrentUser, ref argPos))
+            else if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && message.HasMentionPrefix(client.CurrentUser, ref argPos))
             {
-                if (SpamWatch.Watch(message.Author.Id, () => _ = Responder.SendToContext(context, "You are now rate limited"))) return;
+                if (SpamWatch.Watch(message.Author.Id, rateLimitMessage)) return;
                 _ = Chat.ReplyAsync(context, message.Content.Remove(0, argPos));
                 return;
             }
 
-            if (!message.Author.IsBot && !message.HasMentionPrefix(_client.CurrentUser, ref argPos)) new Chat(context);
+            if (!message.Author.IsBot && !message.HasMentionPrefix(client.CurrentUser, ref argPos)) new Chat(context);
 
-            if (!(message.HasCharPrefix('.', ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))) return;
-            if (SpamWatch.Watch(message.Author.Id, () => _ = Responder.SendToContext(context, "You are now rate limited"))) return;
+            if (!(message.HasCharPrefix('.', ref argPos) || message.HasMentionPrefix(client.CurrentUser, ref argPos))) return;
+            if (SpamWatch.Watch(message.Author.Id, rateLimitMessage)) return;
             // Command handling.
-            var result = await _commands.ExecuteAsync(context, argPos, _services);
+            var result = await commands.ExecuteAsync(context, argPos, services);
             if (context.IsPrivate && message.Author.Id != Globals.BotOwner.Id)
             {
                 await Responder.SendToChannel(Globals.TestGuild.BotTest, "DM command received:", new EmbedBuilder()
@@ -213,7 +221,7 @@ namespace MKOTHDiscordBot
             {
                 if (result.Error == CommandError.BadArgCount || result.Error == CommandError.ParseFailed || result.Error == CommandError.ObjectNotFound)
                 {
-                    if (_commands.Search(context, argPos).Commands.Count(x => x.Command.Remarks != null) > 0 && result.Error == CommandError.ObjectNotFound)
+                    if (commands.Search(context, argPos).Commands.Count(x => x.Command.Remarks != null) > 0 && result.Error == CommandError.ObjectNotFound)
                     {
                         await context.Channel.SendMessageAsync("Execution failed, please refer to the command infomation.");
                         sendHelp();
@@ -229,12 +237,12 @@ namespace MKOTHDiscordBot
                 await context.Channel.SendMessageAsync(result.ErrorReason);
                 return;
 
-                async void sendHelp()
+                void sendHelp()
                 {
-                    await _commands.Commands
+                    commands.Commands
                         .Where(x => x.Name == "Help")
                         .Single(x => x.Parameters.Count == 1)
-                        .ExecuteAsync(context, new object[1] { "." + _commands.Search(context, argPos).Commands.First().Command.Name }, null, _services);
+                        .ExecuteAsync(context, new object[1] { "." + commands.Search(context, argPos).Commands.First().Command.Name }, null, services);
                 }
             }
             else if(result.Error == CommandError.Unsuccessful || result.Error == CommandError.Exception)
@@ -243,7 +251,7 @@ namespace MKOTHDiscordBot
             }
             else if (result.Error == CommandError.UnknownCommand)
             {// Chat reply.
-                if (message.HasMentionPrefix(_client.CurrentUser, ref argPos) && !context.IsPrivate)
+                if (message.HasMentionPrefix(client.CurrentUser, ref argPos) && !context.IsPrivate)
                 {
                     _ = Chat.ReplyAsync(context, message.Content.Remove(0, argPos));
                 }

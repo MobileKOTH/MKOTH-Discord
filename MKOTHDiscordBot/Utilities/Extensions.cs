@@ -10,75 +10,75 @@ namespace MKOTHDiscordBot
 {
     public static class Extensions
     {
-        #region Int -------------------------------------------------------------------------------
-        public static bool IsInRange(this int number, int lower, int upper)
+        #region IComparable -------------------------------------------------------------------------------
+        public static bool IsInRange(this IComparable number, IComparable lower, IComparable upper)
         {
-            return (number >= lower && number <= upper);
+            return (number.CompareTo(lower) >= 0 && number.CompareTo(upper) <= 0);
         }
 
-        public static bool IsInRangeOffset(this int number, int reference, int offset)
+        public static bool IsInRangeOffset(this IComparable number, IComparable reference, IComparable offset)
         {
-            return IsInRange(number, reference - offset, reference + offset);
+            return IsInRange(number, Convert.ToDecimal(reference) - Convert.ToDecimal(offset), Convert.ToDecimal(reference) + Convert.ToDecimal(offset));
         }
         #endregion
 
         #region String ----------------------------------------------------------------------------
-        public static string AddLine(this String str)
+        public static string AddLine(this string str)
         {
             str += Environment.NewLine;
             return str;
         }
 
-        public static string AddMarkDownLine(this String str)
+        public static string AddMarkDownLine(this string str)
         {
             str += "  ".AddLine();
             return str;
         }
 
-        public static string AddTab(this String str)
+        public static string AddTab(this string str)
         {
             str += "\t";
             return str;
         }
 
-        public static string AddSpace(this String str)
+        public static string AddSpace(this string str)
         {
             str += " ";
             return str;
         }
 
-        public static string SliceBack(this String str, int limit, string leftOverCover = "...")
+        public static string SliceBack(this string str, int limit, string leftOverCover = "...")
         {
             str = str.Length > limit ? str.Substring(0, limit - leftOverCover.Length) + leftOverCover : str;
             return str;
         }
 
-        public static string SliceFront(this String str, int limit, string leftOverCover = "...")
+        public static string SliceFront(this string str, int limit, string leftOverCover = "...")
         {
             str = limit >= str.Length ? str : leftOverCover + str.Substring(str.Length - limit - leftOverCover.Length);
             return str;
         }
 
-        public static string MarkdownCodeBlock(this String str, string lang = null)
-        {
-            return $"```{(lang == null ? "" : lang + "\n")}{str}\n```";
-        }
+        public static string MarkdownCodeBlock(this string str, string lang = null)
+            => Format.Code(str, lang ?? "");
 
-        public static string MarkdownCodeLine(this String str)
-        {
-            return $"`{str}`";
-        }
+        public static string MarkdownCodeLine(this string str)
+            => Format.Code(str);
 
-        public static int GetWordCount(this String str)
+        public static string WrapAround(this string str, string start, string end)
+            => $"{start}{str}{end}";
+
+        public static int GetWordCount(this string str)
         {
             return str.Split(' ').Length;
         }
         #endregion
 
         #region IEnumberable ----------------------------------------------------------------------
-        public static T SelectRandom<T>(this IEnumerable<T> collection)
+        static Random Random = new Random();
+        public static T SelectRandom<T>(this IEnumerable<T> collection, Random rng = null)
         {
-            return collection.ElementAt(((int)((new Random().NextDouble() * collection.Count()))));
+            return collection.ElementAt(((int)(((rng ?? Random).NextDouble() * collection.Count()))));
         }
 
         public static List<List<T>> Split<T>(this List<T> list, int splitCount)
@@ -94,34 +94,35 @@ namespace MKOTHDiscordBot
         #endregion
 
         #region TimeSpan --------------------------------------------------------------------------
-        public static string AsRoundedDuration(this TimeSpan timespan)
-        {
-            return timespan.TotalDays >= 370 * 2 ? (int)timespan.TotalDays / 365+ " years" :
-                timespan.TotalDays > 60 ? (int)timespan.TotalDays / 30 + " months" :
-                timespan.TotalHours >= 48 ? (int)timespan.TotalHours / 24 + " days" :
-                timespan.TotalMinutes >= 120 ? (int)timespan.TotalMinutes / 60 + " hours" :
-                timespan.TotalSeconds >= 120 ? (int)timespan.TotalSeconds / 60 + " minutes" :
-                (int)timespan.TotalSeconds + " seconds";
-        }
+        public static string AsRoundedDuration(this TimeSpan timespan) 
+            => timespan.GetRoundedYears() >= 2 ? timespan.GetRoundedYears() + " years " + timespan.Subtract(new TimeSpan(timespan.GetRoundedYears() * 365, 0, 0, 0)).AsRoundedDuration() :
+            timespan.GetRoundedMonths() > 2 ? timespan.GetRoundedMonths() + " months " + timespan.Subtract(new TimeSpan(timespan.GetRoundedMonths() * 30, 0, 0, 0)).AsRoundedDuration() :
+            timespan.TotalHours >= 48 ? (int)timespan.TotalHours / 24 + " days" :
+            timespan.TotalMinutes >= 120 ? (int)timespan.TotalMinutes / 60 + " hours" :
+            timespan.TotalSeconds >= 120 ? (int)timespan.TotalSeconds / 60 + " minutes" :
+            (int)timespan.TotalSeconds + " seconds";
+
+        public static int GetRoundedYears(this TimeSpan timeSpan)
+            => (int)timeSpan.GetTotalYears();
+
+        public static double GetTotalYears(this TimeSpan timeSpan)
+            => timeSpan.TotalDays / 365;
+
+        public static int GetRoundedMonths(this TimeSpan timeSpan)
+            => (int)timeSpan.GetTotalMonths();
+
+        public static double GetTotalMonths(this TimeSpan timeSpan)
+            => timeSpan.TotalDays / 30;
         #endregion
 
         #region IGuildUser ------------------------------------------------------------------------
         public static string GetDisplayName(this IGuildUser user)
-        {
-            return user.Nickname ?? user.Username;
-        }
+            => user.Nickname ?? user.Username;
         #endregion
 
         #region CommandInfo -----------------------------------------------------------------------
         public static string GetCommandParametersInfo(this CommandInfo command)
-        {
-            string info = "";
-            command.Parameters.ToList().ForEach(x =>
-            {
-                info += $"<{x.Name}> ";
-            });
-            return info;
-        }
+            => string.Join(" ", command.Parameters.Select(x => x.Name.WrapAround("<", ">")));
         #endregion
     }
 }

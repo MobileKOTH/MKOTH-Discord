@@ -100,8 +100,9 @@ namespace MKOTHDiscordBot.Modules
             var msg = await ReplyAsync("`loading...`");
             await msg.ModifyAsync(x =>
             {
-                x.Content = "`Bot delay: " + (msg.Timestamp - Context.Message.Timestamp).TotalMilliseconds + " ms`\n" +
+                x.Content = Format.Code("Bot delay: " + (msg.Timestamp - Context.Message.Timestamp).TotalMilliseconds + " ms").AddLine() +
                 "`Bot client latency: " + Context.Client.Latency + " ms`\n";
+
                 var embed = new EmbedBuilder()
                 .WithDescription("Pong!")
                 .WithColor(Color.Orange);
@@ -121,12 +122,8 @@ namespace MKOTHDiscordBot.Modules
             var blocks = File.ReadAllText(Globals.Directories.GeneralLogsFile).Split(new string[1] { "\r\n\r\n" }, StringSplitOptions.None)
                 .Reverse()
                 .Take(20);
-            string output = "";
-            foreach (var item in blocks)
-            {
-                output += item + "\n\n";
-            }
-            output = output.SliceBack(1900);
+            var output = string.Join("\n\n", blocks)
+                .SliceBack(1900);
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithTitle("System Logs")
@@ -153,7 +150,7 @@ namespace MKOTHDiscordBot.Modules
         public async Task Restart()
         {
             await ReplyAsync("Restarting...");
-            var restartTAsk = Task.Run(() => RestartStatic());
+            _ = Task.Run(() => RestartStatic(Context.Channel.Id));
         }
 
         [Command("ShutDown")]
@@ -162,15 +159,15 @@ namespace MKOTHDiscordBot.Modules
         public async Task ShutDown()
         {
             await ReplyAsync("Shutting Down...");
-            var shutdownTAsk = Task.Run(() => ShutDownStatic());
+            _ = Task.Run(() => ShutDownStatic());
         }
 
-        public static void RestartStatic()
+        public static void RestartStatic(ulong responseChannelId)
         {
             Globals.Client.LogoutAsync().GetAwaiter().GetResult();
             Globals.Client.StopAsync().GetAwaiter().GetResult();
             Chat.SaveHistory();
-            Process.Start(Assembly.GetExecutingAssembly().Location, "Restarted");
+            Process.Start(Assembly.GetExecutingAssembly().Location, $"Restarted {responseChannelId}");
             Environment.Exit(0);
         }
 

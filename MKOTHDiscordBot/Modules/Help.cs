@@ -13,7 +13,8 @@ namespace MKOTHDiscordBot.Modules
     {
         private CommandService commands;
 
-        public Help(CommandService _commands) => commands = _commands;
+        public Help(CommandService commands) 
+            => this.commands = commands;
 
         [Command("Help")]
         [Alias("H", "Manual")]
@@ -67,8 +68,8 @@ namespace MKOTHDiscordBot.Modules
 
             para = para.StartsWith(".") ? para.TrimStart('.') : para;
             var command = commands.Commands
-                .ToList()
-                .FindAll(x => x.Name.ToLower() == para || x.Aliases.ToList().Find(y => y.ToLower() == para) != null);
+                .Where(x => x.Name.ToLower() == para || x.Aliases.Any(y => y.ToLower() == para))
+                .ToList();
             if (command.Count > 0)
             {
                 command.Sort((a, b) =>
@@ -96,12 +97,8 @@ namespace MKOTHDiscordBot.Modules
                     .WithDescription(commandDescription);
                 if (baseCommand.Aliases.Count > 0)
                 {
-                    string alias = "";
-                    baseCommand.Aliases.ToList().ForEach(x =>
-                    {
-                        alias += $"{("." + x).MarkdownCodeLine()}\t";
-                    });
-                    embed.AddField("Alias", alias);
+                    var alias = baseCommand.Aliases.Select(x => $"{("." + x).MarkdownCodeLine()}\t");
+                    embed.AddField("Alias", string.Join(" ", alias));
                 }
                 string restrictions = null;
                 baseCommand.Module.Preconditions
@@ -115,9 +112,8 @@ namespace MKOTHDiscordBot.Modules
                     embed.AddField("Restrictions", restrictions);
                 }
 
-                string usage = "";
-                command.ForEach(x => usage += $".{x.Name.AddSpace() + x.GetCommandParametersInfo()}\n");
-                embed.AddField("Usage", usage.MarkdownCodeBlock("css"));
+                var usages = command.Select(x => $".{x.Name.AddSpace() + x.GetCommandParametersInfo()}");
+                embed.AddField("Usage", string.Join("\n", usages).MarkdownCodeBlock("css"));
 
                 string example = "";
                 command.ForEach(x => example += x.Remarks != null ? x.Remarks.AddLine() : "");

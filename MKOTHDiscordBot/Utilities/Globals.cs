@@ -122,7 +122,15 @@ namespace MKOTHDiscordBot
 
                 if (Program.FirstArgument == "Restarted")
                 {
-                    TestGuild.BotTest.SendMessageAsync("The Bot has restarted");
+                    var restartChannel = Client.GetChannel(ulong.Parse(Program.SecondArgument));
+                    if (restartChannel != null)
+                    {
+                        ((SocketTextChannel)restartChannel).SendMessageAsync("Bot has restarted");
+                    }
+                    else
+                    {
+                        TestGuild.BotTest.SendMessageAsync("Bot has restarted");
+                    }
                 }
                 else if (Program.FirstArgument != null)
                 {
