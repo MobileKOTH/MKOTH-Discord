@@ -17,7 +17,7 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Help")]
         [Alias("H", "Manual")]
-        [Summary("Displays the help information.")]
+        [Summary("Displays the general help information.")]
         public async Task HelpCommand()
         {
             var embed = new EmbedBuilder()
@@ -139,7 +139,7 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Info")]
         [Alias("MkothHelp", "Mkoth Help", "Mkoth Info", "Information", "Mkoth Information", "MkothInfo")]
-        [Summary("Redirect to MKOTH related helps, equivalent to `.help information` and `.help management`.")]
+        [Summary("Redirect to common MKOTH related helps, equivalent to as `.help information` and `.help management` together.")]
         public async Task Info() 
             => await Task.WhenAll(HelpCommand("information"), HelpCommand("management"));
     }

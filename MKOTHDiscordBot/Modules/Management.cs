@@ -1,12 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
-using MKOTHDiscordBot.Utilities;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 using HttpUtility = System.Web.HttpUtility;
 
@@ -64,27 +60,21 @@ namespace MKOTHDiscordBot.Modules
             {
                 EmbedBuilder embed = new EmbedBuilder();
                 IUserMessage msg;
-                var playerlist = Player.List.Where(x => !x.IsRemoved).ToList();
-                foreach (var user in Guild.Users)
-                {
-                    var index = playerlist.FindIndex(x => x.DiscordId == user.Id);
-                    if (index > -1)
-                    {
-                        playerlist.RemoveAt(index);
-                    }
-                }
+                var playerlist = Player.List
+                    .Where(x => !x.IsRemoved)
+                    .Where(x => Guild.Users.Any(y => y.Id == x.DiscordId));
 
-                var activemissinglist = playerlist.Where(x => !x.IsHoliday).ToList();
-                var holidaymissinglist = playerlist.Where(x => x.IsHoliday).ToList();
+                var activemissinglist = playerlist.Where(x => !x.IsHoliday);
+                var holidaymissinglist = playerlist.Where(x => x.IsHoliday);
 
-                string activemisinglistfield = string.Join("", activemissinglist.ConvertAll(x => $"{x.Class}: {x.Name}\n"));
-                string holidaymisinglistfield = string.Join("", holidaymissinglist.ConvertAll(x => $"{x.Class}: {x.Name}\n")); ;
+                string activemisinglistfield = string.Join("", activemissinglist.Select(x => $"{x.Class}: {x.Name}\n")).SliceBack(1024);
+                string holidaymisinglistfield = string.Join("", holidaymissinglist.Select(x => $"{x.Class}: {x.Name}\n")).SliceBack(1024);
 
+                embed.Color = Color.Orange;
                 embed.Title = "Missing MKOTH Members from MKOTH Discord Server";
                 embed.Description = "MKOTH Members who are not in the discord server but still remain active or in holiday in the MKOTH Ranking.";
-                embed.AddField(activemissinglist.Count + " Active Members", $"```{activemisinglistfield}```");
-                embed.AddField(holidaymissinglist.Count + " Holiday Members", $"```{holidaymisinglistfield}```");
-                embed.Color = Color.Orange;
+                embed.AddField(activemissinglist.Count() + " Active Members", $"```{activemisinglistfield}```");
+                embed.AddField(holidaymissinglist.Count() + " Holiday Members", $"```{holidaymisinglistfield}```");
 
                 msg = await ReplyAsync(string.Empty, embed: embed.Build());
             }

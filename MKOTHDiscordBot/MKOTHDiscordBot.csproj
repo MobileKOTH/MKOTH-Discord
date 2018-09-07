@@ -132,8 +132,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Components\Chat.cs" />
+    <Compile Include="Components\InteractiveReaction\IInteractiveReaction.cs" />
+    <Compile Include="Components\InteractiveReaction\InteractiveReactionBase.cs" />
     <Compile Include="Components\Player.cs" />
     <Compile Include="Components\Vote.cs" />
+    <Compile Include="Handlers\Leaver.cs" />
+    <Compile Include="Handlers\Reaction.cs" />
     <Compile Include="Modules\System.cs" />
     <Compile Include="Modules\TrashTalk.cs" />
     <Compile Include="Preconditions\RequireBotTestAttribute.cs" />
@@ -161,7 +165,11 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Components\Chat\" />
+    <Folder Include="Components\MKOTH\" />
+    <Folder Include="Components\Moderation\" />
+  </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.1">
       <Visible>False</Visible>

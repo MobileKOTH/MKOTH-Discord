@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections;
-using System.Linq;
-using System.Reflection;
-using System.Timers;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using MKOTHDiscordBot.Modules;
 using MKOTHDiscordBot.Utilities;
+using System;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using System.Timers;
 
 namespace MKOTHDiscordBot
 {
@@ -109,10 +107,11 @@ namespace MKOTHDiscordBot
         {
             // Discord client events.
             _client.MessageReceived += HandleMessageAsync;
-            _client.ReactionAdded += HandleReactionAsync;
+            _client.ReactionAdded += Handlers.Reaction.Handle;
+            _client.ReactionRemoved += Handlers.Reaction.Handle;
             _client.Ready += () => Globals.Load(ref _client);
             _client.UserJoined += (user) => HandleChatSaveUpdateMKOTH(user);
-            _client.UserLeft += (user) => HandleLeaver(user);
+            _client.UserLeft += Handlers.Leaver.Handle;
             _client.Disconnected += (e) => Task.Run(() => FirstArgument = e.Message + e.StackTrace.MarkdownCodeBlock("diff"));
 
             // Discover all of the commands in this assembly and load them.
@@ -148,65 +147,7 @@ namespace MKOTHDiscordBot
                 }
                 return Task.CompletedTask;
             }
-
-            Task HandleLeaver(SocketGuildUser user)
-            {
-                try
-                {
-                    if (user.Guild.Id != Globals.MKOTHGuild.Guild.Id)
-                    {
-                        return Task.CompletedTask;
-                    }
-                    var inviteLink = "https://discord.me/MKOTH";
-                    var bans = Globals.MKOTHGuild.Guild.GetBansAsync().Result;
-                    if (Player.List.Exists(x => x.DiscordId == user.Id && !x.IsRemoved))
-                    {
-                        if (bans.ToList().Exists(x => x.User.Id == user.Id))
-                        {
-                            SendLeaveMessage("a MKOTH Member has left and **banned** from the server.");
-                        }
-                        else
-                        {
-                            SendLeaveMessage("a MKOTH Member has left from the server.");
-                            _ = user.SendMessageAsync("You left the MKOTH Server, note that you are still part of the community unless you are officially removed. " +
-                                "You are welcomed join back anytime using the link below:\n\n" + inviteLink);
-                        }
-                    }
-                    else
-                    {
-                        if (bans.ToList().Exists(x => x.User.Id == user.Id))
-                        {
-                            SendLeaveMessage("a public user has left and **banned** from the server.");
-                        }
-                        else
-                        {
-                            SendLeaveMessage("a public user has left from the server.");
-                            _ = user.SendMessageAsync("Thank you for your interests in MKOTH, if you are keen to join back in the future, use the invite link below:\n\n" +
-                                inviteLink);
-                        }
-                    }
-
-                    void SendLeaveMessage(string message)
-                    {
-                        var embed = new EmbedBuilder()
-                            .WithColor(Color.Orange)
-                            .WithAuthor($"{user.GetDisplayName()}#{user.DiscriminatorValue}", user.GetAvatarUrl())
-                            .WithDescription($"{user.Mention}, {message}");
-
-                        _ = Responder.SendToChannel(Globals.MKOTHGuild.Leave, string.Empty, embed.Build());
-                    }
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError(e);
-                }
-
-                return Task.CompletedTask;
-            }
         }
-
-        private async Task HandleReactionAsync (Cacheable<IUserMessage, ulong> cache, ISocketMessageChannel channel, SocketReaction reaction) 
-            => await Vote.HandleReaction(reaction);
 
         private async Task HandleMessageAsync(SocketMessage messageParam)
         {

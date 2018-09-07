@@ -21,7 +21,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireDeveloper]
         public async Task Mute(IGuildUser user, int muteTimeMinutes, [Remainder]string reason)
         {
-            var isMod = ChatMods.Members.Count(x => x.Id == Context.User.Id) > 0 ? true : false;
+            var isMod = ChatMods.Members.ToList().Any(x => x.Id == Context.User.Id);
             muteTimeMinutes = isMod ? muteTimeMinutes : 10;
 
             var vote = new Vote(
@@ -85,14 +85,14 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync("Ban limit reset.");
         }
 
-        private async Task BanAsync(IGuildUser user, string para, bool prune)
+        private Task BanAsync(IGuildUser user, string para, bool prune)
         {
             int daystoprune = prune ? 1 : 0;
 
             if (IsModImmuneUser(user))
             {
-                await ReplyAsync("Cannot ban a moderator, a bot or a VIP.");
-                return;
+                _ = ReplyAsync("Cannot ban a moderator, a bot or a VIP.");
+                return Task.CompletedTask;
             }
 
             if (user.RoleIds.Contains(Member.Id))
@@ -100,35 +100,32 @@ namespace MKOTHDiscordBot.Modules
                 if (banlimit > 0)
                 {
                     var inviteLink = "https://discord.me/MKOTH";
-                    await user.SendMessageAsync($"You are banned from the MKOTH Server by **{Context.User.Username}** for {para}. " +
+                    _ = user.SendMessageAsync($"You are banned from the MKOTH Server by **{Context.User.Username}** for {para}. " +
                         $"If your ban is lifted, join back using the invite link below:\n\n" + inviteLink);
                     banlimit--;
                     goto banProcedure;
                 }
                 else
                 {
-                    await ReplyAsync("Ban limit for MKOTH members has reached!");
-                    return;
+                    _ = ReplyAsync("Ban limit for MKOTH members has reached!");
+                    return Task.CompletedTask;
                 }
             }
 
             banProcedure:
-            await Context.Guild.AddBanAsync(user, daystoprune, para);
-            await SendModResponseAsync(user, para, "**banned**");
+            _ = Context.Guild.AddBanAsync(user, daystoprune, para);
+            _ = SendModResponseAsync(user, para, "**banned**");
 
-            return;
+            return Task.CompletedTask;
         }
 
         private bool IsModImmuneUser(IGuildUser user)
         {
-            if (user.IsBot || user.RoleIds.Intersect(new ulong[] { ChatMods.Id, VIP.Id}).Count() > 0)
-            {
-                return true;
-            }
-            return false;
+            var immunes = new ulong[] { ChatMods.Id, VIP.Id };
+            return user.IsBot || user.RoleIds.Any(x => immunes.Contains(x));
         }
 
-        private async Task SendModResponseAsync(IGuildUser user, string para, string type)
+        private Task SendModResponseAsync(IGuildUser user, string para, string type)
         {
             EmbedBuilder embed = new EmbedBuilder
             {
@@ -137,8 +134,9 @@ namespace MKOTHDiscordBot.Modules
                 Color = Color.Red
             };
             string text = $"User {type}: " + user.Mention.AddSpace() + user;
-            await ReplyAsync(text, embed: embed.Build());
-            await ((ITextChannel)ModLog).SendMessageAsync(text, embed: embed.Build());
+            _ = ReplyAsync(text, embed: embed.Build());
+            _ = ((ITextChannel)ModLog).SendMessageAsync(text, embed: embed.Build());
+            return Task.CompletedTask;
         }
     }
 }

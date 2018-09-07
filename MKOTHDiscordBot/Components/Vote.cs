@@ -23,6 +23,19 @@ namespace MKOTHDiscordBot
             Interval = 30000,
         };
 
+        public int ApprovalRate
+        {
+            get
+            {
+                int rate = 100 / (Supporters.Count + Opposers.Count + 1) * Supporters.Count;
+                if (rate.IsInRangeOffset(33, 5) || rate.IsInRangeOffset(66, 5))
+                {
+                    TimeLeft.Interval = 10000;
+                }
+                return rate;
+            }
+        }
+
         public Vote(SocketCommandContext context, string topic, string content)
         {
             Supporters.Add(context.User.Id);
@@ -48,23 +61,10 @@ namespace MKOTHDiscordBot
             Votes.Add(this);
         }
 
-        public int ApprovalRate
-        {
-            get
-            {
-                int rate = 100 / (Supporters.Count + Opposers.Count + 1) * Supporters.Count;
-                if (rate.IsInRangeOffset(33, 5) || rate.IsInRangeOffset(66, 5))
-                {
-                    TimeLeft.Interval = 10000;
-                }
-                return rate;
-            }
-        }
-
         public static async Task HandleReaction(SocketReaction reaction)
         {
             var member = Player.Fetch(reaction.UserId);
-            if (Votes.Count(x => x.Message.Id == reaction.MessageId) > 0 && !member.IsUnknown)
+            if (Votes.Exists(x => x.Message.Id == reaction.MessageId) && !member.IsUnknown)
             {
                 var vote = Votes.Find(x => x.Message.Id == reaction.MessageId);
                 var embed = vote.Message.Embeds.First().ToEmbedBuilder();
