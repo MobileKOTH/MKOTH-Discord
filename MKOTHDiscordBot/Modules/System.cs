@@ -139,7 +139,7 @@ namespace MKOTHDiscordBot.Modules
             EmbedBuilder embed = new EmbedBuilder();
             IUserMessage msg;
             if (Program.TestMode) return;
-            Program.ReplyToTestServer = false;
+            Handlers.Message.ReplyToTestServer = false;
             msg = await ReplyAsync("Disabled replying to test server");
         }
 

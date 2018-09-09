@@ -40,6 +40,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>x64</PlatformTarget>
@@ -72,6 +73,9 @@
     </Reference>
     <Reference Include="Discord.Net.WebSocket, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Discord.Net.WebSocket.2.0.0-beta\lib\net45\Discord.Net.WebSocket.dll</HintPath>
+    </Reference>
+    <Reference Include="LiteDB, Version=4.1.4.0, Culture=neutral, PublicKeyToken=4ee40123013c9f27, processorArchitecture=MSIL">
+      <HintPath>..\packages\LiteDB.4.1.4\lib\net40\LiteDB.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Extensions.DependencyInjection, Version=2.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.2.0.0\lib\netstandard2.0\Microsoft.Extensions.DependencyInjection.dll</HintPath>
@@ -137,6 +141,7 @@
     <Compile Include="Components\Player.cs" />
     <Compile Include="Components\Vote.cs" />
     <Compile Include="Handlers\Leaver.cs" />
+    <Compile Include="Handlers\Message.cs" />
     <Compile Include="Handlers\Reaction.cs" />
     <Compile Include="Modules\System.cs" />
     <Compile Include="Modules\TrashTalk.cs" />
@@ -167,8 +172,12 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Components\Chat\" />
-    <Folder Include="Components\MKOTH\" />
     <Folder Include="Components\Moderation\" />
+    <Folder Include="Components\SeriesSystem\Core\" />
+    <Folder Include="Components\SeriesSystem\Database\" />
+    <Folder Include="Components\SeriesSystem\Entities\" />
+    <Folder Include="Components\SeriesSystem\GoogleSuite\" />
+    <Folder Include="Components\SeriesSystem\Management\" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.1">

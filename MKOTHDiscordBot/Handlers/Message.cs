@@ -1,0 +1,132 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+using MKOTHDiscordBot.Utilities;
+
+namespace MKOTHDiscordBot.Handlers
+{
+    public static class Message
+    {
+        public static bool ReplyToTestServer = true;
+
+        private static DiscordSocketClient client;
+        private static CommandService commands;
+        private static IServiceProvider services;
+
+        public static void Initialise(DiscordSocketClient client, CommandService commands, IServiceProvider services)
+        {
+            Message.client = client;
+            Message.commands = commands;
+            Message.services = services;
+        }
+
+        public static async Task Handle(SocketMessage socketMessage)
+        {
+            var message = socketMessage as SocketUserMessage;
+            // No handle to own or null message.
+            if (message.Author.Id == client.CurrentUser.Id) return;
+            if (message == null) return;
+
+            var context = new SocketCommandContext(client, message);
+            int argPos = 0;
+
+            void rateLimitMessage() => _ = Responder.SendToContext(context, "You are now rate limited");
+
+            // Debug log non dm messages.
+            if (!context.IsPrivate)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine(message.Timestamp.ToLocalTime() + "\tUser: " + message.Author.Username + "\nMessage: " + message.Content);
+                Console.ResetColor();
+            }
+            // Special test mode command handling.
+            if (!ReplyToTestServer && message.Content == ".settest")
+            {
+                ReplyToTestServer = true;
+                await context.Channel.SendMessageAsync("Replying to test server");
+                return;
+            }
+            // Special test mode to not handle certain messages.
+            if (!context.IsPrivate)
+            {
+                if (!Program.TestMode && !ReplyToTestServer && (context.Guild.Id == Globals.TestGuild.Guild.Id)) return;
+                if (Program.TestMode && (context.Guild.Id == Globals.MKOTHGuild.Guild.Id)) return;
+            }
+            else if (context.IsPrivate && context.User.Id != Globals.BotOwner.Id)
+            {
+                if (Program.TestMode) return;
+            }
+            // Chat handling in DM.
+            if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(client.CurrentUser, ref argPos))
+            {
+                if (SpamWatch.Watch(message.Author.Id, rateLimitMessage)) return;
+                _ = Chat.ReplyAsync(context, message.Content);
+                return;
+            }
+            else if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && message.HasMentionPrefix(client.CurrentUser, ref argPos))
+            {
+                if (SpamWatch.Watch(message.Author.Id, rateLimitMessage)) return;
+                _ = Chat.ReplyAsync(context, message.Content.Remove(0, argPos));
+                return;
+            }
+
+            if (!message.Author.IsBot && !message.HasMentionPrefix(client.CurrentUser, ref argPos)) new Chat(context);
+
+            if (!(message.HasCharPrefix('.', ref argPos) || message.HasMentionPrefix(client.CurrentUser, ref argPos))) return;
+            if (SpamWatch.Watch(message.Author.Id, rateLimitMessage)) return;
+            // Command handling.
+            var result = await commands.ExecuteAsync(context, argPos, services);
+            if (context.IsPrivate && message.Author.Id != Globals.BotOwner.Id)
+            {
+                await Responder.SendToChannel(Globals.TestGuild.BotTest, "DM command received:", new EmbedBuilder()
+                    .WithAuthor(message.Author)
+                    .WithDescription(message.Content)
+                    .Build());
+            }
+            if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
+            {
+                if (result.Error == CommandError.BadArgCount || result.Error == CommandError.ParseFailed || result.Error == CommandError.ObjectNotFound)
+                {
+                    if (commands.Search(context, argPos).Commands.Count(x => x.Command.Remarks != null) > 0 && result.Error == CommandError.ObjectNotFound)
+                    {
+                        await context.Channel.SendMessageAsync("Execution failed, please refer to the command infomation.");
+                        sendHelp();
+                        return;
+                    }
+                    else if (result.Error != CommandError.ObjectNotFound)
+                    {
+                        await context.Channel.SendMessageAsync(result.ErrorReason);
+                        sendHelp();
+                        return;
+                    }
+                }
+                await context.Channel.SendMessageAsync(result.ErrorReason);
+                return;
+
+                void sendHelp()
+                {
+                    commands.Commands
+                        .Where(x => x.Name == "Help")
+                        .Single(x => x.Parameters.Count == 1)
+                        .ExecuteAsync(context, new object[1] { "." + commands.Search(context, argPos).Commands.First().Command.Name }, null, services);
+                }
+            }
+            else if (result.Error == CommandError.Unsuccessful || result.Error == CommandError.Exception)
+            {
+                await context.Channel.SendMessageAsync(result.ErrorReason);
+            }
+            else if (result.Error == CommandError.UnknownCommand)
+            {// Chat reply.
+                if (message.HasMentionPrefix(client.CurrentUser, ref argPos) && !context.IsPrivate)
+                {
+                    _ = Chat.ReplyAsync(context, message.Content.Remove(0, argPos));
+                }
+            }
+        }
+    }
+}

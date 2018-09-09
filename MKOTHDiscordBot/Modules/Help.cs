@@ -34,10 +34,7 @@ namespace MKOTHDiscordBot.Modules
             commands.Modules
                 .OrderBy(x => x.Remarks ?? "Module Z")
                 .ToList()
-                .ForEach(x =>
-                {
-                    embed.AddField(x.Name, x.Summary ?? "In Development".MarkdownCodeBlock());
-                });
+                .ForEach(x => embed.AddField(x.Name, x.Summary ?? "In Development".MarkdownCodeBlock()));
 
             await ReplyAsync(string.Empty, false, embed.Build());
         }

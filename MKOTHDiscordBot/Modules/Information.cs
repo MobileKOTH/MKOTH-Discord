@@ -15,12 +15,11 @@ namespace MKOTHDiscordBot.Modules
         public async Task Ranking(IUser user = null)
         {
             var player = Player.Fetch((user ?? Context.User).Id);
-            var topTenField = string.Join( string.Empty, Player.List
+            var topTenField = string.Join(string.Empty, Player.List
                 .Where(x => x.Rank >= 1)
                 .OrderBy(x => x.Rank)
                 .Take(10)
-                .ToList()
-                .ConvertAll((x => x.GetRankFieldString(identify: x.Rank == player.Rank))));
+                .Select((x => x.GetRankFieldString(identify: x.Rank == player.Rank))));
 
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)

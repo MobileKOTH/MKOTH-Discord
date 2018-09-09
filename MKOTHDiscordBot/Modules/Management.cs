@@ -60,15 +60,16 @@ namespace MKOTHDiscordBot.Modules
             {
                 EmbedBuilder embed = new EmbedBuilder();
                 IUserMessage msg;
+
                 var playerlist = Player.List
                     .Where(x => !x.IsRemoved)
-                    .Where(x => Guild.Users.Any(y => y.Id == x.DiscordId));
+                    .Where(x => Guild.Users.All(y => y.Id != x.DiscordId));
 
                 var activemissinglist = playerlist.Where(x => !x.IsHoliday);
                 var holidaymissinglist = playerlist.Where(x => x.IsHoliday);
 
-                string activemisinglistfield = string.Join("", activemissinglist.Select(x => $"{x.Class}: {x.Name}\n")).SliceBack(1024);
-                string holidaymisinglistfield = string.Join("", holidaymissinglist.Select(x => $"{x.Class}: {x.Name}\n")).SliceBack(1024);
+                var activemisinglistfield = string.Join("", activemissinglist.Select(x => $"{x.Class}: {x.Name}\n")).SliceBack(1024);
+                var holidaymisinglistfield = string.Join("", holidaymissinglist.Select(x => $"{x.Class}: {x.Name}\n")).SliceBack(1024);
 
                 embed.Color = Color.Orange;
                 embed.Title = "Missing MKOTH Members from MKOTH Discord Server";
