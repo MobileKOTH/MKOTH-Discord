@@ -46,13 +46,14 @@ namespace MKOTHDiscordBot
                         Console.WriteLine(text);
                     }
                 }
+                catch (DirectoryNotFoundException error)
+                {
+                    Console.WriteLine($"Catched: {error.Message}");
+                    new FileInfo(directory).Directory.Create();
+                    writeLog(directory);
+                }
                 catch (Exception error)
                 {
-                    if (error.GetType() == typeof(DirectoryNotFoundException))
-                    {
-                        new FileInfo(directory).Directory.Create();
-                        writeLog(directory);
-                    }
                     Console.WriteLine(error.Message.AddLine() + error.StackTrace);
                 }
             }
@@ -104,7 +105,10 @@ namespace MKOTHDiscordBot
             {
                 LogError(e);
             }
-            LogError(error);
+            finally
+            {
+                LogError(error);
+            }
         }
     }
 }
