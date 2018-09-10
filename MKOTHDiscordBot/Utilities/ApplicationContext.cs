@@ -8,11 +8,12 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Discord;
 using Discord.WebSocket;
+using System.Configuration;
 
 namespace MKOTHDiscordBot
 {
     // A data holder class to store global variables and discord context
-    public static class Globals
+    public static class ApplicationContext
     {
         public static class Directories
         {
@@ -54,7 +55,7 @@ namespace MKOTHDiscordBot
 
         public static ProgramConfiguration Config = JsonConvert.DeserializeObject<ProgramConfiguration>(File.ReadAllText(Directories.ConfigFile));
 
-        public static readonly string BuildVersion = $"{Assembly.GetExecutingAssembly().GetName().Version.Major}.{Assembly.GetExecutingAssembly().GetName().Version.Minor}." + Config.BuildNumber.ToString().PadLeft(4, '0');
+        public static string BuildVersion => $"{Assembly.GetExecutingAssembly().GetName().Version.Major}.{Assembly.GetExecutingAssembly().GetName().Version.Minor}." +  ConfigurationManager.AppSettings["BuildNumber"].PadLeft(4, '0');
         public static readonly DateTime DeploymentTime = DateTime.Now;
 
         public static int CurrentTypingSecond = 0;
@@ -100,7 +101,7 @@ namespace MKOTHDiscordBot
             public static SocketTextChannel BotTest => Guild.TextChannels.Single(x => x.Id.Equals(360352712619065345UL));
         }
 
-        public static Task Load(ref DiscordSocketClient client)
+        public static Task Load(DiscordSocketClient client)
         {
             try
             {
@@ -160,11 +161,8 @@ namespace MKOTHDiscordBot
 
         public class ProgramConfiguration
         {
-            public int BuildNumber { get; set; }
             public string Token { get; set; }
             public List<ulong> Moderators { get; set; }
         }
-
-        public static void SaveConfig() => File.WriteAllText(Directories.ConfigFile, JsonConvert.SerializeObject(Config, Formatting.Indented));
     }
 }

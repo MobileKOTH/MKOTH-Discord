@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Timers;
+using System.Configuration;
 
 namespace MKOTHDiscordBot
 {
@@ -27,7 +28,7 @@ namespace MKOTHDiscordBot
         public static async Task Main(string[] args)
         {
             FirstArgument = args.FirstOrDefault();
-            SecondArgument = args.Length > 1 ? args[1] : null;
+            SecondArgument = args.ElementAtOrDefault(1);
             Console.WriteLine(args.Length > 0 ? "Arguments: " + string.Join(", ", args) : "No start up arguments");
             Console.WriteLine(RuntimeInformation.FrameworkDescription);
             Console.WriteLine(RuntimeInformation.ProcessArchitecture);
@@ -38,8 +39,13 @@ namespace MKOTHDiscordBot
 #if DEBUG
             Console.WriteLine("Debug Build");
             checkForTestMode();
-            Globals.Config.BuildNumber++;
-            Globals.SaveConfig();
+            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            var buildNumberStr = config.AppSettings.Settings["BuildNumber"].Value;
+            var buildNumber = int.Parse(buildNumberStr);
+            config.AppSettings.Settings["BuildNumber"].Value = (buildNumber + 1).ToString();
+            config.Save(ConfigurationSaveMode.Modified);
+            config.SaveAs(System.IO.Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.FullName + @"\App.config", ConfigurationSaveMode.Modified);
+            ConfigurationManager.RefreshSection("appSettings");
 #else
             Console.WriteLine("Release Build");
 #endif
@@ -78,7 +84,7 @@ namespace MKOTHDiscordBot
                 return Task.CompletedTask;
             };
 
-            await client.LoginAsync(TokenType.Bot, Globals.Config.Token);
+            await client.LoginAsync(TokenType.Bot, ApplicationContext.Config.Token);
             await client.StartAsync();
 
             await Task.Delay(-1);
@@ -111,47 +117,22 @@ namespace MKOTHDiscordBot
             // Discover all of the commands in this assembly and load them.
             await commands.AddModulesAsync(Assembly.GetEntryAssembly());
 
-            Handlers.Message.Initialise(client, commands, services);
+            Handlers.Message.Initialise(services);
 
             // Discord client events.
             client.MessageReceived += Handlers.Message.Handle;
             client.ReactionAdded += Handlers.Reaction.Handle;
             client.ReactionRemoved += Handlers.Reaction.Handle;
-            client.Ready += () => Globals.Load(ref client);
-            client.UserJoined += (user) => HandleChatSaveUpdateMKOTH(user);
+            client.Ready += () => ApplicationContext.Load(client);
+            client.UserJoined += (user) => Task.CompletedTask;
             client.UserLeft += Handlers.Leaver.Handle;
             client.Disconnected += (e) => Task.Run(() => FirstArgument = e.Message + e.StackTrace.MarkdownCodeBlock("diff"));
 
-            Timer statustimer = new Timer();
+            Timer statustimer = new Timer(15000);
             statustimer.Elapsed += async(_, __) => { if (!TestMode) await Responder.ChangeStatus(client); };
-            statustimer.Interval = 15000;
             statustimer.Start();
 
-            Timer savechatupdatemkothtimer = new Timer();
-            savechatupdatemkothtimer.Elapsed += (_, __) => HandleChatSaveUpdateMKOTH();
-            savechatupdatemkothtimer.Interval = 60000;
-            savechatupdatemkothtimer.Start();
-
-            Timer downloadplayerdatatimer = new Timer();
-            downloadplayerdatatimer.Elapsed += async (_, __) => { if (!TestMode) await Player.Load(); };
-            downloadplayerdatatimer.Interval = 300000;
-            downloadplayerdatatimer.Start();
-
             SpamWatch.Start();
-
-            Task HandleChatSaveUpdateMKOTH(SocketGuildUser user = null)
-            {
-                if (user != null && user?.Guild.Id != Globals.MKOTHGuild.Guild.Id)
-                {
-                    return Task.CompletedTask;
-                }
-                Chat.SaveHistory();
-                if (!TestMode)
-                {
-                    var task = Management.UpdateMKOTHAsync();
-                }
-                return Task.CompletedTask;
-            }
         }
     }
 }

@@ -11,22 +11,17 @@ namespace MKOTHDiscordBot
     {
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
-            return Task.Run(() =>
+            if (context.User.Id == ApplicationContext.BotOwner.Id)
             {
-                if (context.User.Id == Globals.BotOwner.Id)
-                {
-                    return PreconditionResult.FromSuccess();
-                }
-                else
-                {
-                    return PreconditionResult.FromError("This command can only be used by the developer of the bot.");
-                }
-            });
+                return Task.FromResult(PreconditionResult.FromSuccess());
+            }
+            else
+            {
+                return Task.FromResult(PreconditionResult.FromError("This command can only be used by the developer of the bot."));
+            }
         }
 
         public override string ToString()
-        {
-            return "Require developer";
-        }
+            => "Require developer";
     }
 }

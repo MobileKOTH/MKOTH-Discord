@@ -36,7 +36,7 @@ namespace MKOTHDiscordBot.Modules
             var (possiblereplies, matchRate) = Chat.GetPossibleReplies(message, triggers);
             if (matchRate <= 0)
             {
-                await ReplyAsync($"No trigger key found for:\n \"{message}\"");
+                await ReplyAsync($"No trigger key found for:\n{message.WrapAround("\"")}");
             }
 
             List<string> historyClone;
@@ -81,7 +81,10 @@ namespace MKOTHDiscordBot.Modules
         public async Task TrashMessage(int id)
         {
             var message = Chat.History[id];
-            await ReplyAsync($"`Message Id: #{id}`\n\n", embed: new EmbedBuilder().WithDescription(message.SliceBack(1900)).Build());
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithDescription(message.SliceBack(1900));
+            await ReplyAsync($"`Message Id: #{id}`", embed: embed.Build());
         }
 
         [Command("SaveChat")]

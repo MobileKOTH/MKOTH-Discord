@@ -58,13 +58,8 @@ namespace MKOTHDiscordBot.Utilities
                 }
             }
 
-            if (blockedUsers.Count(x => x.Id == userId) > 0)
-            {
-                return true;
-            }
-            return false;
+            return blockedUsers.Any(x => x.Id == userId);
         }
-
 
         private class BlockedUser
         {

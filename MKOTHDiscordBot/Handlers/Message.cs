@@ -7,6 +7,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using MKOTHDiscordBot.Utilities;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MKOTHDiscordBot.Handlers
 {
@@ -18,11 +19,11 @@ namespace MKOTHDiscordBot.Handlers
         private static CommandService commands;
         private static IServiceProvider services;
 
-        public static void Initialise(DiscordSocketClient client, CommandService commands, IServiceProvider services)
+        public static void Initialise(IServiceProvider serviceProvider)
         {
-            Message.client = client;
-            Message.commands = commands;
-            Message.services = services;
+            services = serviceProvider;
+            client = services.GetService<DiscordSocketClient>();
+            commands = services.GetService<CommandService>();
         }
 
         public static async Task Handle(SocketMessage socketMessage)
@@ -54,10 +55,10 @@ namespace MKOTHDiscordBot.Handlers
             // Special test mode to not handle certain messages.
             if (!context.IsPrivate)
             {
-                if (!Program.TestMode && !ReplyToTestServer && (context.Guild.Id == Globals.TestGuild.Guild.Id)) return;
-                if (Program.TestMode && (context.Guild.Id == Globals.MKOTHGuild.Guild.Id)) return;
+                if (!Program.TestMode && !ReplyToTestServer && (context.Guild.Id == ApplicationContext.TestGuild.Guild.Id)) return;
+                if (Program.TestMode && (context.Guild.Id == ApplicationContext.MKOTHGuild.Guild.Id)) return;
             }
-            else if (context.IsPrivate && context.User.Id != Globals.BotOwner.Id)
+            else if (context.IsPrivate && context.User.Id != ApplicationContext.BotOwner.Id)
             {
                 if (Program.TestMode) return;
             }
@@ -81,9 +82,9 @@ namespace MKOTHDiscordBot.Handlers
             if (SpamWatch.Watch(message.Author.Id, rateLimitMessage)) return;
             // Command handling.
             var result = await commands.ExecuteAsync(context, argPos, services);
-            if (context.IsPrivate && message.Author.Id != Globals.BotOwner.Id)
+            if (context.IsPrivate && message.Author.Id != ApplicationContext.BotOwner.Id)
             {
-                await Responder.SendToChannel(Globals.TestGuild.BotTest, "DM command received:", new EmbedBuilder()
+                await Responder.SendToChannel(ApplicationContext.TestGuild.BotTest, "DM command received:", new EmbedBuilder()
                     .WithAuthor(message.Author)
                     .WithDescription(message.Content)
                     .Build());

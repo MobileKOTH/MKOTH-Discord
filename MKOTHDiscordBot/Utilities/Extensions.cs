@@ -12,14 +12,10 @@ namespace MKOTHDiscordBot
     {
         #region IComparable -------------------------------------------------------------------------------
         public static bool IsInRange(this IComparable number, IComparable lower, IComparable upper)
-        {
-            return (number.CompareTo(lower) >= 0 && number.CompareTo(upper) <= 0);
-        }
+            => number.CompareTo(lower) >= 0 && number.CompareTo(upper) <= 0;
 
         public static bool IsInRangeOffset(this IComparable number, IComparable reference, IComparable offset)
-        {
-            return IsInRange(number, Convert.ToDecimal(reference) - Convert.ToDecimal(offset), Convert.ToDecimal(reference) + Convert.ToDecimal(offset));
-        }
+            => IsInRange(number, Convert.ToDecimal(reference) - Convert.ToDecimal(offset), Convert.ToDecimal(reference) + Convert.ToDecimal(offset));
         #endregion
 
         #region String ----------------------------------------------------------------------------
@@ -65,12 +61,16 @@ namespace MKOTHDiscordBot
         public static string MarkdownCodeLine(this string str)
             => Format.Code(str);
 
-        public static string WrapAround(this string str, string start, string end)
-            => $"{start}{str}{end}";
+        public static string WrapAround(this string str, string start, string end = null)
+            => $"{start}{str}{end ?? start}";
 
         public static int GetWordCount(this string str)
+            => GetWordCount(str, null).wordCount;
+
+        public static (int wordCount, string[] splits) GetWordCount(this string str, string[] splits = null)
         {
-            return str.Split(' ').Length;
+            splits = str.Split(' ');
+            return (splits.Length, splits);
         }
         #endregion
 

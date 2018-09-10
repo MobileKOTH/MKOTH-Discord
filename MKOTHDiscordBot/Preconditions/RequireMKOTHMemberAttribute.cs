@@ -11,27 +11,22 @@ namespace MKOTHDiscordBot
     {
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
-            return Task.Run(() =>
+            var player = Player.Fetch(context.User.Id);
+            if (player.IsUnknown)
             {
-                var player = Player.Fetch(context.User.Id);
-                if (player.IsUnknown)
-                {
-                    goto error;
-                }
+                goto error;
+            }
 
-                if (!player.IsRemoved)
-                {
-                    return PreconditionResult.FromSuccess();
-                }
+            if (!player.IsRemoved)
+            {
+                return Task.FromResult(PreconditionResult.FromSuccess());
+            }
 
-                error:
-                return PreconditionResult.FromError("You need to be MKOTH Member in order to do that.");
-            });
+            error:
+            return Task.FromResult(PreconditionResult.FromError("You need to be MKOTH Member in order to do that."));
         }
 
         public override string ToString()
-        {
-            return "Require MKOTH Member";
-        }
+            => "Require MKOTH Member";
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using HttpUtility = System.Web.HttpUtility;
 
-using static MKOTHDiscordBot.Globals.MKOTHGuild;
+using static MKOTHDiscordBot.ApplicationContext.MKOTHGuild;
 
 namespace MKOTHDiscordBot.Modules
 {
@@ -261,11 +261,11 @@ namespace MKOTHDiscordBot.Modules
                     }
                     else if (!player.IsUnknown && !player.IsRemoved && !serveruser.Roles.Contains(Stupid))
                     {
-                        if (Globals.Config.Moderators.Contains(serveruser.Id) && !serveruser.Roles.Contains(ChatMods))
+                        if (ApplicationContext.Config.Moderators.Contains(serveruser.Id) && !serveruser.Roles.Contains(ChatMods))
                         {
                             await serveruser.AddRoleAsync(ChatMods);
                         }
-                        if (Globals.Config.Moderators.Contains(serveruser.Id) && !serveruser.GetDisplayName().Contains("ᴹᵒᵈ"))
+                        if (ApplicationContext.Config.Moderators.Contains(serveruser.Id) && !serveruser.GetDisplayName().Contains("ᴹᵒᵈ"))
                         {
                             await serveruser.ModifyAsync(x => { x.Nickname = player.Name + " ᴹᵒᵈ"; });
                         }

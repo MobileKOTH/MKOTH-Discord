@@ -13,12 +13,12 @@ namespace MKOTHDiscordBot.Handlers
         {
             try
             {
-                if (user.Guild.Id != Globals.MKOTHGuild.Guild.Id)
+                if (user.Guild.Id != ApplicationContext.MKOTHGuild.Guild.Id)
                 {
                     return Task.CompletedTask;
                 }
 
-                var bans = Globals.MKOTHGuild.Guild.GetBansAsync().Result;
+                var bans = ApplicationContext.MKOTHGuild.Guild.GetBansAsync().Result;
 
                 if (Player.List.Exists(x => x.DiscordId == user.Id && !x.IsRemoved))
                 {
@@ -53,7 +53,7 @@ namespace MKOTHDiscordBot.Handlers
                         .WithAuthor($"{user.GetDisplayName()}#{user.DiscriminatorValue}", user.GetAvatarUrl())
                         .WithDescription($"{user.Mention}, {message}");
 
-                    _ = Responder.SendToChannel(Globals.MKOTHGuild.Leave, string.Empty, embed.Build());
+                    _ = Responder.SendToChannel(ApplicationContext.MKOTHGuild.Leave, string.Empty, embed.Build());
                 }
 
                 void SendDmMessage(string message)

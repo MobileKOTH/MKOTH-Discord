@@ -7,31 +7,26 @@ using Discord.WebSocket;
 
 namespace MKOTHDiscordBot
 {
-    using static Globals.MKOTHGuild;
+    using static ApplicationContext.MKOTHGuild;
 
     public class RequireMKOTHGuildAttribute : PreconditionAttribute
     {
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
-            return Task.Run(() =>
+            if (context.Guild == null)
             {
-                if (context.Guild == null)
-                {
-                    goto failedProcedure;
-                }
-                if (context.Guild.Id == Guild.Id)
-                {
-                    return PreconditionResult.FromSuccess();
-                }
+                goto failedProcedure;
+            }
+            if (context.Guild.Id == Guild.Id)
+            {
+                return Task.FromResult(PreconditionResult.FromSuccess());
+            }
 
-                failedProcedure:
-                return PreconditionResult.FromError("This command can only be used in MKOTH Server.");
-            });
+            failedProcedure:
+            return Task.FromResult(PreconditionResult.FromError("This command can only be used in MKOTH Server."));
         }
 
         public override string ToString()
-        {
-            return "Require MKOTH Discord Server";
-        }
+            => "Require MKOTH Discord Server";
     }
 }

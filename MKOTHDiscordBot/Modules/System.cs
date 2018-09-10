@@ -57,8 +57,8 @@ namespace MKOTHDiscordBot.Modules
                 .WithUrl("https://github.com/MobileKOTH")
                 .WithThumbnailUrl("https://cdn.discordapp.com/attachments/341163606605299716/360336022745382912/13615239_1204861226212220_2613382245523520956_n.png")
                 .WithAuthor(new EmbedAuthorBuilder()
-                    .WithName("Developed by " + Globals.BotOwner.Username)
-                    .WithIconUrl(Globals.BotOwner.GetAvatarUrl())
+                    .WithName("Developed by " + ApplicationContext.BotOwner.Username)
+                    .WithIconUrl(ApplicationContext.BotOwner.GetAvatarUrl())
                     .WithUrl("https://github.com/Cerlancism"))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Help")
@@ -73,14 +73,14 @@ namespace MKOTHDiscordBot.Modules
                     .WithIsInline(true))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Build")
-                    .WithValue($"```v{Globals.BuildVersion}```")
+                    .WithValue($"```v{ApplicationContext.BuildVersion}```")
                     .WithIsInline(true))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("System")
                     .WithValue(systemInfo))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Uptime")
-                    .WithValue($"```{(DateTime.Now - Globals.DeploymentTime).AsRoundedDuration()}```"))
+                    .WithValue($"```{(DateTime.Now - ApplicationContext.DeploymentTime).AsRoundedDuration()}```"))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Repositories")
                     .WithValue(
@@ -119,7 +119,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireDeveloper]
         public async Task Logs()
         {
-            var blocks = File.ReadAllText(Globals.Directories.GeneralLogsFile).Split(new string[1] { "\r\n\r\n" }, StringSplitOptions.None)
+            var blocks = File.ReadAllText(ApplicationContext.Directories.GeneralLogsFile).Split(new string[1] { "\r\n\r\n" }, StringSplitOptions.None)
                 .Reverse()
                 .Take(20);
             var output = string.Join("\n\n", blocks)
@@ -164,8 +164,9 @@ namespace MKOTHDiscordBot.Modules
 
         public static void RestartStatic(ulong responseChannelId)
         {
-            Globals.Client.LogoutAsync().GetAwaiter().GetResult();
-            Globals.Client.StopAsync().GetAwaiter().GetResult();
+            ApplicationContext.Client.LogoutAsync().GetAwaiter().GetResult();
+            ApplicationContext.Client.StopAsync().GetAwaiter().GetResult();
+            ApplicationContext.Client.Dispose();
             Chat.SaveHistory();
             Process.Start(Assembly.GetExecutingAssembly().Location, $"Restarted {responseChannelId}");
             Environment.Exit(0);
@@ -173,8 +174,9 @@ namespace MKOTHDiscordBot.Modules
 
         public static void ShutDownStatic()
         {
-            Globals.Client.LogoutAsync().GetAwaiter().GetResult();
-            Globals.Client.StopAsync().GetAwaiter().GetResult();
+            ApplicationContext.Client.LogoutAsync().GetAwaiter().GetResult();
+            ApplicationContext.Client.StopAsync().GetAwaiter().GetResult();
+            ApplicationContext.Client.Dispose();
             Chat.SaveHistory();
             Environment.Exit(0);
         }

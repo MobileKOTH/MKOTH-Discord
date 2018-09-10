@@ -26,7 +26,7 @@ namespace MKOTHDiscordBot
         {
             if (context.IsPrivate) return;
             if (context.User.IsWebhook) return;
-            if (context.Channel.Id != Globals.MKOTHGuild.Official.Id) return;
+            if (context.Channel.Id != ApplicationContext.MKOTHGuild.Official.Id) return;
             message = context.Message.Content;
             if (context.Message.MentionedUsers.Count > 0)
             {
@@ -70,7 +70,7 @@ namespace MKOTHDiscordBot
 
         public static void LoadHistory()
         {
-            string json = "[" + File.ReadAllText(Globals.Directories.ChatHistoryFile) + "]";
+            string json = "[" + File.ReadAllText(ApplicationContext.Directories.ChatHistoryFile) + "]";
             History = JsonConvert.DeserializeObject<List<string>>(json);
             lastSaveIndex = History.Count;
             previousUser = null;
@@ -86,7 +86,7 @@ namespace MKOTHDiscordBot
                 var saveString = "";
                 saveRange.ForEach(x => saveString += JsonConvert.SerializeObject(x) + ",".AddLine());
                 DateTime start = DateTime.Now;
-                using (StreamWriter sw = File.AppendText(Globals.Directories.ChatHistoryFile))
+                using (StreamWriter sw = File.AppendText(ApplicationContext.Directories.ChatHistoryFile))
                 {
                     sw.Write(saveString);
                 }
@@ -102,7 +102,7 @@ namespace MKOTHDiscordBot
             DateTimeOffset starttime = DateTime.Now;
             string reply = "";
 
-            if (context.Channel.Id == Globals.MKOTHGuild.Suggestions.Id)
+            if (context.Channel.Id == ApplicationContext.MKOTHGuild.Suggestions.Id)
             {
                 return;
             }
@@ -143,9 +143,9 @@ namespace MKOTHDiscordBot
                 "**Reply:** " + reply, LogType.TRASHREPLY);
 
             await Responder.SendToContext(context, reply);
-            if (context.IsPrivate && context.User.Id != Globals.BotOwner.Id)
+            if (context.IsPrivate && context.User.Id != ApplicationContext.BotOwner.Id)
             {
-                await Responder.SendToChannel(Globals.TestGuild.BotTest, "DM chat received:", new EmbedBuilder()
+                await Responder.SendToChannel(ApplicationContext.TestGuild.BotTest, "DM chat received:", new EmbedBuilder()
                     .WithAuthor(context.User)
                     .WithDescription(message)
                     .AddField("Response", reply)

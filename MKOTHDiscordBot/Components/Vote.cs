@@ -47,8 +47,8 @@ namespace MKOTHDiscordBot
                 .WithFooter($"Approval: {ApprovalRate}%");
 
             Message = context.Channel.SendMessageAsync(string.Empty, embed: embed.Build()).Result;
-            var emoteTask1 = Message.AddReactionAsync(Globals.MKOTHGuild.UpArrowEmote);
-            var emoteTask2 = Message.AddReactionAsync(Globals.MKOTHGuild.DownArrowEmote);
+            var emoteTask1 = Message.AddReactionAsync(ApplicationContext.MKOTHGuild.UpArrowEmote);
+            var emoteTask2 = Message.AddReactionAsync(ApplicationContext.MKOTHGuild.DownArrowEmote);
             Task.WaitAll(emoteTask1, emoteTask2);
             TimeLeft.Start();
             TimeLeft.Elapsed += (sender, evt) =>
@@ -69,7 +69,7 @@ namespace MKOTHDiscordBot
                 var vote = Votes.Find(x => x.Message.Id == reaction.MessageId);
                 var embed = vote.Message.Embeds.First().ToEmbedBuilder();
                 var emote = (Emote)reaction.Emote;
-                if (emote.Id == Globals.MKOTHGuild.UpArrowEmote.Id)
+                if (emote.Id == ApplicationContext.MKOTHGuild.UpArrowEmote.Id)
                 {
                     if (vote.Supporters.Add(reaction.UserId))
                     {
@@ -77,7 +77,7 @@ namespace MKOTHDiscordBot
                         await vote.UpdateMessage(embed.Build());
                     }
                 }
-                if (emote.Id == Globals.MKOTHGuild.DownArrowEmote.Id)
+                if (emote.Id == ApplicationContext.MKOTHGuild.DownArrowEmote.Id)
                 {
                     if (vote.Opposers.Add(reaction.UserId))
                     {

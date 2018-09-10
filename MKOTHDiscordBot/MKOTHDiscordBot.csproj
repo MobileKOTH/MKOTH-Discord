@@ -51,6 +51,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Discord.Net.Commands, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -94,6 +95,7 @@
       <HintPath>..\packages\System.Collections.Immutable.1.4.0\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
     </Reference>
     <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Diagnostics.DiagnosticSource, Version=4.0.2.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Diagnostics.DiagnosticSource.4.4.1\lib\net46\System.Diagnostics.DiagnosticSource.dll</HintPath>
@@ -150,7 +152,7 @@
     <Compile Include="Preconditions\RequireMKOTHGuildAttribute.cs" />
     <Compile Include="Preconditions\RequireMKOTHMemberAttribute.cs" />
     <Compile Include="Preconditions\RequireMKOTHModAttribute.cs" />
-    <Compile Include="Utilities\Globals.cs" />
+    <Compile Include="Utilities\ApplicationContext.cs" />
     <Compile Include="Utilities\Extensions.cs" />
     <Compile Include="Utilities\Logger.cs" />
     <Compile Include="Utilities\Responder.cs" />
@@ -173,11 +175,11 @@
   <ItemGroup>
     <Folder Include="Components\Chat\" />
     <Folder Include="Components\Moderation\" />
-    <Folder Include="Components\SeriesSystem\Core\" />
-    <Folder Include="Components\SeriesSystem\Database\" />
-    <Folder Include="Components\SeriesSystem\Entities\" />
-    <Folder Include="Components\SeriesSystem\GoogleSuite\" />
-    <Folder Include="Components\SeriesSystem\Management\" />
+    <Folder Include="Components\SeriesProcessor\Core\" />
+    <Folder Include="Components\SeriesProcessor\Database\" />
+    <Folder Include="Components\SeriesProcessor\Entities\" />
+    <Folder Include="Components\SeriesProcessor\GoogleSuite\" />
+    <Folder Include="Components\SeriesProcessor\Management\" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.1">

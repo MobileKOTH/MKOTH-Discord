@@ -20,15 +20,15 @@ namespace MKOTHDiscordBot
                 case LogType.TRASHREPLY:
 
                 case LogType.NOREPLYFOUND:
-                    writeLog(Globals.Directories.ChatLogsFile);
+                    writeLog(ApplicationContext.Directories.ChatLogsFile);
                     break;
 
                 case LogType.ERROR:
-                    writeLog(Globals.Directories.ErrorLogsFile);
+                    writeLog(ApplicationContext.Directories.ErrorLogsFile);
                     break;
 
                 default:
-                    writeLog(Globals.Directories.GeneralLogsFile);
+                    writeLog(ApplicationContext.Directories.GeneralLogsFile);
                     break;
             }
 
@@ -92,12 +92,12 @@ namespace MKOTHDiscordBot
             {
                 string stacktrace = error.StackTrace ?? "Null Stacktrace";
                 stacktrace = stacktrace.SliceFront(1800);
-                await Responder.SendToChannel(Globals.TestGuild.BotTest, error.Message + stacktrace.MarkdownCodeBlock("yaml"));
+                await Responder.SendToChannel(ApplicationContext.TestGuild.BotTest, error.Message + stacktrace.MarkdownCodeBlock("yaml"));
                 if (++ResponderErrors > 3)
                 {
                     ResponderErrors = 0;
                     await SendError(new Exception("The application has experienced too many errors and is attempting to auto restart"));
-                    Modules.System.RestartStatic(Globals.TestGuild.BotTest.Id);
+                    Modules.System.RestartStatic(ApplicationContext.TestGuild.BotTest.Id);
                 }
             }
             catch (Exception e)

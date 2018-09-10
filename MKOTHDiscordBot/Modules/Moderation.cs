@@ -6,7 +6,7 @@ using Discord.Commands;
 
 namespace MKOTHDiscordBot.Modules
 {
-    using static Globals.MKOTHGuild;
+    using static ApplicationContext.MKOTHGuild;
 
     [Summary("Performs user moderations for MKOTH chat.")]
     [Remarks("Module D")]
@@ -21,7 +21,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireDeveloper]
         public async Task Mute(IGuildUser user, int muteTimeMinutes, [Remainder]string reason)
         {
-            var isMod = ChatMods.Members.ToList().Any(x => x.Id == Context.User.Id);
+            var isMod = ChatMods.Members.Any(x => x.Id == Context.User.Id);
             muteTimeMinutes = isMod ? muteTimeMinutes : 10;
 
             var vote = new Vote(

@@ -25,9 +25,9 @@ namespace MKOTHDiscordBot.Utilities
         {
             try
             {
-                if (Globals.CurrentTypingSecond == 0)
+                if (ApplicationContext.CurrentTypingSecond == 0)
                 {
-                    Globals.CurrentTypingSecond = 10;
+                    ApplicationContext.CurrentTypingSecond = 10;
                     await context.Channel.TriggerTypingAsync();
                 }
             }
@@ -42,7 +42,7 @@ namespace MKOTHDiscordBot.Utilities
         {
             try
             {
-                Globals.CurrentTypingSecond = 0;
+                ApplicationContext.CurrentTypingSecond = 0;
                 await Task.Delay(500);
                 await context.Channel.SendMessageAsync(reply);
             }

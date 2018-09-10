@@ -156,7 +156,7 @@ namespace MKOTHDiscordBot
 
                 var playerDataTask = webClients[0].DownloadStringTaskAsync(playerDataTsvUrl);
                 var playerRankingTask = webClients[1].DownloadStringTaskAsync(playerRankingJsonUrl);
-                var messagesTask = Globals.MKOTHGuild.PlayerID.GetMessagesAsync(100).FlattenAsync();
+                var messagesTask = ApplicationContext.MKOTHGuild.PlayerID.GetMessagesAsync(100).FlattenAsync();
 
                 await Task.WhenAll(playerDataTask, playerRankingTask, messagesTask);
 
