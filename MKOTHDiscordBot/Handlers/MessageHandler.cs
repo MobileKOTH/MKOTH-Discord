@@ -33,9 +33,8 @@ namespace MKOTHDiscordBot.Handlers
 
         async Task Handle(SocketMessage socketMessage)
         {
-            var message = socketMessage as SocketUserMessage;
             // No handle to null or own message.
-            if (message == null) return;
+            if (!(socketMessage is SocketUserMessage message)) return;
             if (message.Author.Id == currentUserId) return;
 
             var context = new SocketCommandContext(client, message);
