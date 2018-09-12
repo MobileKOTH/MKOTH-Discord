@@ -9,9 +9,15 @@ using MKOTHDiscordBot.Components.InteractiveReaction;
 
 namespace MKOTHDiscordBot.Handlers
 {
-    public static class Reaction
+    public class ReactionHandler
     {
-        public static Task Handle(Cacheable<IUserMessage, ulong> cache, ISocketMessageChannel channel, SocketReaction reaction)
+        public ReactionHandler(DiscordSocketClient client)
+        {
+            client.ReactionAdded += Handle;
+            client.ReactionRemoved += Handle;
+        }
+
+        Task Handle(Cacheable<IUserMessage, ulong> cache, ISocketMessageChannel channel, SocketReaction reaction)
         {
             if (cache.HasValue && InteractiveReactionBase.ActiveChannels.Contains(channel.Id))
             {

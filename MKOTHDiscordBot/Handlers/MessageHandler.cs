@@ -11,27 +11,32 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MKOTHDiscordBot.Handlers
 {
-    public static class Message
+    public class MessageHandler
     {
         public static bool ReplyToTestServer = true;
 
-        private static DiscordSocketClient client;
-        private static CommandService commands;
-        private static IServiceProvider services;
+        private DiscordSocketClient client;
+        private CommandService commands;
+        private IServiceProvider services;
+        private ulong currentUserId;
 
-        public static void Initialise(IServiceProvider serviceProvider)
+        public MessageHandler(DiscordSocketClient client, CommandService commands, IServiceProvider services)
         {
-            services = serviceProvider;
-            client = services.GetService<DiscordSocketClient>();
-            commands = services.GetService<CommandService>();
+            this.client = client;
+            this.commands = commands;
+            this.services = services;
+
+            currentUserId = client.CurrentUser.Id;
+
+            client.MessageReceived += Handle;
         }
 
-        public static async Task Handle(SocketMessage socketMessage)
+        async Task Handle(SocketMessage socketMessage)
         {
             var message = socketMessage as SocketUserMessage;
-            // No handle to own or null message.
-            if (message.Author.Id == client.CurrentUser.Id) return;
+            // No handle to null or own message.
             if (message == null) return;
+            if (message.Author.Id == currentUserId) return;
 
             var context = new SocketCommandContext(client, message);
             int argPos = 0;

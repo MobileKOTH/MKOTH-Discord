@@ -142,9 +142,10 @@
     <Compile Include="Components\InteractiveReaction\InteractiveReactionBase.cs" />
     <Compile Include="Components\Player.cs" />
     <Compile Include="Components\Vote.cs" />
-    <Compile Include="Handlers\Leaver.cs" />
-    <Compile Include="Handlers\Message.cs" />
-    <Compile Include="Handlers\Reaction.cs" />
+    <Compile Include="Handlers\DiscordClientEventHandle.cs" />
+    <Compile Include="Handlers\LeaverHandler.cs" />
+    <Compile Include="Handlers\MessageHandler.cs" />
+    <Compile Include="Handlers\ReactionHandler.cs" />
     <Compile Include="Modules\System.cs" />
     <Compile Include="Modules\TrashTalk.cs" />
     <Compile Include="Preconditions\RequireBotTestAttribute.cs" />

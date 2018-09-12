@@ -7,12 +7,14 @@ using System.Management;
 using System.Reflection;
 using System.IO;
 using System.Linq;
+using System.Timers;
 
 namespace MKOTHDiscordBot.Modules
 {
     [Summary("Contains the diagnostics and maintenance information of the bot.")]
     public class System : ModuleBase<SocketCommandContext>
     {
+
         /*
         [Command("")]
         [Alias("")]
@@ -139,7 +141,7 @@ namespace MKOTHDiscordBot.Modules
             EmbedBuilder embed = new EmbedBuilder();
             IUserMessage msg;
             if (Program.TestMode) return;
-            Handlers.Message.ReplyToTestServer = false;
+            Handlers.MessageHandler.ReplyToTestServer = false;
             msg = await ReplyAsync("Disabled replying to test server");
         }
 

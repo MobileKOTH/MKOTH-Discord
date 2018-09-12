@@ -7,9 +7,14 @@ using System.Threading.Tasks;
 
 namespace MKOTHDiscordBot.Handlers
 {
-    public static class Leaver
+    public class LeaverHandler
     {
-        public static Task Handle(SocketGuildUser user)
+        public LeaverHandler(DiscordSocketClient client)
+        {
+            client.UserLeft += Handle;
+        }
+
+        Task Handle(SocketGuildUser user)
         {
             try
             {

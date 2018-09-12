@@ -68,22 +68,6 @@ namespace MKOTHDiscordBot
 
             await InitialiseAsync();
 
-            client.Log += (msg) =>
-            {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine(msg.ToString());
-                Console.ResetColor();
-                return Task.CompletedTask;
-            };
-
-            commands.Log += (msg) =>
-            {
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine(msg.ToString());
-                Console.ResetColor();
-                return Task.CompletedTask;
-            };
-
             await client.LoginAsync(TokenType.Bot, ApplicationContext.Config.Token);
             await client.StartAsync();
 
@@ -114,18 +98,29 @@ namespace MKOTHDiscordBot
 
         public async static Task InitialiseAsync()
         {
+            client.Log += (msg) =>
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine(msg.ToString());
+                Console.ResetColor();
+                return Task.CompletedTask;
+            };
+
+            commands.Log += (msg) =>
+            {
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine(msg.ToString());
+                Console.ResetColor();
+                return Task.CompletedTask;
+            };
+
             // Discover all of the commands in this assembly and load them.
             await commands.AddModulesAsync(Assembly.GetEntryAssembly());
 
-            Handlers.Message.Initialise(services);
-
             // Discord client events.
-            client.MessageReceived += Handlers.Message.Handle;
-            client.ReactionAdded += Handlers.Reaction.Handle;
-            client.ReactionRemoved += Handlers.Reaction.Handle;
+            Handlers.DiscordClientEventHandle.StartCommonHandlers(services);
             client.Ready += () => ApplicationContext.Load(client);
-            client.UserJoined += (user) => Task.CompletedTask;
-            client.UserLeft += Handlers.Leaver.Handle;
+            client.UserJoined += (user) => Task.Run(() => Logger.Debug(user.GetDisplayName(), "User Joined")); // TODO
             client.Disconnected += (e) => Task.Run(() => FirstArgument = e.Message + e.StackTrace.MarkdownCodeBlock("diff"));
 
             Timer statustimer = new Timer(15000);
