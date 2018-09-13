@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Discord;
 using Discord.WebSocket;
 using System.Configuration;
+using System.Collections.Immutable;
 
 namespace MKOTHDiscordBot
 {
@@ -53,6 +54,8 @@ namespace MKOTHDiscordBot
                 ChatHistoryFile = DataFolder + FileNames.CHATHISTORY_DAT;
         }
 
+        public static IReadOnlyList<Type> CommonClasses => Assembly.GetEntryAssembly().GetTypes().Where(x => x.IsClass && !x.IsNested).ToImmutableArray();
+
         public static ProgramConfiguration Config = JsonConvert.DeserializeObject<ProgramConfiguration>(File.ReadAllText(Directories.ConfigFile));
 
         public static string BuildVersion => $"{Assembly.GetExecutingAssembly().GetName().Version.Major}.{Assembly.GetExecutingAssembly().GetName().Version.Minor}." +  ConfigurationManager.AppSettings["BuildNumber"].PadLeft(4, '0');
@@ -63,7 +66,7 @@ namespace MKOTHDiscordBot
         public static DiscordSocketClient Client;
         public static IUser BotOwner;
 
-        private static Timer SecondCounter = new Timer(1000);
+        private static Timer SecondCounter;
 
         public static class MKOTHGuild
         {
@@ -105,13 +108,15 @@ namespace MKOTHDiscordBot
         {
             try
             {
+                SecondCounter?.Dispose();
+                SecondCounter = new Timer(1000);
                 SecondCounter.Elapsed += HandleTimeCounter;
                 SecondCounter.Start();
 
                 Client = client;
 
                 // Owner
-                client.GetApplicationInfoAsync()
+                _ = client.GetApplicationInfoAsync()
                     .ContinueWith(x =>
                     {
                         BotOwner = x.Result.Owner;
@@ -119,7 +124,7 @@ namespace MKOTHDiscordBot
                     });
 
                 // Player Data
-                Player.Load().GetAwaiter().GetResult();
+                _ = Player.Load();
 
                 if (Program.FirstArgument == "Restarted")
                 {
@@ -142,11 +147,11 @@ namespace MKOTHDiscordBot
             }
             catch (Exception e)
             {
+                client.StopAsync();
+                client.LogoutAsync();
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(e.Message.AddLine() + e.StackTrace);
                 Console.WriteLine("Failed loading context!");
-                client.LogoutAsync();
-                client.StopAsync();
                 Console.ReadKey();
                 Environment.Exit(0);
             }

@@ -81,7 +81,7 @@ namespace MKOTHDiscordBot.Modules
             }
             catch (Exception e)
             {
-                await Logger.SendError(e);
+                await Logger.SendErrorAsync(e);
             }
         }
 
@@ -372,7 +372,7 @@ namespace MKOTHDiscordBot.Modules
             }
             catch (Exception e)
             {
-                await Logger.SendError(e);
+                await Logger.SendErrorAsync(e);
             }
         }
     }

@@ -5,15 +5,15 @@ using System.Timers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MKOTHDiscordBot.Utilities
+namespace MKOTHDiscordBot.Services
 {
-    class SpamWatch
+    public class SpamWatch : ISingletonService
     {
-        private static List<ulong> userList = new List<ulong>();
-        private static HashSet<BlockedUser> blockedUsers = new HashSet<BlockedUser>();
-        private static Timer refresher = new Timer(5000);
+        private List<ulong> userList = new List<ulong>();
+        private HashSet<BlockedUser> blockedUsers = new HashSet<BlockedUser>();
+        private Timer refresher = new Timer(5000);
 
-        public static void Start()
+        public SpamWatch()
         {
             refresher.Start();
             refresher.Elapsed += (sender, evt) =>
@@ -27,7 +27,7 @@ namespace MKOTHDiscordBot.Utilities
             };
         }
 
-        public static bool Watch(ulong watchId, Action rateLimiteResponder = null)
+        public bool Watch(ulong watchId, Action rateLimiteResponder = null)
         {
             var userId = watchId;
             userList.Add(userId);

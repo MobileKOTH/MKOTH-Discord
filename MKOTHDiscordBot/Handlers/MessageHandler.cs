@@ -6,30 +6,39 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using MKOTHDiscordBot.Utilities;
-using Microsoft.Extensions.DependencyInjection;
+using MKOTHDiscordBot.Services;
 
 namespace MKOTHDiscordBot.Handlers
 {
-    public class MessageHandler
+    public class MessageHandler : DiscordClientEventHandlerBase
     {
         public static bool ReplyToTestServer = true;
 
-        private DiscordSocketClient client;
-        private CommandService commands;
         private IServiceProvider services;
+        private CommandService commands;
+        private SpamWatch spamWatch;
+        private ResponseService responseService;
+
         private ulong currentUserId;
 
-        public MessageHandler(DiscordSocketClient client, CommandService commands, IServiceProvider services)
+        public MessageHandler(
+            DiscordSocketClient client, 
+            CommandService commands, 
+            IServiceProvider services, 
+            SpamWatch spamWatch, 
+            ResponseService responseService) : base(client)
         {
-            this.client = client;
-            this.commands = commands;
             this.services = services;
+            this.commands = commands;
+            this.spamWatch = spamWatch;
+            this.responseService = responseService;
 
-            currentUserId = client.CurrentUser.Id;
-
-            client.MessageReceived += Handle;
+            this.client.MessageReceived += Handle;
+            this.client.Ready += async () => currentUserId = await Task.FromResult(this.client.CurrentUser.Id);
         }
+
+        Action RateLimitMessage(SocketCommandContext context) => () 
+            => _ = responseService.SendToContextAsync(context, "You are now rate limited");
 
         async Task Handle(SocketMessage socketMessage)
         {
@@ -39,8 +48,6 @@ namespace MKOTHDiscordBot.Handlers
 
             var context = new SocketCommandContext(client, message);
             int argPos = 0;
-
-            void rateLimitMessage() => _ = Responder.SendToContext(context, "You are now rate limited");
 
             // Debug log non dm messages.
             if (!context.IsPrivate)
@@ -69,13 +76,13 @@ namespace MKOTHDiscordBot.Handlers
             // Chat handling in DM.
             if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(client.CurrentUser, ref argPos))
             {
-                if (SpamWatch.Watch(message.Author.Id, rateLimitMessage)) return;
+                if (spamWatch.Watch(message.Author.Id, RateLimitMessage(context))) return;
                 _ = Chat.ReplyAsync(context, message.Content);
                 return;
             }
             else if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && message.HasMentionPrefix(client.CurrentUser, ref argPos))
             {
-                if (SpamWatch.Watch(message.Author.Id, rateLimitMessage)) return;
+                if (spamWatch.Watch(message.Author.Id, RateLimitMessage(context))) return;
                 _ = Chat.ReplyAsync(context, message.Content.Remove(0, argPos));
                 return;
             }
@@ -83,12 +90,12 @@ namespace MKOTHDiscordBot.Handlers
             if (!message.Author.IsBot && !message.HasMentionPrefix(client.CurrentUser, ref argPos)) new Chat(context);
 
             if (!(message.HasCharPrefix('.', ref argPos) || message.HasMentionPrefix(client.CurrentUser, ref argPos))) return;
-            if (SpamWatch.Watch(message.Author.Id, rateLimitMessage)) return;
+            if (spamWatch.Watch(message.Author.Id, RateLimitMessage(context))) return;
             // Command handling.
             var result = await commands.ExecuteAsync(context, argPos, services);
             if (context.IsPrivate && message.Author.Id != ApplicationContext.BotOwner.Id)
             {
-                await Responder.SendToChannel(ApplicationContext.TestGuild.BotTest, "DM command received:", new EmbedBuilder()
+                await responseService.SendToChannelAsync(ApplicationContext.TestGuild.BotTest, "DM command received:", new EmbedBuilder()
                     .WithAuthor(message.Author)
                     .WithDescription(message.Content)
                     .Build());

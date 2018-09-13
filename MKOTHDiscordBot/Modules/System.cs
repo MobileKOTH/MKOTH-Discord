@@ -49,10 +49,10 @@ namespace MKOTHDiscordBot.Modules
             foreach (var item in searcherCPU.Get()) cpuUsagePercent = (ushort)item["LoadPercentage"];
 
             await msgTask.Result.ModifyAsync(x => x.Embed = buildEmbed(
-                string.Format("```{0:N2} MB```", RamUsageMB),
-                string.Format("```Free RAM: {0:N2} / {1:N2} GB\nCPU Load: {2}%```", freeRAMGB, ramSizeGB, cpuUsagePercent)));
+                string.Format("{0:N2} MB", RamUsageMB),
+                string.Format("Free RAM: {0:N2} / {1:N2} GB\nCPU Load: {2}%", freeRAMGB, ramSizeGB, cpuUsagePercent)));
 
-            Embed buildEmbed(string ramUsage = "```Loading...```", string systemInfo = "```Loading...```")
+            Embed buildEmbed(string ramUsage = "Loading...", string systemInfo = "Loading...")
                 => new EmbedBuilder()
                 .WithTitle("System Information")
                 .WithDescription("[__**Official MKOTH Website**__](https://MobileKOTH.github.io)\n\nOfficial MKOTH Management Bot. In early development and testing phase.")
@@ -64,25 +64,25 @@ namespace MKOTHDiscordBot.Modules
                     .WithUrl("https://github.com/Cerlancism"))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Help")
-                    .WithValue("```.Help```"))
+                    .WithValue(".Help".MarkdownCodeBlock("yaml")))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Library")
-                    .WithValue("```Discord.Net v2.0.0```")
+                    .WithValue("Discord.Net v2.0.0".MarkdownCodeBlock("yaml"))
                     .WithIsInline(true))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Memory")
-                    .WithValue(ramUsage)
+                    .WithValue(ramUsage.MarkdownCodeBlock("yaml"))
                     .WithIsInline(true))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Build")
-                    .WithValue($"```v{ApplicationContext.BuildVersion}```")
+                    .WithValue($"v{ApplicationContext.BuildVersion}".MarkdownCodeBlock("yaml"))
                     .WithIsInline(true))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("System")
-                    .WithValue(systemInfo))
+                    .WithValue(systemInfo.MarkdownCodeBlock("yaml")))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Uptime")
-                    .WithValue($"```{(DateTime.Now - ApplicationContext.DeploymentTime).AsRoundedDuration()}```"))
+                    .WithValue($"{(DateTime.Now - ApplicationContext.DeploymentTime).AsRoundedDuration()}".MarkdownCodeBlock("yaml")))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Repositories")
                     .WithValue(
@@ -138,11 +138,9 @@ namespace MKOTHDiscordBot.Modules
         [RequireDeveloper]
         public async Task SetTest()
         {
-            EmbedBuilder embed = new EmbedBuilder();
-            IUserMessage msg;
             if (Program.TestMode) return;
             Handlers.MessageHandler.ReplyToTestServer = false;
-            msg = await ReplyAsync("Disabled replying to test server");
+            await ReplyAsync("Disabled replying to test server");
         }
 
         [Command("Restart")]

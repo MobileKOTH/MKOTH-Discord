@@ -3,11 +3,20 @@ using System.IO;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Discord.WebSocket;
-using MKOTHDiscordBot.Utilities;
+using MKOTHDiscordBot.Services;
 
 namespace MKOTHDiscordBot
 {
-    public enum LogType { DIRECTMESSAGE, ERROR, TRASHREPLY , NOREPLYFOUND, CHATSAVETIME, PLAYERDATALOAD};
+    public enum LogType
+    {
+        DIRECTMESSAGE,
+        ERROR,
+        TRASHREPLY ,
+        NOREPLYFOUND,
+        CHATSAVETIME,
+        PLAYERDATALOAD,
+        CLIENTEVENT
+    };
 
     public class Logger
     {
@@ -87,17 +96,17 @@ namespace MKOTHDiscordBot
             }
         }
 
-        public static async Task SendError(Exception error)
+        public static async Task SendErrorAsync(Exception error)
         {
             try
             {
                 string stacktrace = error.StackTrace ?? "Null Stacktrace";
                 stacktrace = stacktrace.SliceFront(1800);
-                await Responder.SendToChannel(ApplicationContext.TestGuild.BotTest, error.Message + stacktrace.MarkdownCodeBlock("yaml"));
+                await ResponseService.Instance.SendToChannelAsync(ApplicationContext.TestGuild.BotTest, error.Message + stacktrace.MarkdownCodeBlock("yaml"));
                 if (++ResponderErrors > 3)
                 {
                     ResponderErrors = 0;
-                    await SendError(new Exception("The application has experienced too many errors and is attempting to auto restart"));
+                    await SendErrorAsync(new Exception("The application has experienced too many errors and is attempting to auto restart"));
                     Modules.System.RestartStatic(ApplicationContext.TestGuild.BotTest.Id);
                 }
             }

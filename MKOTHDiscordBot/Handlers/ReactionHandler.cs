@@ -9,12 +9,12 @@ using MKOTHDiscordBot.Components.InteractiveReaction;
 
 namespace MKOTHDiscordBot.Handlers
 {
-    public class ReactionHandler
+    public class ReactionHandler : DiscordClientEventHandlerBase
     {
-        public ReactionHandler(DiscordSocketClient client)
+        public ReactionHandler(DiscordSocketClient client) : base(client)
         {
-            client.ReactionAdded += Handle;
-            client.ReactionRemoved += Handle;
+            this.client.ReactionAdded += Handle;
+            this.client.ReactionRemoved += Handle;
         }
 
         Task Handle(Cacheable<IUserMessage, ulong> cache, ISocketMessageChannel channel, SocketReaction reaction)

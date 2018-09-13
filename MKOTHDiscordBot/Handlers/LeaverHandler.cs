@@ -1,17 +1,20 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using MKOTHDiscordBot.Utilities;
+using MKOTHDiscordBot.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace MKOTHDiscordBot.Handlers
 {
-    public class LeaverHandler
+    public class LeaverHandler : DiscordClientEventHandlerBase
     {
-        public LeaverHandler(DiscordSocketClient client)
+        private ResponseService responseService;
+
+        public LeaverHandler(DiscordSocketClient client, ResponseService responseService) : base (client)
         {
-            client.UserLeft += Handle;
+            this.responseService = responseService;
+            this.client.UserLeft += Handle;
         }
 
         Task Handle(SocketGuildUser user)
@@ -58,7 +61,7 @@ namespace MKOTHDiscordBot.Handlers
                         .WithAuthor($"{user.GetDisplayName()}#{user.DiscriminatorValue}", user.GetAvatarUrl())
                         .WithDescription($"{user.Mention}, {message}");
 
-                    _ = Responder.SendToChannel(ApplicationContext.MKOTHGuild.Leave, string.Empty, embed.Build());
+                    _ = responseService.SendToChannelAsync(ApplicationContext.MKOTHGuild.Leave, string.Empty, embed.Build());
                 }
 
                 void SendDmMessage(string message)

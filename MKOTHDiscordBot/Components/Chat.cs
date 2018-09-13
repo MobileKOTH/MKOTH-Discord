@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using MKOTHDiscordBot.Utilities;
+using MKOTHDiscordBot.Services;
 
 namespace MKOTHDiscordBot
 {
@@ -116,7 +116,7 @@ namespace MKOTHDiscordBot
                     return;
                 }
             }
-            await Responder.TriggerTyping(context);
+            await ResponseService.Instance.TriggerTypingAsync(context);
 
             var (rephrasePool, replyPool) = ProcessResponses(message);
 
@@ -142,10 +142,10 @@ namespace MKOTHDiscordBot
                 "**Pool:** " + poolLog.AddMarkDownLine() +
                 "**Reply:** " + reply, LogType.TRASHREPLY);
 
-            await Responder.SendToContext(context, reply);
+            await ResponseService.Instance.SendToContextAsync(context, reply);
             if (context.IsPrivate && context.User.Id != ApplicationContext.BotOwner.Id)
             {
-                await Responder.SendToChannel(ApplicationContext.TestGuild.BotTest, "DM chat received:", new EmbedBuilder()
+                await ResponseService.Instance.SendToChannelAsync(ApplicationContext.TestGuild.BotTest, "DM chat received:", new EmbedBuilder()
                     .WithAuthor(context.User)
                     .WithDescription(message)
                     .AddField("Response", reply)
