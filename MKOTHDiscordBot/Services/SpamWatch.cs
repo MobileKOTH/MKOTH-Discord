@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 
 namespace MKOTHDiscordBot.Services
 {
-    public class SpamWatch : ISingletonService
+    [SingletonService("Rate limiting service to watch users and prevent them spamming to the bot.")]
+    public class SpamWatch
     {
         private List<ulong> userList = new List<ulong>();
         private HashSet<BlockedUser> blockedUsers = new HashSet<BlockedUser>();

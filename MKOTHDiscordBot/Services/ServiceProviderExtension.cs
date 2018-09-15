@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Reflection;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -9,7 +11,7 @@ namespace MKOTHDiscordBot.Services
         public static IServiceCollection ConfigureSingletonServices(this IServiceCollection services)
         {
             var serviesRunners = ApplicationContext.CommonClasses
-                .Where(x => x.GetInterfaces().Contains(typeof(ISingletonService)))
+                .Where(x => x.GetCustomAttribute<SingletonServiceAttribute>() != null)
                 .ToImmutableArray();
 
             foreach (var item in serviesRunners)

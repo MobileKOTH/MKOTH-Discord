@@ -154,7 +154,8 @@
     <Compile Include="Preconditions\RequireMKOTHMemberAttribute.cs" />
     <Compile Include="Preconditions\RequireMKOTHModAttribute.cs" />
     <Compile Include="Services\ServiceProviderExtension.cs" />
-    <Compile Include="Services\ISingletonService.cs" />
+    <Compile Include="Services\SingletonServiceAttribute.cs" />
+    <Compile Include="Services\StatusCycler.cs" />
     <Compile Include="Utilities\ApplicationContext.cs" />
     <Compile Include="Utilities\Directories.cs" />
     <Compile Include="Utilities\Extensions.cs" />
