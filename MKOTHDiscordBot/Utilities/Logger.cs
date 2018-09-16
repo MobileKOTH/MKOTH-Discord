@@ -9,16 +9,16 @@ namespace MKOTHDiscordBot
 {
     public enum LogType
     {
-        DIRECTMESSAGE,
-        ERROR,
-        TRASHREPLY ,
-        NOREPLYFOUND,
-        CHATSAVETIME,
-        PLAYERDATALOAD,
-        CLIENTEVENT
+        DirectMessage,
+        Error,
+        TrashReply ,
+        NoTrashReplyFound,
+        ChatSaveTime,
+        PlayerDataLoad,
+        ClientEvent
     };
 
-    public class Logger
+    public static class Logger
     {
         public static int ResponderErrors = 0;
 
@@ -26,18 +26,18 @@ namespace MKOTHDiscordBot
         {
             switch (type)
             {
-                case LogType.TRASHREPLY:
+                case LogType.TrashReply:
 
-                case LogType.NOREPLYFOUND:
-                    writeLog(ApplicationContext.Directories.ChatLogsFile);
+                case LogType.NoTrashReplyFound:
+                    writeLog(Directories.ChatLogsFile);
                     break;
 
-                case LogType.ERROR:
-                    writeLog(ApplicationContext.Directories.ErrorLogsFile);
+                case LogType.Error:
+                    writeLog(Directories.ErrorLogsFile);
                     break;
 
                 default:
-                    writeLog(ApplicationContext.Directories.GeneralLogsFile);
+                    writeLog(Directories.GeneralLogsFile);
                     break;
             }
 
@@ -71,7 +71,7 @@ namespace MKOTHDiscordBot
         public static void LogError(Exception error)
         {
             Log("### " + error.Message.AddMarkDownLine() + 
-                error.StackTrace.MarkdownCodeBlock("diff"), LogType.ERROR);
+                error.StackTrace.MarkdownCodeBlock("diff"), LogType.Error);
         }
 
         public static void Debug(object obj, string description)
@@ -106,9 +106,13 @@ namespace MKOTHDiscordBot
                 if (++ResponderErrors > 3)
                 {
                     ResponderErrors = 0;
-                    await SendErrorAsync(new Exception("The application has experienced too many errors and is attempting to auto restart"));
-                    Modules.System.RestartStatic(ApplicationContext.TestGuild.BotTest.Id);
+                    throw new TooManyErrorsException();
                 }
+            }
+            catch (TooManyErrorsException e)
+            {
+                await SendErrorAsync(e);
+                ApplicationManager.RestartApplication(ApplicationContext.TestGuild.BotTest.Id);
             }
             catch (Exception e)
             {
@@ -117,6 +121,16 @@ namespace MKOTHDiscordBot
             finally
             {
                 LogError(error);
+            }
+        }
+
+        private class TooManyErrorsException : Exception
+        {
+            public override string Message => "The application has experienced too many errors and is attempting to auto restart";
+
+            public TooManyErrorsException()
+            {
+
             }
         }
     }

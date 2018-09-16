@@ -42,12 +42,12 @@ namespace MKOTHDiscordBot.Modules
             {
                 await Context.User.SendMessageAsync("Your identification for submission form is below. Please keep the code secret.");
                 await Context.User.SendMessageAsync(code.ToString());
-                Logger.Log("Sent code to " + Context.User.Username.AddTab().AddMarkDownLine() + $"Discord Id: {Context.User.Id}".AddMarkDownLine() + code.ToString(), LogType.DIRECTMESSAGE);
+                Logger.Log("Sent code to " + Context.User.Username.AddTab().AddMarkDownLine() + $"Discord Id: {Context.User.Id}".AddMarkDownLine() + code.ToString(), LogType.DirectMessage);
             }
             else
             {
                 await Context.User.SendMessageAsync("Your Identification is not found, please dm an admin for assistance");
-                Logger.Log("Sent code to " + Context.User.Username.AddTab().AddMarkDownLine() + $"Discord Id: {Context.User.Id}" + "Code not found/not member", LogType.DIRECTMESSAGE);
+                Logger.Log("Sent code to " + Context.User.Username.AddTab().AddMarkDownLine() + $"Discord Id: {Context.User.Id}" + "Code not found/not member", LogType.DirectMessage);
             }
         }
 
@@ -190,7 +190,7 @@ namespace MKOTHDiscordBot.Modules
 
             string filledFormURLEncoded = baseURL + queryString.ToString();
             var filledFormURLDecoded = Uri.EscapeUriString(HttpUtility.UrlDecode(filledFormURLEncoded));
-            Logger.Log($"Form sent to: {Context.User}\n \nfilledFormURLEncoded: {filledFormURLEncoded}\n\nfilledFormURLDecoded: {filledFormURLDecoded}\n", LogType.DIRECTMESSAGE);
+            Logger.Log($"Form sent to: {Context.User}\n \nfilledFormURLEncoded: {filledFormURLEncoded}\n\nfilledFormURLDecoded: {filledFormURLDecoded}\n", LogType.DirectMessage);
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithUrl(filledFormURLDecoded)
@@ -261,11 +261,11 @@ namespace MKOTHDiscordBot.Modules
                     }
                     else if (!player.IsUnknown && !player.IsRemoved && !serveruser.Roles.Contains(Stupid))
                     {
-                        if (ApplicationContext.Config.Moderators.Contains(serveruser.Id) && !serveruser.Roles.Contains(ChatMods))
+                        if (ApplicationContext.Credentials.Moderators.Contains(serveruser.Id) && !serveruser.Roles.Contains(ChatMods))
                         {
                             await serveruser.AddRoleAsync(ChatMods);
                         }
-                        if (ApplicationContext.Config.Moderators.Contains(serveruser.Id) && !serveruser.GetDisplayName().Contains("ᴹᵒᵈ"))
+                        if (ApplicationContext.Credentials.Moderators.Contains(serveruser.Id) && !serveruser.GetDisplayName().Contains("ᴹᵒᵈ"))
                         {
                             await serveruser.ModifyAsync(x => { x.Nickname = player.Name + " ᴹᵒᵈ"; });
                         }

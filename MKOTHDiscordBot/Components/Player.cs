@@ -180,7 +180,7 @@ namespace MKOTHDiscordBot
                 Initialise(playerData, playerRanking, codeList);
 
                 stopwatch.Stop();
-                Logger.Log("**Time used:** `" + stopwatch.ElapsedMilliseconds + " ms`", LogType.PLAYERDATALOAD);
+                Logger.Log("**Time used:** `" + stopwatch.ElapsedMilliseconds + " ms`", LogType.PlayerDataLoad);
 
             }
             catch (Exception e)

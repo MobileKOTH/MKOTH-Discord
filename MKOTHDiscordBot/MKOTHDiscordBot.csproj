@@ -142,6 +142,8 @@
     <Compile Include="Components\InteractiveReaction\InteractiveReactionBase.cs" />
     <Compile Include="Components\Player.cs" />
     <Compile Include="Components\Vote.cs" />
+    <Compile Include="Credentials.cs" />
+    <Compile Include="Handlers\ReadyHandler.cs" />
     <Compile Include="Handlers\DiscordClientEventHandlerBase.cs" />
     <Compile Include="Handlers\LeaverHandler.cs" />
     <Compile Include="Handlers\MessageHandler.cs" />
@@ -153,7 +155,7 @@
     <Compile Include="Preconditions\RequireMKOTHGuildAttribute.cs" />
     <Compile Include="Preconditions\RequireMKOTHMemberAttribute.cs" />
     <Compile Include="Preconditions\RequireMKOTHModAttribute.cs" />
-    <Compile Include="Services\ServiceProviderExtension.cs" />
+    <Compile Include="Services\ServiceExtensions.cs" />
     <Compile Include="Services\SingletonServiceAttribute.cs" />
     <Compile Include="Services\StatusCycler.cs" />
     <Compile Include="Utilities\ApplicationContext.cs" />
@@ -168,7 +170,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\SpamWatch.cs" />
-    <Compile Include="Utilities\SystemManager.cs" />
+    <Compile Include="Utilities\ApplicationManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

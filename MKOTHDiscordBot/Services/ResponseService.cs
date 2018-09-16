@@ -1,26 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using System.Timers;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using System.Timers;
 
 namespace MKOTHDiscordBot.Services
 {
-    [SingletonService("Helper class to send discord messages.")]
+    [SingletonService("Helper class to send Discord messages.")]
     public class ResponseService
     {
         public static ResponseService Instance { get; private set; }
 
-        private StatusCycler statusCycler;
+        private int currentTypingSecond = 0;
+        private Timer secondCounter = new Timer(1000);
 
-        public ResponseService(StatusCycler statusCycler)
+        public ResponseService()
         {
-            Instance = this;
+            if (Instance != null)
+            {
+                return;
+            }
 
-            this.statusCycler = statusCycler;
+            secondCounter.Elapsed += HandleTimeCounter;
+            secondCounter.Start();
+
+            Instance = this;
 
             Logger.Debug("Started", "Responder Service");
         }
@@ -29,9 +34,9 @@ namespace MKOTHDiscordBot.Services
         {
             try
             {
-                if (ApplicationContext.CurrentTypingSecond == 0)
+                if (currentTypingSecond == 0)
                 {
-                    ApplicationContext.CurrentTypingSecond = 10;
+                    currentTypingSecond = 10;
                     await context.Channel.TriggerTypingAsync();
                 }
             }
@@ -45,7 +50,7 @@ namespace MKOTHDiscordBot.Services
         {
             try
             {
-                ApplicationContext.CurrentTypingSecond = 0;
+                currentTypingSecond = 0;
                 await context.Channel.SendMessageAsync(reply);
             }
             catch (Exception e)
@@ -64,6 +69,11 @@ namespace MKOTHDiscordBot.Services
             {
                 Logger.LogError(e);
             }
+        }
+
+        private void HandleTimeCounter(object _, ElapsedEventArgs __)
+        {
+            currentTypingSecond = currentTypingSecond > 0 ? currentTypingSecond - 1 : 0;
         }
     }
 }

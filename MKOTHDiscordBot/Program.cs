@@ -1,15 +1,16 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
-using MKOTHDiscordBot.Handlers;
-using MKOTHDiscordBot.Services;
-using System;
+﻿using System;
 using System.Configuration;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
+using MKOTHDiscordBot.Handlers;
+
+using static MKOTHDiscordBot.Services.ServiceExtensions;
 
 namespace MKOTHDiscordBot
 {
@@ -75,7 +76,8 @@ namespace MKOTHDiscordBot
                 .AddSingleton(client)
                 .AddSingleton(commands)
                 .ConfigureSingletonServices()
-                .BuildServiceProvider();
+                .BuildServiceProvider()
+                .StartForcedInstances();
 
             // Discover all of the commands in this assembly and load them.
             await commands.AddModulesAsync(Assembly.GetEntryAssembly());
@@ -84,9 +86,8 @@ namespace MKOTHDiscordBot
             DiscordClientEventHandlerBase.ConfigureCommonHandlers(services);
             client.UserJoined += (user) => Task.Run(() => Logger.Debug(user.GetDisplayName(), "User Joined")); // TODO
             client.Disconnected += (e) => Task.Run(() => FirstArgument = e.Message + e.StackTrace.MarkdownCodeBlock("diff"));
-            client.Ready += async () => await ApplicationContext.Load(client);
 
-            await client.LoginAsync(TokenType.Bot, ApplicationContext.Config.Token);
+            await client.LoginAsync(TokenType.Bot, ApplicationContext.Credentials.DiscordToken);
             await client.StartAsync();
 
             await Task.Delay(-1);

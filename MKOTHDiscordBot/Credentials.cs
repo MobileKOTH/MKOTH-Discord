@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace MKOTHDiscordBot
 {
-    class SystemManager
+    public class Credentials
     {
+        public string DiscordToken { get; set; }
+        public List<ulong> Moderators { get; set; }
     }
 }

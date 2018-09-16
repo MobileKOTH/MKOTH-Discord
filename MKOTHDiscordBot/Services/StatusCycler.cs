@@ -8,24 +8,24 @@ using Discord.WebSocket;
 
 namespace MKOTHDiscordBot.Services
 {
-    [SingletonService("Display manage status showm in Discord.")]
+    [SingletonService("Display status showm in Discord.", ForceInstantiate = true)]
     public class StatusCycler
     {
         public enum StatusMessageType
         {
-            HELP,
-            INFO,
-            KING,
-            GAMESCOUNT,
-            SUBMIT
+            Help,
+            Info,
+            King,
+            GamesCount,
+            SeriesSubmission
         };
 
         private readonly List<StatusMessageType> statusSequence = new List<StatusMessageType>
         {
-            StatusMessageType.INFO,
-            StatusMessageType.KING,
-            StatusMessageType.GAMESCOUNT,
-            StatusMessageType.SUBMIT,
+            StatusMessageType.Info,
+            StatusMessageType.King,
+            StatusMessageType.GamesCount,
+            StatusMessageType.SeriesSubmission,
         };
 
         private DiscordSocketClient client;
@@ -37,20 +37,20 @@ namespace MKOTHDiscordBot.Services
         {
             this.client = client;
 
-            status = (StatusMessageType.HELP, statusSequence.Last());
+            status = (StatusMessageType.Help, statusSequence.Last());
             statusTimer.Elapsed += async (_, __) => await ChangeStatusAsync();
 
             client.Connected += () =>
             {
                 statusTimer.Start();
-                Logger.Log("CLient Connected", LogType.CLIENTEVENT);
+                Logger.Log("CLient Connected", LogType.ClientEvent);
                 return Task.CompletedTask;
             };
 
             client.Disconnected += (_) =>
             {
                 statusTimer.Stop();
-                Logger.Log("Client Disconnected", LogType.CLIENTEVENT);
+                Logger.Log("Client Disconnected", LogType.ClientEvent);
                 return Task.CompletedTask;
             };
 
@@ -69,33 +69,33 @@ namespace MKOTHDiscordBot.Services
                 Console.WriteLine(status);
                 switch (status.current)
                 {
-                    case StatusMessageType.HELP:
+                    case StatusMessageType.Help:
                         await client.SetGameAsync("| .help for general help");
                         setNextStatus();
                         return;
 
-                    case StatusMessageType.INFO:
+                    case StatusMessageType.Info:
                         await client.SetGameAsync("| .info MKOTH information");
                         break;
 
-                    case StatusMessageType.SUBMIT:
+                    case StatusMessageType.SeriesSubmission:
                         await client.SetGameAsync("| .submit to submit series");
                         break;
 
-                    case StatusMessageType.KING:
+                    case StatusMessageType.King:
                         var kingname = Player.List.First(x => x.Class == PlayerClass.KING).Name;
                         var kingstatus = "King: " + kingname.SliceBack(18);
                         await client.SetGameAsync(kingstatus);
                         break;
 
-                    case StatusMessageType.GAMESCOUNT:
+                    case StatusMessageType.GamesCount:
                         var count = Player.List.Sum(x => (x.Wins + x.Loss + x.Draws) / 2);
                         var gamestatus = count + " total games played";
                         await client.SetGameAsync(gamestatus);
                         break;
                 }
                 status.last = status.current;
-                status.current = StatusMessageType.HELP;
+                status.current = StatusMessageType.Help;
 
                 void setNextStatus()
                 {

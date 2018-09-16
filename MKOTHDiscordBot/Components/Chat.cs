@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Linq;
-using System.Text;
-using System.IO;
-using System.Threading.Tasks;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using MKOTHDiscordBot.Services;
+using Newtonsoft.Json;
 
 namespace MKOTHDiscordBot
 {
@@ -70,7 +69,7 @@ namespace MKOTHDiscordBot
 
         public static void LoadHistory()
         {
-            string json = "[" + File.ReadAllText(ApplicationContext.Directories.ChatHistoryFile) + "]";
+            string json = "[" + File.ReadAllText(Directories.ChatHistoryFile) + "]";
             History = JsonConvert.DeserializeObject<List<string>>(json);
             lastSaveIndex = History.Count;
             previousUser = null;
@@ -86,13 +85,13 @@ namespace MKOTHDiscordBot
                 var saveString = "";
                 saveRange.ForEach(x => saveString += JsonConvert.SerializeObject(x) + ",".AddLine());
                 DateTime start = DateTime.Now;
-                using (StreamWriter sw = File.AppendText(ApplicationContext.Directories.ChatHistoryFile))
+                using (StreamWriter sw = File.AppendText(Directories.ChatHistoryFile))
                 {
                     sw.Write(saveString);
                 }
                 Logger.Log("**Time used:** `" + (DateTime.Now - start).TotalMilliseconds.ToString() + " ms`".AddMarkDownLine() +
                     "**Lines:** " + saveRange.Count.ToString().AddMarkDownLine() +
-                    $"**Height:** History - {History.Count} Last Save - {History.Count - saveRange.Count} Idle Time - {idleTime} seconds", LogType.CHATSAVETIME);
+                    $"**Height:** History - {History.Count} Last Save - {History.Count - saveRange.Count} Idle Time - {idleTime} seconds", LogType.ChatSaveTime);
                 LoadHistory();
             }
         }
@@ -140,7 +139,7 @@ namespace MKOTHDiscordBot
                 "**Chat Trigger:** " + message.AddMarkDownLine() +
                 "**Match Rate:** " + matchRate.ToString().AddMarkDownLine() +
                 "**Pool:** " + poolLog.AddMarkDownLine() +
-                "**Reply:** " + reply, LogType.TRASHREPLY);
+                "**Reply:** " + reply, LogType.TrashReply);
 
             await ResponseService.Instance.SendToContextAsync(context, reply);
             if (context.IsPrivate && context.User.Id != ApplicationContext.BotOwner.Id)
@@ -269,7 +268,7 @@ namespace MKOTHDiscordBot
                 }
                 if (wordcountmatch <= 0)
                 {
-                    Logger.Log("**No chat results:** ".AddMarkDownLine() + message, LogType.NOREPLYFOUND);
+                    Logger.Log("**No chat results:** ".AddMarkDownLine() + message, LogType.NoTrashReplyFound);
                     break;
                 }
                 wordcountmatch--;

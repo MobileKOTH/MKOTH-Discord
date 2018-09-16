@@ -1,13 +1,11 @@
-﻿using Discord.Commands;
-using Discord;
-using System;
-using System.Threading.Tasks;
+﻿using System;
 using System.Diagnostics;
-using System.Management;
-using System.Reflection;
 using System.IO;
 using System.Linq;
-using System.Timers;
+using System.Management;
+using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
 
 namespace MKOTHDiscordBot.Modules
 {
@@ -31,26 +29,15 @@ namespace MKOTHDiscordBot.Modules
         [Command("BotInfo", RunMode = RunMode.Async)]
         [Alias("BotStats", "SystemInfo", "sys", "system")]
         [Summary("Displays the bot information and statistics.")]
-        public async Task Info()
+        public async Task BotInfo()
         {
             var msgTask = ReplyAsync(string.Empty, embed: buildEmbed());
 
-            var prcName = Process.GetCurrentProcess().ProcessName;
-            var RamUsageMB = (float)new PerformanceCounter("Process", "Working Set - Private", prcName).RawValue / 1024 / 1024;
-            var freeRAMGB = new PerformanceCounter("Memory", "Available MBytes").NextValue() / 1024;
-            ulong ramSizeGB = 0;
-            ushort cpuUsagePercent = 0;
-
-            var ramQuery = new ObjectQuery("SELECT * FROM CIM_PhysicalMemory");
-            var searcherRAM = new ManagementObjectSearcher(ramQuery);
-            var cpuQuery = new ObjectQuery("SELECT * FROM CIM_Processor");
-            var searcherCPU = new ManagementObjectSearcher(cpuQuery);
-            foreach (var item in searcherRAM.Get()) ramSizeGB += (ulong)item["Capacity"] / 1024 / 1024 / 1024;
-            foreach (var item in searcherCPU.Get()) cpuUsagePercent = (ushort)item["LoadPercentage"];
+            var (ramUsageMB, freeRamGB, ramSizeGB, cpuUsagePercent) = ApplicationManager.GetResourceUsage();
 
             await msgTask.Result.ModifyAsync(x => x.Embed = buildEmbed(
-                string.Format("{0:N2} MB", RamUsageMB),
-                string.Format("Free RAM: {0:N2} / {1:N2} GB\nCPU Load: {2}%", freeRAMGB, ramSizeGB, cpuUsagePercent)));
+                string.Format("{0:N2} MB", ramUsageMB),
+                string.Format("Free RAM: {0:N2} / {1:N2} GB\nCPU Load: {2}%", freeRamGB, ramSizeGB, cpuUsagePercent)));
 
             Embed buildEmbed(string ramUsage = "Loading...", string systemInfo = "Loading...")
                 => new EmbedBuilder()
@@ -121,7 +108,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireDeveloper]
         public async Task Logs()
         {
-            var blocks = File.ReadAllText(ApplicationContext.Directories.GeneralLogsFile).Split(new string[1] { "\r\n\r\n" }, StringSplitOptions.None)
+            var blocks = File.ReadAllText(Directories.GeneralLogsFile).Split(new string[1] { "\r\n\r\n" }, StringSplitOptions.None)
                 .Reverse()
                 .Take(20);
             var output = string.Join("\n\n", blocks)
@@ -150,7 +137,7 @@ namespace MKOTHDiscordBot.Modules
         public async Task Restart()
         {
             await ReplyAsync("Restarting...");
-            _ = Task.Run(() => RestartStatic(Context.Channel.Id));
+            _ = Task.Run(() => ApplicationManager.RestartApplication(Context.Channel.Id));
         }
 
         [Command("ShutDown")]
@@ -159,26 +146,7 @@ namespace MKOTHDiscordBot.Modules
         public async Task ShutDown()
         {
             await ReplyAsync("Shutting Down...");
-            _ = Task.Run(() => ShutDownStatic());
-        }
-
-        public static void RestartStatic(ulong responseChannelId)
-        {
-            ApplicationContext.Client.LogoutAsync().GetAwaiter().GetResult();
-            ApplicationContext.Client.StopAsync().GetAwaiter().GetResult();
-            ApplicationContext.Client.Dispose();
-            Chat.SaveHistory();
-            Process.Start(Assembly.GetExecutingAssembly().Location, $"Restarted {responseChannelId}");
-            Environment.Exit(0);
-        }
-
-        public static void ShutDownStatic()
-        {
-            ApplicationContext.Client.LogoutAsync().GetAwaiter().GetResult();
-            ApplicationContext.Client.StopAsync().GetAwaiter().GetResult();
-            ApplicationContext.Client.Dispose();
-            Chat.SaveHistory();
-            Environment.Exit(0);
+            _ = Task.Run(() => ApplicationManager.ShutDownApplication());
         }
     }
 }

@@ -16,61 +16,22 @@ namespace MKOTHDiscordBot
     // A data holder class to store global variables and discord context
     public static class ApplicationContext
     {
-        public static class Directories
-        {
-            private static class FoldersNames
-            {
-                public const string
-                    DATA = @"\Data\",
-                    LOGS = @"\Logs\";
-            }
+        public static IReadOnlyList<Type> CommonClasses => 
+            Assembly.GetEntryAssembly()
+            .GetTypes()
+            .Where(x => x.IsClass && !x.IsNested).ToImmutableArray();
 
-            private static class FileNames
-            {
-                public const string 
-                    CONFIG_JSON = "Config.json",
-                    GENERALLOGS_MD = "General Logs.md",
-                    ERRORLOGS_MD = "Error Logs.md",
-                    CHATLOGS_TXT = "Chat Logs.md",
-                    CHATHISTORY_DAT = "ChatHistory.dat";
-            }
-
-            /// <summary>
-            /// Full directory string paths for an application folder.
-            /// </summary>
-            public static readonly string 
-                Root = Directory.GetParent(Directory.GetCurrentDirectory()).FullName + @"\",
-                DataFolder = Root + FoldersNames.DATA,
-                LogsFolder = Root + FoldersNames.LOGS;
-
-            /// <summary>
-            /// Full directory string path of an application file.
-            /// </summary>
-            public static readonly string 
-                ConfigFile = Root + FileNames.CONFIG_JSON,
-                GeneralLogsFile = LogsFolder + FileNames.GENERALLOGS_MD,
-                ErrorLogsFile = LogsFolder + FileNames.ERRORLOGS_MD,
-                ChatLogsFile = LogsFolder + FileNames.CHATLOGS_TXT,
-                ChatHistoryFile = DataFolder + FileNames.CHATHISTORY_DAT;
-        }
-
-        public static IReadOnlyList<Type> CommonClasses => Assembly.GetEntryAssembly().GetTypes().Where(x => x.IsClass && !x.IsNested).ToImmutableArray();
-
-        public static ProgramConfiguration Config = JsonConvert.DeserializeObject<ProgramConfiguration>(File.ReadAllText(Directories.ConfigFile));
+        public static Credentials Credentials => JsonConvert.DeserializeObject<Credentials>(File.ReadAllText(Directories.ConfigFile));
 
         public static string BuildVersion => $"{Assembly.GetExecutingAssembly().GetName().Version.Major}.{Assembly.GetExecutingAssembly().GetName().Version.Minor}." +  ConfigurationManager.AppSettings["BuildNumber"].PadLeft(4, '0');
         public static readonly DateTime DeploymentTime = DateTime.Now;
 
-        public static int CurrentTypingSecond = 0;
-
-        public static DiscordSocketClient Client;
+        public static DiscordSocketClient DiscordClient;
         public static IUser BotOwner;
-
-        private static Timer SecondCounter;
 
         public static class MKOTHGuild
         {
-            public static SocketGuild Guild => Client.GetGuild(271109067261476866UL);
+            public static SocketGuild Guild => DiscordClient.GetGuild(271109067261476866UL);
 
             public static SocketTextChannel Official => Guild.TextChannels.Single(x => x.Id.Equals(347258242277310465UL));
             public static SocketTextChannel Casual => Guild.TextChannels.Single(x => x.Id.Equals(347166773642133515UL));
@@ -99,75 +60,9 @@ namespace MKOTHDiscordBot
 
         public static class TestGuild
         {
-            public static SocketGuild Guild => Client.GetGuild(270838709287387136UL);
+            public static SocketGuild Guild => DiscordClient.GetGuild(270838709287387136UL);
 
             public static SocketTextChannel BotTest => Guild.TextChannels.Single(x => x.Id.Equals(360352712619065345UL));
-        }
-
-        public static Task Load(DiscordSocketClient client)
-        {
-            try
-            {
-                SecondCounter?.Dispose();
-                SecondCounter = new Timer(1000);
-                SecondCounter.Elapsed += HandleTimeCounter;
-                SecondCounter.Start();
-
-                Client = client;
-
-                // Owner
-                _ = client.GetApplicationInfoAsync()
-                    .ContinueWith(x =>
-                    {
-                        BotOwner = x.Result.Owner;
-                        Console.WriteLine($"Owner Id: {BotOwner.Id}");
-                    });
-
-                // Player Data
-                _ = Player.Load();
-
-                if (Program.FirstArgument == "Restarted")
-                {
-                    var restartChannel = Client.GetChannel(ulong.Parse(Program.SecondArgument));
-                    if (restartChannel != null)
-                    {
-                        ((SocketTextChannel)restartChannel).SendMessageAsync("Bot has restarted");
-                    }
-                    else
-                    {
-                        TestGuild.BotTest.SendMessageAsync("Bot has restarted");
-                    }
-                }
-                else if (Program.FirstArgument != null)
-                {
-                    TestGuild.BotTest.SendMessageAsync("Some thing happened: " + Program.FirstArgument);
-                }
-
-                Logger.Debug(BuildVersion, nameof(BuildVersion));
-            }
-            catch (Exception e)
-            {
-                client.StopAsync();
-                client.LogoutAsync();
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(e.Message.AddLine() + e.StackTrace);
-                Console.WriteLine("Failed loading context!");
-                Console.ReadKey();
-                Environment.Exit(0);
-            }
-
-            return Task.CompletedTask;
-        }
-
-        private static void HandleTimeCounter(object _, ElapsedEventArgs __)
-        {
-            CurrentTypingSecond = CurrentTypingSecond > 0 ? CurrentTypingSecond - 1 : 0;
-        }
-
-        public class ProgramConfiguration
-        {
-            public string Token { get; set; }
-            public List<ulong> Moderators { get; set; }
         }
     }
 }
