@@ -202,8 +202,8 @@
       <Project>{b5250b03-a44c-4e99-82a7-a3f7ec701694}</Project>
       <Name>Cerlancism.Discord.InteractiveReaction</Name>
     </ProjectReference>
-    <ProjectReference Include="..\EloHeadToHeadSystem\Cerlancism.EloHeadToHeadSystem.csproj">
-      <Project>{68766a75-27ac-4270-a143-b4a46efd947f}</Project>
+    <ProjectReference Include="..\Cerlancism.EloHeadToHeadSystem\Cerlancism.EloHeadToHeadSystem.csproj">
+      <Project>{e3f8c89c-ffaa-48a9-89a2-027c74835fa9}</Project>
       <Name>Cerlancism.EloHeadToHeadSystem</Name>
     </ProjectReference>
   </ItemGroup>
