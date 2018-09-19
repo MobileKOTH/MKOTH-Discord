@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using MKOTHDiscordBot.Components.InteractiveReaction;
+using Cerlancism.Discord.InteractiveReaction.Core;
 
 namespace MKOTHDiscordBot.Handlers
 {

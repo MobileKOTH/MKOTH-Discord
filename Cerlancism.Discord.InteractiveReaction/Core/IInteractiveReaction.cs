@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 
-namespace MKOTHDiscordBot.Components.InteractiveReaction
+namespace Cerlancism.Discord.InteractiveReaction.Core
 {
     public interface IInteractiveReaction
     {

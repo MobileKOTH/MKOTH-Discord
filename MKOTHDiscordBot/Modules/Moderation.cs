@@ -21,15 +21,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireDeveloper]
         public async Task Mute(IGuildUser user, int muteTimeMinutes, [Remainder]string reason)
         {
-            var isMod = ChatMods.Members.Any(x => x.Id == Context.User.Id);
-            muteTimeMinutes = isMod ? muteTimeMinutes : 10;
-
-            var vote = new Vote(
-                Context,
-                "Mute User Vote",
-                "**" + user.GetDisplayName() + $"** has been demanded to be muted for {muteTimeMinutes} minutes, cast your opinions by reacting below. " +
-                $"This vote is initiated by a {(isMod ? "***moderator***" : "***member***")}, it needs a {(isMod ? "32" : "67")}% approval rate. " +
-                "Only MKOTH Members' vote casts are considered.");
+            // TODO
 
             await Task.CompletedTask;
         }

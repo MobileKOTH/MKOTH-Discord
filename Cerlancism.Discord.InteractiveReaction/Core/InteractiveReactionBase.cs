@@ -7,7 +7,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-namespace MKOTHDiscordBot.Components.InteractiveReaction
+namespace Cerlancism.Discord.InteractiveReaction.Core
 {
     public abstract class InteractiveReactionBase : IInteractiveReaction
     {

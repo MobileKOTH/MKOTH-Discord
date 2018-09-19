@@ -127,6 +127,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -138,10 +139,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Components\Chat.cs" />
-    <Compile Include="Components\InteractiveReaction\IInteractiveReaction.cs" />
-    <Compile Include="Components\InteractiveReaction\InteractiveReactionBase.cs" />
     <Compile Include="Components\Player.cs" />
-    <Compile Include="Components\Vote.cs" />
     <Compile Include="Credentials.cs" />
     <Compile Include="Handlers\ReadyHandler.cs" />
     <Compile Include="Handlers\DiscordClientEventHandlerBase.cs" />
@@ -181,13 +179,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Components\Chat\" />
-    <Folder Include="Components\Moderation\" />
-    <Folder Include="Components\SeriesProcessor\Core\" />
-    <Folder Include="Components\SeriesProcessor\Database\" />
-    <Folder Include="Components\SeriesProcessor\Entities\" />
-    <Folder Include="Components\SeriesProcessor\GoogleSuite\" />
-    <Folder Include="Components\SeriesProcessor\Management\" />
+    <Folder Include="Moderation\" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.1">
@@ -200,6 +192,20 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Cerlancism.ChatSystem\Cerlancism.ChatSystem.csproj">
+      <Project>{f911c9c4-ee8a-4bbc-a3d9-57c7c41eb158}</Project>
+      <Name>Cerlancism.ChatSystem</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Cerlancism.Discord.InteractiveReaction\Cerlancism.Discord.InteractiveReaction.csproj">
+      <Project>{b5250b03-a44c-4e99-82a7-a3f7ec701694}</Project>
+      <Name>Cerlancism.Discord.InteractiveReaction</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\EloHeadToHeadSystem\Cerlancism.EloHeadToHeadSystem.csproj">
+      <Project>{68766a75-27ac-4270-a143-b4a46efd947f}</Project>
+      <Name>Cerlancism.EloHeadToHeadSystem</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\NETStandard.Library.2.0.1\build\netstandard2.0\NETStandard.Library.targets" Condition="Exists('..\packages\NETStandard.Library.2.0.1\build\netstandard2.0\NETStandard.Library.targets')" />

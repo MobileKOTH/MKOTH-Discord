@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Core\" />
+    <Folder Include="Database\" />
+    <Folder Include="Entities\" />
+    <Folder Include="GoogleSuite\" />
+    <Folder Include="Management\" />
+  </ItemGroup>
+
+</Project>
