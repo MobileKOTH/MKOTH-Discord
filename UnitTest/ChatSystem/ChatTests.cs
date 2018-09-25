@@ -20,9 +20,11 @@ namespace UnitTest.ChatSystem
             using (var chat = new Chat("ChatHistory.db"))
             {
                 // Arrange
+                var trigger = "Hello this is a test message!";
+
+                // Act
                 chat.Log += log => Console.WriteLine(log);
 
-                var trigger = "Hello this is a test message!";
                 var response = chat.Reply(trigger);
 
 
@@ -39,6 +41,8 @@ namespace UnitTest.ChatSystem
             {
                 // Arrange
                 var trigger = "Hello this is a test message!";
+
+                // Act
                 var analysis = chat.Analyse(trigger);
                 var responses = chat.GetResults(analysis, trigger);
 
@@ -54,9 +58,11 @@ namespace UnitTest.ChatSystem
             using (var chat = new Chat("ChatHistory.db"))
             {
                 // Arrange
+                var trigger = "Hello this is a test message Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message!";
+
+                // Act
                 chat.Log += log => Console.WriteLine(log);
 
-                var trigger = "Hello this is a test message Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message!";
                 var response = chat.Reply(trigger);
 
 
@@ -73,6 +79,8 @@ namespace UnitTest.ChatSystem
             {
                 // Arrange
                 var trigger = "Hello this is a test message Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message!";
+
+                // Act
                 var analysis = chat.Analyse(trigger);
                 var responses = chat.GetResults(analysis, trigger);
 

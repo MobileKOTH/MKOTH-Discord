@@ -138,8 +138,7 @@ namespace Cerlancism.ChatSystem
 
         public string GetMessageById(int id)
         {
-            var collection = ChatDatabase.GetCollection<History>();
-            return collection.FindById(id).Message;
+            return ChatCollection.FindById(id).Message;
         }
 
         public void Dispose()
