@@ -6,7 +6,9 @@ namespace Cerlancism.ChatSystem.Core
 {
     public class Result
     {
-        public string Message { get; set; }
         public float Score { get; set; }
+        public History Trigger { get; set; }
+        public History Rephrase { get; set; }
+        public History Response { get; set; }
     }
 }
