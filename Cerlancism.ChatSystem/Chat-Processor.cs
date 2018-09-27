@@ -20,7 +20,7 @@ namespace Cerlancism.ChatSystem
         public static string TrimMessage(string message)
             => new string(message.Where(c => !char.IsPunctuation(c)).ToArray());
 
-        private float ComputeScore(string history, in string[] words, in int wordCount)
+        private float ComputeScore(in string history, in string[] words, in int wordCount)
         {
             var matchCount = 0f;
             var historyLowerCase = history.ToLower();
