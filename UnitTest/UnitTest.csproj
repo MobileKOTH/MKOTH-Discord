@@ -54,6 +54,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChatSystem\BasicTests.cs" />
     <Compile Include="ChatSystem\ChatTests.cs" />
     <Compile Include="ChatSystem\SetUpTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

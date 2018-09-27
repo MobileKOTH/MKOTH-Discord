@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Cerlancism.ChatSystem.Core
 {
-    public class History
+    public class ChatHistory
     {
         public int Id { get; set; }
         public string Message { get; set; }

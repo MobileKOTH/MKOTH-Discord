@@ -44,7 +44,7 @@ namespace UnitTest.ChatSystem
 
                 // Act
                 var analysis = chat.Analyse(trigger);
-                var responses = chat.GetResults(analysis, trigger);
+                var responses = chat.GetResults(trigger, analysis);
 
                 // Assert
                 Assert.AreNotEqual(responses, null);
@@ -82,7 +82,7 @@ namespace UnitTest.ChatSystem
 
                 // Act
                 var analysis = chat.Analyse(trigger);
-                var responses = chat.GetResults(analysis, trigger);
+                var responses = chat.GetResults(trigger, analysis);
 
                 // Assert
                 Assert.AreNotEqual(responses, null);

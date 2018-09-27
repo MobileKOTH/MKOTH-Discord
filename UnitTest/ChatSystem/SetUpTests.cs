@@ -12,7 +12,7 @@ namespace UnitTest.ChatSystem
     [TestClass]
     public class SetUpTests
     {
-        //[TestMethod]
+        [TestMethod]
         public void MigrationTest()
         {
             // Arrange
@@ -30,7 +30,7 @@ namespace UnitTest.ChatSystem
             Assert.AreEqual(File.Exists(path), true);
             using (var db = new LiteDatabase(path))
             {
-                var historyCollection = db.GetCollection<History>();
+                var historyCollection = db.GetCollection<ChatHistory>();
                 Assert.AreNotEqual(null, historyCollection);
 
                 historyCollection.EnsureIndex(x => x.Id);
@@ -59,7 +59,7 @@ namespace UnitTest.ChatSystem
             using (Chat chatSystem = new Chat("ChatHistory.db"))
             {
                 stopwatch.Start();
-                var lastMessage = chatSystem.GetLastMessage();
+                var lastMessage = chatSystem.GetLastChatHistory();
                 stopwatch.Stop();
 
                 Assert.AreEqual(lastMessage != null, true);

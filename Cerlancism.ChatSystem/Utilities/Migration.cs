@@ -15,16 +15,16 @@ namespace Cerlancism.ChatSystem.Utilities
         {
             var json = $"[{File.ReadAllText($"{fileName}.dat")}]";
             var historyList = JsonConvert.DeserializeObject<List<string>>(json)
-                .Where(x => !string.IsNullOrEmpty(x))
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => new History
+                .Where(string.IsNullOrEmpty)
+                .Where(string.IsNullOrWhiteSpace)
+                .Select(x => new ChatHistory
                 {
                     Message = x
                 });
 
             using (var db = new LiteDatabase($"{fileName}.db"))
             {
-                var chatHistoryCollection = db.GetCollection<History>();
+                var chatHistoryCollection = db.GetCollection<ChatHistory>();
                 db.DropCollection(chatHistoryCollection.Name);
                 chatHistoryCollection.InsertBulk(historyList);
             }

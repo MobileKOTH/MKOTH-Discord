@@ -17,20 +17,17 @@ namespace Cerlancism.ChatSystem
         private void LogMessage(string log)
             => Log?.Invoke($"[ChatSystem] {log}");
 
-        private string TrimMessage(string message)
-            => message.Replace(".", "")
-                .Replace(",", "")
-                .Replace("?", "")
-                .Replace("!", "");
+        public static string TrimMessage(string message)
+            => new string(message.Where(c => !char.IsPunctuation(c)).ToArray());
 
-        private float ComputeScore(string history, string current)
+        private float ComputeScore(string history, in string[] words, in int wordCount)
         {
-            var (wordCount, words) = current.GetWordCount(null);
-            float matchCount = 0;
+            var matchCount = 0f;
+            var historyLowerCase = history.ToLower();
 
             foreach (var word in words)
             {
-                if (history.ToLower().Contains(word))
+                if (historyLowerCase.Contains(word))
                 {
                     matchCount++;
                 }
@@ -39,14 +36,15 @@ namespace Cerlancism.ChatSystem
             return matchCount / wordCount;
         }
 
-        private string GetTriggerOrResponse(Result result, string message)
+        private string GetTriggerOrResponse(AnalysisResult result, string message)
         {
             var wordCount = message.GetWordCount();
             var randomsource = new Random().NextDouble();
-            History choosen;
+            ChatHistory choosen;
             switch (wordCount)
             {
                 case 1:
+
                 case 2:
                     choosen = (randomsource > 0.2) ? result.Rephrase : result.Response;
                     break;
