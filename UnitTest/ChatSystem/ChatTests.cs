@@ -43,7 +43,7 @@ namespace UnitTest.ChatSystem
                 var trigger = "Hello this is a test message!";
 
                 // Act
-                var analysis = chat.Analyse(trigger);
+                var analysis = chat.Analyse(in trigger);
                 var responses = chat.GetResults(trigger, analysis);
 
                 // Assert
@@ -81,7 +81,7 @@ namespace UnitTest.ChatSystem
                 var trigger = "Hello this is a test message Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message!";
 
                 // Act
-                var analysis = chat.Analyse(trigger);
+                var analysis = chat.Analyse(in trigger);
                 var responses = chat.GetResults(trigger, analysis);
 
                 // Assert

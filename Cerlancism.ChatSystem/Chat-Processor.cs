@@ -9,6 +9,8 @@ using Newtonsoft.Json;
 
 namespace Cerlancism.ChatSystem
 {
+    using static Extensions.StringExtensions;
+
     public partial class Chat
     {
         private void LogMessage(object logObject)
@@ -36,11 +38,15 @@ namespace Cerlancism.ChatSystem
             return matchCount / wordCount;
         }
 
-        private string GetTriggerOrResponse(AnalysisResult result, string message)
+        private string GetRephraseOrResponse((string message, Analysis result) input)
+            => GetRephraseOrResponse(input.message, input.result);
+
+        private string GetRephraseOrResponse(string message, Analysis result)
         {
             var wordCount = message.GetWordCount();
             var randomsource = new Random().NextDouble();
-            ChatHistory choosen;
+            Entry choosen;
+
             switch (wordCount)
             {
                 case 1:
@@ -57,7 +63,9 @@ namespace Cerlancism.ChatSystem
                     choosen = result.Response;
                     break;
             }
-            LogMessage((message, result));
+
+            LogMessage(new { Message = message, Result = result });
+
             return choosen?.Message ?? result.Rephrase.Message;
         }
     }

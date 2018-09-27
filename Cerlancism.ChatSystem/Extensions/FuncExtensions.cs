@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Cerlancism.ChatSystem.Utilities
+namespace Cerlancism.ChatSystem.Extensions
 {
     public static class FuncExtensions
     {

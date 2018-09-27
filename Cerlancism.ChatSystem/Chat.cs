@@ -9,9 +9,12 @@ using LiteDB;
 
 namespace Cerlancism.ChatSystem
 {
-    using static Utilities.DatabaseExtensions;
-    using static Utilities.GenericExtensions;
-    using static Utilities.FuncExtensions;
+    using static Extensions.FuncExtensions;
+    using static Extensions.GenericExtensions;
+    using static Extensions.StringExtensions;
+
+    using static Utilities.DatabaseUtilities;
+    using static Utilities.FuncUtilities;
 
     public partial class Chat : IDisposable
     {
@@ -25,11 +28,11 @@ namespace Cerlancism.ChatSystem
 
         private string connectionString;
 
-        private LiteDatabase ChatDatabase => _chatDatabase ?? GetAndSetDataBase(out _chatDatabase, connectionString);
-        private LiteCollection<ChatHistory> ChatCollection => _chatCollection ?? ChatDatabase.GetAndSetCollection(out _chatCollection);
+        private LiteDatabase ChatDatabase => _chatDatabase ?? GetAndOutDataBase(out _chatDatabase, connectionString);
+        private LiteCollection<Entry> ChatCollection => _chatCollection ?? GetAndOutCollection(ChatDatabase, out _chatCollection);
 
         private LiteDatabase _chatDatabase;
-        private LiteCollection<ChatHistory> _chatCollection;
+        private LiteCollection<Entry> _chatCollection;
 
         public Chat(string connectionString)
         {
@@ -48,32 +51,37 @@ namespace Cerlancism.ChatSystem
                 return;
             }
 
-            if (previousUserId != default)
+            if (previousUserId != default && previousUserId == userId)
             {
-                if (previousUserId == userId)
-                {
-                    var lastMessage = GetLastChatHistory();
-                    lastMessage.Message += " " + message;
-                    ChatCollection.Update(lastMessage);
-                    return;
-                }
+                var lastMessage = GetLastChatHistory();
+                lastMessage.Message += " " + message;
+                ChatCollection.Update(lastMessage);
+                return;
             }
-            lastId = ChatCollection.Insert(new ChatHistory { Message = message });
+
+            lastId = ChatCollection.Insert(new Entry
+            {
+                Message = message
+            });
+
             previousUserId = userId;
             previousMessage = message;
         }
 
-        public ChatHistory GetLastChatHistory()
-        {            
-            lastId = lastId == default ? ChatCollection.FindOne(Query.All(Query.Descending)).Id : lastId;
-            return ChatCollection.FindById(lastId);
-        }
+        public Entry GetChatHistoryById(int id)
+            => ChatCollection.FindById(id);
+
+        public Entry GetLastChatHistory()
+            => GetChatHistoryById(lastId = lastId == default ? ChatCollection.FindOne(Query.All(Query.Descending)).Id : lastId);
 
         public string Reply(string message)
-            => Analyse
-            .Then(x => GetResults(message, x))
-            .Then(x => x.SelectRandom())
-            .Then(x => GetTriggerOrResponse(x, message))(message);
+            => Funcify<string, string>(TrimeAndLower)
+            .Then(Analyse)
+            .Then(GetRandomResult)
+            .Then(GetRephraseOrResponse)(message);
+
+        public string TrimeAndLower(string message)
+            => TrimMessage(message).ToLower();
 
         //=> TrimMessage(message)
         //.ToLower()
@@ -82,7 +90,7 @@ namespace Cerlancism.ChatSystem
         //.Forward(x => x.SelectRandom())
         //.Forward(x => GetTriggerOrResponse(x, message));
 
-        // => GetTriggerOrResponse(GetResults(Analyse(TrimMessage(message).ToLower()), message).SelectRandom(), message);
+        //=> GetTriggerOrResponse(GetResults(Analyse(TrimMessage(message).ToLower()), message).SelectRandom(), message);
 
         //{
         //    message = TrimMessage(message).ToLower();
@@ -93,40 +101,46 @@ namespace Cerlancism.ChatSystem
         //    return reply;
         //}
 
-        public Func<string, IEnumerable<AnalysisResult>> Analyse => message =>
+        public (string message, IEnumerable<Analysis> analysis) Analyse(string message)
+            => (message, Analyse(in message));
+
+        public IEnumerable<Analysis> Analyse(in string message)
         {
             var history = ChatCollection.FindAll().ToArray();
-            var analysed = new ConcurrentBag<AnalysisResult>();
+            var analysed = new ConcurrentBag<Analysis>();
             var count = history.Length;
             var (wordCount, words) = message.GetWordCount(null);
 
             Parallel.ForEach(history, (item, state, index) =>
             {
                 var score = ComputeScore(item.Message, words, wordCount);
-                var result = new AnalysisResult
+                var result = new Analysis
                 {
                     Score = score,
-                    Trigger = index == 0 ? null : history[index - 1],
+                    Trigger = index == 0 ? default : history[index - 1],
                     Rephrase = item,
-                    Response = index + 1 == count ? null : history[index + 1],
+                    Response = index + 1 == count ? default : history[index + 1],
                 };
 
                 analysed.Add(result);
             });
 
             return analysed;
-        };
+        }
 
-        public IEnumerable<AnalysisResult> GetResults(string message, IEnumerable<AnalysisResult> analysis)
+        public (string message, Analysis result) GetRandomResult((string message, IEnumerable<Analysis> analysis) input)
+            => (input.message, GetResults(input.message, input.analysis).SelectRandom());
+
+        public IEnumerable<Analysis> GetResults(string message, IEnumerable<Analysis> analysis)
         {
-            var wordCount = message.GetWordCount();
-            float wordCountMatch = wordCount;
-            float matchRate = 0.9f;
             var query = analysis.AsParallel();
+            var wordCount = message.GetWordCount();
+            float wordCountTarget = wordCount;
+            float matchRate = 0.9f;
 
             while (!query.Any(x => x.Score >= matchRate))
             {
-                wordCountMatch--;
+                wordCountTarget--;
                 matchRate = NextMatchRate();
 
                 if (matchRate <= 0)
@@ -134,8 +148,6 @@ namespace Cerlancism.ChatSystem
                     return analysis;
                 }
             }
-
-            return query.Where(x => x.Score >= matchRate);
 
             float NextMatchRate()
             {
@@ -145,14 +157,11 @@ namespace Cerlancism.ChatSystem
                 }
                 else
                 {
-                    return wordCountMatch / wordCount;
+                    return wordCountTarget / wordCount;
                 }
             }
-        }
 
-        public ChatHistory GetChatHistoryById(int id)
-        {
-            return ChatCollection.FindById(id);
+            return query.Where(x => x.Score >= matchRate);
         }
 
         public void Dispose()

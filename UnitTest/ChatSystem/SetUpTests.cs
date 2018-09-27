@@ -30,7 +30,7 @@ namespace UnitTest.ChatSystem
             Assert.AreEqual(File.Exists(path), true);
             using (var db = new LiteDatabase(path))
             {
-                var historyCollection = db.GetCollection<ChatHistory>();
+                var historyCollection = db.GetCollection<Entry>();
                 Assert.AreNotEqual(null, historyCollection);
 
                 historyCollection.EnsureIndex(x => x.Id);
