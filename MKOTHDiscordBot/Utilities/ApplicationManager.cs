@@ -52,10 +52,16 @@ namespace MKOTHDiscordBot
 
         private static void ClosingPreparation()
         {
-            ApplicationContext.DiscordClient.LogoutAsync().GetAwaiter().GetResult();
-            ApplicationContext.DiscordClient.StopAsync().GetAwaiter().GetResult();
-            ApplicationContext.DiscordClient.Dispose();
-            Chat.SaveHistory();
+            try
+            {
+                ApplicationContext.DiscordClient.LogoutAsync().GetAwaiter().GetResult();
+                ApplicationContext.DiscordClient.StopAsync().GetAwaiter().GetResult();
+                ApplicationContext.DiscordClient.Dispose();
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e);
+            }
         }
     }
 }

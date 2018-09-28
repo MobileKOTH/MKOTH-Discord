@@ -5,13 +5,21 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using MKOTHDiscordBot.Services;
 
 namespace MKOTHDiscordBot.Modules
 {
     [Summary("The debug module for the chat system.")]
     [Remarks("Module Y")]
-    public class TrashTalk : ModuleBase<SocketCommandContext>
+    public class TrashTalk : ModuleBase<SocketCommandContext>, IDisposable
     {
+        private ChatService chatService;
+
+        public TrashTalk(ChatService chatService)
+        {
+            this.chatService = chatService;
+        }
+
         [Command("TrashInfo", RunMode = RunMode.Async)]
         [Summary("Displays the possible response the bot will give when being pinged with the content.")]
         [Alias("ti")]
@@ -19,59 +27,27 @@ namespace MKOTHDiscordBot.Modules
         public async Task TrashInfo([Remainder] string message)
         {
             DateTime start = DateTime.Now;
-            EmbedBuilder embed = new EmbedBuilder();
-            IUserMessage msg;
+            var analysis = await chatService.ChatSystem.AnalyseAsync(message);
+            var results = chatService.ChatSystem.GetResults(message, analysis).results;
+            var takeResults = results.Take(25);
+            var embed = new EmbedBuilder();
 
-            message = Chat.TrimMessage(message);
-            string[] words = message.ToLower().Split(' ');
-            if (words.Length == 1)
+            foreach (var item in takeResults)
             {
-                if (words[0].Length < 2)
-                {
-                    msg = await ReplyAsync("Too little content");
-                }
-            }
-
-            var (triggers, _) = Chat.ProcessResponses(message);
-            var (possiblereplies, matchRate) = Chat.GetPossibleReplies(message, triggers);
-            if (matchRate <= 0)
-            {
-                await ReplyAsync($"No trigger key found for:\n{message.WrapAround("\"")}");
-            }
-
-            List<string> historyClone;
-            List<string> historyClone2;
-            lock (Chat.History)
-            {
-                historyClone = new List<string>(Chat.History);
-                historyClone2 = new List<string>(Chat.History);
-            }
-            for (int i = 0; i < possiblereplies.Take(25).Count(); i++)
-            {
-                int index = historyClone.IndexOf(possiblereplies[i].Message);
-                historyClone[index] = null;
-                string trigger = historyClone2[index - 1];
-                string rephrase = historyClone2[index];
-                string response = historyClone2[index + 1];
-                trigger = trigger.SliceBack(100);
-                rephrase = rephrase.SliceBack(100);
-                response = response.SliceBack(100);
-
                 embed.AddField(
                     string.Format("{0:N2}%",
-                    possiblereplies[i].Matchrate * 100),
-                    $"`#{index - 1}` {trigger}\n" +
-                    $"`#{index}` {rephrase}\n" +
-                    $"`#{index + 1}` {response}");
+                    item.Score * 100),
+                    $"`#{item.Trigger?.Id}` {item.Trigger?.Message.SliceBack(100)}\n" +
+                    $"`#{item.Rephrase.Id}` {item.Rephrase.Message.SliceBack(100)}\n" +
+                    $"`#{item.Response?.Id}` {item.Response?.Message.SliceBack(100)}");
 
-                var omission = possiblereplies.Take(25).Count() < possiblereplies.Count ? possiblereplies.Count - possiblereplies.Take(25).Count() : 0;
-                embed.WithFooter($"Results: {possiblereplies.Take(25).Count()}" + (omission > 0 ? $", omitted: {omission}" : ""));
+                var omission = takeResults.Count() < results.Count() ? results.Count() - takeResults.Count() : 0;
+                embed.WithFooter($"Results: {takeResults.Count()}" + (omission > 0 ? $", omitted: {omission}" : ""));
             }
+
             embed.Title = "Trigger, rephrase and reply pool";
             embed.Description = "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`";
             await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"{message.SliceBack(100)}\"", false, embed.Build());
-            await Task.CompletedTask;
-            return;
         }
 
         [Command("TrashMessage", RunMode = RunMode.Async)]
@@ -80,19 +56,15 @@ namespace MKOTHDiscordBot.Modules
         [RequireBotTest]
         public async Task TrashMessage(int id)
         {
-            var message = Chat.History[id];
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
-                .WithDescription(message.SliceBack(1900));
+                .WithDescription("".SliceBack(1900));
             await ReplyAsync($"`Message Id: #{id}`", embed: embed.Build());
         }
 
-        [Command("SaveChat")]
-        [RequireDeveloper]
-        public async Task SaveChat()
+        public void Dispose()
         {
-            Chat.SaveHistory();
-            await ReplyAsync("Done.");
+            chatService.Dispose();
         }
     }
 }

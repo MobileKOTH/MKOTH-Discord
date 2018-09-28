@@ -8,6 +8,7 @@ using System.Diagnostics;
 using LiteDB;
 using Newtonsoft.Json;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace UnitTest.ChatSystem
 {
@@ -15,7 +16,7 @@ namespace UnitTest.ChatSystem
     public class ChatTests
     {
         [TestMethod]
-        public void ChatSimpleReplyTest()
+        public async Task ChatSimpleReplyTestAsync()
         {
             using (var chat = new Chat("ChatHistory.db"))
             {
@@ -25,8 +26,7 @@ namespace UnitTest.ChatSystem
                 // Act
                 chat.Log += log => Console.WriteLine(log);
 
-                var response = chat.Reply(trigger);
-
+                var response = await Task.FromResult(chat.Reply(trigger));
 
                 // Assert
                 Assert.AreNotEqual(response, null);
@@ -35,7 +35,7 @@ namespace UnitTest.ChatSystem
         }
 
         [TestMethod]
-        public void ChatSimpleAnalysisTest()
+        public async Task ChatSimpleAnalysisTestAsync()
         {
             using (var chat = new Chat("ChatHistory.db"))
             {
@@ -43,8 +43,8 @@ namespace UnitTest.ChatSystem
                 var trigger = "Hello this is a test message!";
 
                 // Act
-                var analysis = chat.Analyse(in trigger);
-                var responses = chat.GetResults(trigger, analysis);
+                var analysis = await chat.AnalyseAsync(trigger);
+                var responses = chat.GetResults(trigger, analysis).results;
 
                 // Assert
                 Assert.AreNotEqual(responses, null);
@@ -73,7 +73,7 @@ namespace UnitTest.ChatSystem
         }
 
         [TestMethod]
-        public void ChatLengthyAnalysisTest()
+        public async Task ChatLengthyAnalysisTestAsync()
         {
             using (var chat = new Chat("ChatHistory.db"))
             {
@@ -81,8 +81,8 @@ namespace UnitTest.ChatSystem
                 var trigger = "Hello this is a test message Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message! Hello this is a test message!";
 
                 // Act
-                var analysis = chat.Analyse(in trigger);
-                var responses = chat.GetResults(trigger, analysis);
+                var analysis = await chat.AnalyseAsync(trigger);
+                var responses = chat.GetResults(trigger, analysis).results;
 
                 // Assert
                 Assert.AreNotEqual(responses, null);

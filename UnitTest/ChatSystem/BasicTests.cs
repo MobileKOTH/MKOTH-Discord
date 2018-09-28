@@ -20,7 +20,7 @@ namespace UnitTest.ChatSystem
             var testMessage = "Hi! This is a test messsage. +_)(*&^%$#@!~=-\\][|}{';\":/.,?><你好";
 
             // Act
-            var trimed = Chat.TrimMessage(testMessage);
+            var trimed = Chat.RemovePunctuations(testMessage);
 
             // Assert
             Assert.AreNotEqual(testMessage, trimed);
@@ -32,39 +32,51 @@ namespace UnitTest.ChatSystem
         {
             // Arrange
             var rng = new Random();
-            var source = new List<(int, double)>(1000000);
-            var collection = new ConcurrentQueue<(int, double)>();
+            var source = new SortedList<int, double>(5000000);
             for (int i = 0; i < source.Capacity; i++)
             {
-                source.Add((i, rng.NextDouble()));
+                source.Add(i, rng.NextDouble());
             }
 
-            source.AsParallel()
-                .AsOrdered()
-                .ForAll(collection.Enqueue);
-
-            var list = collection.ToList();
-            var array = collection.ToArray();
-            var enumerable = collection.ToList().AsEnumerable();
-
             // Act
-            var stopWatch = Stopwatch.StartNew();
             (int, double) testVar; 
+            var stopWatch = Stopwatch.StartNew();
+
+            var collection = new ConcurrentBag<(int, double)>();
+            source.AsParallel()
+                .ForAll(x => collection.Add((x.Key, x.Value)));
+
+            var ordered = collection.AsParallel().OrderBy(x => x.Item1);
+
+            stopWatch.Stop();
+            var concurrentTime = stopWatch.Elapsed.TotalMilliseconds;
+
+            var list = ordered.ToList();
+            var array = ordered.ToArray();
+            var enumerable = ordered.ToList().AsEnumerable();
+
+            stopWatch.Restart();
+
             for (int i = 0; i < list.Count; i++)
             {
                 testVar = list[i];
-                if (testVar.Item1 != i)
-                {
-                    Console.WriteLine($"{testVar} {i}");
-                    Assert.Fail();
-                }
                 testVar = default;
             }
 
             stopWatch.Stop();
             var listTime = stopWatch.Elapsed.TotalMilliseconds;
 
-            stopWatch.Start();
+            for (int i = 0; i < list.Count; i++)
+            {
+                testVar = list[i];
+                if (testVar.Item1 != i)
+                {
+                    //Console.WriteLine($"{testVar} {i}");
+                    Assert.Fail();
+                }
+            }
+
+            stopWatch.Restart();
 
             for (int i = 0; i < array.Length; i++)
             {
@@ -77,7 +89,7 @@ namespace UnitTest.ChatSystem
 
             stopWatch.Restart();
             var length = enumerable.Count();
-            for (int i = 0; i < enumerable.Count(); i++)
+            for (int i = 0; i < length; i++)
             {
                 testVar = enumerable.ElementAtOrDefault(i);
                 testVar = default;
@@ -87,8 +99,12 @@ namespace UnitTest.ChatSystem
             var enumerableTime = stopWatch.Elapsed.TotalMilliseconds;
 
             // Assert
-            //Assert.IsTrue((enumerableTime > listTime) && (listTime > arrayTime));
-            Console.WriteLine($"enumerableTime: {enumerableTime} ms \nlistTime: {listTime} ms \narrayTime: {arrayTime} ms");
+            Console.WriteLine(
+                $"concurrentTime: {concurrentTime} ms \n" +
+                $"enumerableTime: {enumerableTime} ms \n" +
+                $"listTime: {listTime} ms \n" +
+                $"arrayTime: {arrayTime} ms \n");
+            Assert.IsTrue((enumerableTime > listTime) && (listTime > arrayTime));
         }
     }
 }

@@ -5,6 +5,7 @@ using Cerlancism.ChatSystem;
 using Cerlancism.ChatSystem.Core;
 using Cerlancism.ChatSystem.Utilities;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using LiteDB;
 
 namespace UnitTest.ChatSystem
@@ -53,13 +54,13 @@ namespace UnitTest.ChatSystem
         }
 
         [TestMethod]
-        public void GetLastMessageTest()
+        public async Task GetLastMessageTestAsync()
         {
             var stopwatch = new Stopwatch();
             using (Chat chatSystem = new Chat("ChatHistory.db"))
             {
                 stopwatch.Start();
-                var lastMessage = chatSystem.GetLastChatHistory();
+                var lastMessage = await chatSystem.GetLastChatHistoryAsync();
                 stopwatch.Stop();
 
                 Assert.AreEqual(lastMessage != null, true);

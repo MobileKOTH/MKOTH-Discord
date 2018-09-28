@@ -39,7 +39,7 @@ namespace Cerlancism.ChatSystem
             this.connectionString = connectionString;
         }
 
-        public void Add(ulong userId, string message)
+        public async Task AddAsync(ulong userId, string message)
         {
             if (startWithIgnoreList.Any(x => message.StartsWith(x)) || message == "")
             {
@@ -53,35 +53,45 @@ namespace Cerlancism.ChatSystem
 
             if (previousUserId == userId)
             {
-                var lastMessage = GetLastChatHistory();
-                lastMessage.Message += " " + message;
-                ChatCollection.Update(lastMessage);
+                await UpdateMessageAsync(message);
                 return;
             }
 
-            lastId = ChatCollection.Insert(new Entry
+            await AddMessageAsync(userId, message);
+        }
+
+        private async Task UpdateMessageAsync(string message)
+        {
+            var lastMessage = await GetLastChatHistoryAsync();
+            lastMessage.Message += " " + message;
+            await Task.FromResult(ChatCollection.Update(lastMessage));
+        }
+
+        private async Task AddMessageAsync(ulong userId, string message)
+        {
+            lastId = await Task.FromResult(ChatCollection.Insert(new Entry
             {
                 Message = message
-            });
+            }));
 
             previousUserId = userId;
             previousMessage = message;
         }
 
-        public Entry GetChatHistoryById(int id)
-            => ChatCollection.FindById(id);
+        public async Task<Entry> GetChatHistoryByIdAsync(int id)
+            => await Task.FromResult(ChatCollection.FindById(id));
 
-        public Entry GetLastChatHistory()
-            => GetChatHistoryById(lastId = lastId == default ? ChatCollection.FindOne(Query.All(Query.Descending)).Id : lastId);
+        public async Task<Entry> GetLastChatHistoryAsync()
+            => await GetChatHistoryByIdAsync(lastId = lastId == default ? ChatCollection.FindOne(Query.All(Query.Descending)).Id : lastId);
+
+        public async Task<string> ReplyAsync(string message)
+            => await Task.FromResult(Reply(message));
 
         public string Reply(string message)
-            => Funcify<string, string>(TrimeAndLower)
+            => Funcify<string, string>(RemovePunctuationsAndLower)
             .Then(Analyse)
-            .Then(GetRandomResult)
-            .Then(GetRephraseOrResponse)(message);
-
-        public string TrimeAndLower(string message)
-            => TrimMessage(message).ToLower();
+            .Then(GetResults)
+            .Then(GetRandomReply)(message);
 
         //=> TrimMessage(message)
         //.ToLower()
@@ -102,24 +112,28 @@ namespace Cerlancism.ChatSystem
         //}
 
         public (string message, IEnumerable<Analysis> analysis) Analyse(string message)
-            => (message, Analyse(in message));
+            => (message, AnalyseAsync(message).Result);
 
-        public IEnumerable<Analysis> Analyse(in string message)
+        public async Task<IEnumerable<Analysis>> AnalyseAsync(string message)
         {
-            var history = ChatCollection.FindAll().ToArray();
+            var history = await Task.FromResult(ChatCollection.FindAll());
             var analysed = new ConcurrentBag<Analysis>();
-            var count = history.Length;
             var (wordCount, words) = message.GetWordCount(null);
+            var filtered = history
+                .AsParallel()
+                .Where(x => FilterBySentenceLength(x.Message, wordCount))
+                .ToArray();
+            var count = filtered.Length;
 
-            Parallel.ForEach(history, (item, state, index) =>
+            Parallel.ForEach(filtered, (item, state, index) =>
             {
                 var score = ComputeScore(item.Message, words, wordCount);
                 var result = new Analysis
                 {
                     Score = score,
-                    Trigger = index == 0 ? default : history[index - 1],
+                    Trigger = index == 0 ? default : filtered[index - 1],
                     Rephrase = item,
-                    Response = index + 1 == count ? default : history[index + 1],
+                    Response = index + 1 == count ? default : filtered[index + 1],
                 };
 
                 analysed.Add(result);
@@ -128,13 +142,30 @@ namespace Cerlancism.ChatSystem
             return analysed;
         }
 
-        public (string message, Analysis result) GetRandomResult((string message, IEnumerable<Analysis> analysis) input)
-            => (input.message, GetResults(input.message, input.analysis).SelectRandom());
+        public string GetRandomReply((bool rephraseOrResponse, string message, IEnumerable<Analysis> analysis) input)
+        {
+            var (rephraseOrResponse, message, analysis) = input;
+            var choosen = analysis.SelectRandom();
+            var reply = rephraseOrResponse ? choosen.Rephrase.Message : (choosen.Response == null ? choosen.Rephrase.Message : choosen.Response.Message);
 
-        public IEnumerable<Analysis> GetResults(string message, IEnumerable<Analysis> analysis)
+            LogMessage(new
+            {
+                Message = message,
+                Result = choosen,
+                Reply = reply
+            });
+
+            return reply;
+        }
+
+        public (bool rephraseOrResponse, string message, IEnumerable<Analysis> results) GetResults((string message, IEnumerable<Analysis> analysis) input)
+            => GetResults(input.message, input.analysis);
+
+        public (bool rephraseOrResponse, string message, IEnumerable<Analysis> results) GetResults(string message, IEnumerable<Analysis> analysis)
         {
             var query = analysis.AsParallel();
             var wordCount = message.GetWordCount();
+            var rephraseOrResponse = IsGettingRephraseOrResponse(wordCount);
             float wordCountTarget = wordCount;
             float matchRate = 0.9f;
 
@@ -145,7 +176,7 @@ namespace Cerlancism.ChatSystem
 
                 if (matchRate <= 0)
                 {
-                    return analysis;
+                    return (rephraseOrResponse, message, analysis);
                 }
             }
 
@@ -161,12 +192,20 @@ namespace Cerlancism.ChatSystem
                 }
             }
 
-            return query.Where(x => x.Score >= matchRate);
+            var results = query.Where(x => x.Score >= matchRate)
+                .Where(x => rephraseOrResponse ? FilterBySentenceLength(x.Rephrase.Message, wordCount) : true);
+
+            return (rephraseOrResponse, message, results);
+        }
+
+        private static bool FilterBySentenceLength(string message, int wordCount)
+        {
+            return message.GetWordCount() <= wordCount * 4;
         }
 
         public void Dispose()
         {
-            ChatDatabase.Dispose();
+            _chatDatabase?.Dispose();
         }
     }
 }

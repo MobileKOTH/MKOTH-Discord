@@ -3,16 +3,36 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using MKOTHDiscordBot.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MKOTHDiscordBot.Handlers
 {
     public class MessageHandler : DiscordClientEventHandlerBase
     {
         public static bool ReplyToTestServer = true;
+
+        private Timer chatServiceExpire = new Timer(20000);
+
+        private ChatService ChatService
+        {
+            get
+            {
+                if (_chatService == null)
+                {
+                    _chatService = services.GetRequiredService<ChatService>();
+                }
+                chatServiceExpire.Stop();
+                chatServiceExpire.Start();
+                return _chatService;
+            }
+        }
+
+        private ChatService _chatService;
 
         private IServiceProvider services;
         private CommandService commands;
@@ -32,6 +52,13 @@ namespace MKOTHDiscordBot.Handlers
             this.commands = commands;
             this.spamWatch = spamWatch;
             this.responseService = responseService;
+
+            chatServiceExpire.AutoReset = false;
+            chatServiceExpire.Elapsed += (_, __) =>
+            {
+                _chatService.Dispose();
+                _chatService = null;
+            };
 
             this.client.MessageReceived += Handle;
             this.client.Ready += async () => currentUserId = await Task.FromResult(this.client.CurrentUser.Id);
@@ -77,17 +104,17 @@ namespace MKOTHDiscordBot.Handlers
             if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(client.CurrentUser, ref argPos))
             {
                 if (spamWatch.Watch(message.Author.Id, RateLimitMessage(context))) return;
-                _ = Chat.ReplyAsync(context, message.Content);
+                _ = ChatService.ReplyAsync(context, message.Content);
                 return;
             }
             else if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && message.HasMentionPrefix(client.CurrentUser, ref argPos))
             {
                 if (spamWatch.Watch(message.Author.Id, RateLimitMessage(context))) return;
-                _ = Chat.ReplyAsync(context, message.Content.Remove(0, argPos));
+                _ = ChatService.ReplyAsync(context, message.Content.Remove(0, argPos));
                 return;
             }
 
-            if (!message.Author.IsBot && !message.HasMentionPrefix(client.CurrentUser, ref argPos)) new Chat(context);
+            if (!message.Author.IsBot && !message.HasMentionPrefix(client.CurrentUser, ref argPos)) _ = ChatService.AddSync(context);
 
             if (!(message.HasCharPrefix('.', ref argPos) || message.HasMentionPrefix(client.CurrentUser, ref argPos))) return;
             if (spamWatch.Watch(message.Author.Id, RateLimitMessage(context))) return;
@@ -136,7 +163,7 @@ namespace MKOTHDiscordBot.Handlers
             {// Chat reply.
                 if (message.HasMentionPrefix(client.CurrentUser, ref argPos) && !context.IsPrivate)
                 {
-                    _ = Chat.ReplyAsync(context, message.Content.Remove(0, argPos));
+                    _ = ChatService.ReplyAsync(context, message.Content.Remove(0, argPos));
                 }
             }
         }

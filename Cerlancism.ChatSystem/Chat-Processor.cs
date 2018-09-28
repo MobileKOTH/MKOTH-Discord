@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 namespace Cerlancism.ChatSystem
 {
     using static Extensions.StringExtensions;
+    using static Extensions.GenericExtensions;
 
     public partial class Chat
     {
@@ -19,8 +20,11 @@ namespace Cerlancism.ChatSystem
         private void LogMessage(string log)
             => Log?.Invoke($"[ChatSystem] {log}");
 
-        public static string TrimMessage(string message)
+        public static string RemovePunctuations(string message)
             => new string(message.Where(c => !char.IsPunctuation(c)).ToArray());
+
+        public static string RemovePunctuationsAndLower(string message)
+            => RemovePunctuations(message).ToLower();
 
         private float ComputeScore(in string history, in string[] words, in int wordCount)
         {
@@ -38,35 +42,23 @@ namespace Cerlancism.ChatSystem
             return matchCount / wordCount;
         }
 
-        private string GetRephraseOrResponse((string message, Analysis result) input)
-            => GetRephraseOrResponse(input.message, input.result);
-
-        private string GetRephraseOrResponse(string message, Analysis result)
+        private bool IsGettingRephraseOrResponse(int wordCount)
         {
-            var wordCount = message.GetWordCount();
             var randomsource = new Random().NextDouble();
-            Entry choosen;
 
             switch (wordCount)
             {
                 case 1:
 
                 case 2:
-                    choosen = (randomsource > 0.2) ? result.Rephrase : result.Response;
-                    break;
+                    return randomsource > 0.2;
 
                 case 3:
-                    choosen = (randomsource > 0.66) ? result.Rephrase : result.Response;
-                    break;
+                    return randomsource > 0.66;
 
                 default:
-                    choosen = result.Response;
-                    break;
+                    return false;
             }
-
-            LogMessage(new { Message = message, Result = result });
-
-            return choosen?.Message ?? result.Rephrase.Message;
         }
     }
 }

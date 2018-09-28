@@ -138,7 +138,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Components\Chat.cs" />
     <Compile Include="Components\Player.cs" />
     <Compile Include="Credentials.cs" />
     <Compile Include="Handlers\ReadyHandler.cs" />
@@ -153,6 +152,7 @@
     <Compile Include="Preconditions\RequireMKOTHGuildAttribute.cs" />
     <Compile Include="Preconditions\RequireMKOTHMemberAttribute.cs" />
     <Compile Include="Preconditions\RequireMKOTHModAttribute.cs" />
+    <Compile Include="Services\ChatService.cs" />
     <Compile Include="Services\ServiceExtensions.cs" />
     <Compile Include="Services\SingletonServiceAttribute.cs" />
     <Compile Include="Services\StatusCycler.cs" />

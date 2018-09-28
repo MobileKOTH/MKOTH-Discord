@@ -9,6 +9,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using MKOTHDiscordBot.Handlers;
+using MKOTHDiscordBot.Services;
 
 using static MKOTHDiscordBot.Services.ServiceExtensions;
 
@@ -31,8 +32,6 @@ namespace MKOTHDiscordBot
             Console.WriteLine(RuntimeInformation.FrameworkDescription);
             Console.WriteLine(RuntimeInformation.ProcessArchitecture);
             Console.WriteLine(RuntimeInformation.OSDescription);
-
-            Chat.LoadHistory();
 
 #if DEBUG
             Console.WriteLine("Debug Build");
@@ -77,6 +76,7 @@ namespace MKOTHDiscordBot
                 .AddSingleton(client)
                 .AddSingleton(commands)
                 .ConfigureSingletonServices()
+                .AddTransient<ChatService>()
                 .BuildServiceProvider()
                 .StartForcedInstances();
 
