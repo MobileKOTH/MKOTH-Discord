@@ -14,5 +14,8 @@ namespace Cerlancism.ChatSystem.Extensions
             splits = str.Split(' ');
             return (splits.Length, splits);
         }
+
+        public static bool IsNullOrEmptyOrWhiteSpace(this string str)
+            => string.IsNullOrEmpty(str) || string.IsNullOrWhiteSpace(str);
     }
 }

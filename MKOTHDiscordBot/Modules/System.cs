@@ -32,6 +32,7 @@ namespace MKOTHDiscordBot.Modules
         public async Task BotInfo()
         {
             var msgTask = ReplyAsync(string.Empty, embed: buildEmbed());
+            GC.Collect();
 
             var (ramUsageMB, freeRamGB, ramSizeGB, cpuUsagePercent) = ApplicationManager.GetResourceUsage();
 

@@ -27,9 +27,10 @@ namespace MKOTHDiscordBot.Modules
         public async Task TrashInfo([Remainder] string message)
         {
             DateTime start = DateTime.Now;
-            var analysis = await chatService.ChatSystem.AnalyseAsync(message);
-            var results = chatService.ChatSystem.GetResults(message, analysis).results;
-            var takeResults = results.Take(25);
+            var chatSystem = chatService.ChatSystem;
+            var (wordCount, analysis) = await chatSystem.AnalyseAsync(message);
+            var results = chatSystem.GetResults(wordCount, analysis).ToArray();
+            var takeResults = results.Take(25).ToArray();
             var embed = new EmbedBuilder();
 
             foreach (var item in takeResults)
@@ -37,12 +38,12 @@ namespace MKOTHDiscordBot.Modules
                 embed.AddField(
                     string.Format("{0:N2}%",
                     item.Score * 100),
-                    $"`#{item.Trigger?.Id}` {item.Trigger?.Message.SliceBack(100)}\n" +
+                    $"`#{item.Trigger.Id}` {item.Trigger.Message.SliceBack(100)}\n" +
                     $"`#{item.Rephrase.Id}` {item.Rephrase.Message.SliceBack(100)}\n" +
-                    $"`#{item.Response?.Id}` {item.Response?.Message.SliceBack(100)}");
+                    $"`#{item.Response.Id}` {item.Response.Message.SliceBack(100)}");
 
-                var omission = takeResults.Count() < results.Count() ? results.Count() - takeResults.Count() : 0;
-                embed.WithFooter($"Results: {takeResults.Count()}" + (omission > 0 ? $", omitted: {omission}" : ""));
+                var omission = takeResults.Length < results.Length ? results.Length - takeResults.Length : 0;
+                embed.WithFooter($"Results: {takeResults.Length}" + (omission > 0 ? $", omitted: {omission}" : ""));
             }
 
             embed.Title = "Trigger, rephrase and reply pool";
@@ -56,15 +57,18 @@ namespace MKOTHDiscordBot.Modules
         [RequireBotTest]
         public async Task TrashMessage(int id)
         {
+            var entry = await chatService.ChatSystem.GetChatHistoryByIdAsync(id);
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
-                .WithDescription("".SliceBack(1900));
+                .WithDescription(entry.Message.SliceBack(1900));
             await ReplyAsync($"`Message Id: #{id}`", embed: embed.Build());
         }
 
         public void Dispose()
         {
             chatService.Dispose();
+            chatService = null;
+            GC.Collect();
         }
     }
 }

@@ -95,6 +95,7 @@ namespace MKOTHDiscordBot.Services
         {
             Logger.Debug("Disposed", "ChatSystem");
             ChatSystem.Dispose();
+            ChatSystem = null;
         }
     }
 }

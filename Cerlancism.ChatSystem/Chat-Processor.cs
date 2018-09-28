@@ -26,10 +26,18 @@ namespace Cerlancism.ChatSystem
         public static string RemovePunctuationsAndLower(string message)
             => RemovePunctuations(message).ToLower();
 
-        private float ComputeScore(in string history, in string[] words, in int wordCount)
+        private static bool FilterBySentenceLength(string message, int wordCount, int mutiplier = 4)
+            => message.GetWordCount() > wordCount * mutiplier;
+
+        private float ComputeScore(string history, string[] words, int wordCount)
         {
             var matchCount = 0f;
             var historyLowerCase = history.ToLower();
+
+            if (FilterBySentenceLength(history, wordCount))
+            {
+                return 0;
+            }
 
             foreach (var word in words)
             {

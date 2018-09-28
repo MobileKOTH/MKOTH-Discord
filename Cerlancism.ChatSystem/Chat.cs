@@ -41,7 +41,7 @@ namespace Cerlancism.ChatSystem
 
         public async Task AddAsync(ulong userId, string message)
         {
-            if (startWithIgnoreList.Any(x => message.StartsWith(x)) || message == "")
+            if (startWithIgnoreList.Any(x => message.StartsWith(x)) || message.IsNullOrEmptyOrWhiteSpace())
             {
                 return;
             }
@@ -85,13 +85,25 @@ namespace Cerlancism.ChatSystem
             => await GetChatHistoryByIdAsync(lastId = lastId == default ? ChatCollection.FindOne(Query.All(Query.Descending)).Id : lastId);
 
         public async Task<string> ReplyAsync(string message)
-            => await Task.FromResult(Reply(message));
+        {
+            var cleanedMessage = RemovePunctuationsAndLower(message);
+            var (wordCount, analysis) = await AnalyseAsync(cleanedMessage);
+            var results = GetResults(wordCount, analysis);
+            var choosen = GetRandomReply(wordCount, results, out Analysis result);
 
-        public string Reply(string message)
-            => Funcify<string, string>(RemovePunctuationsAndLower)
-            .Then(Analyse)
-            .Then(GetResults)
-            .Then(GetRandomReply)(message);
+            LogMessage(new
+            {
+                Message = message,
+                Result = result,
+                Reply = choosen
+            });
+
+            return choosen;
+        }
+        //=> Funcify<string, string>(RemovePunctuationsAndLower)
+        //.Then(Analyse)
+        //.Then(GetResults)
+        //.Then(GetRandomReply)(message);
 
         //=> TrimMessage(message)
         //.ToLower()
@@ -102,70 +114,46 @@ namespace Cerlancism.ChatSystem
 
         //=> GetTriggerOrResponse(GetResults(Analyse(TrimMessage(message).ToLower()), message).SelectRandom(), message);
 
-        //{
-        //    message = TrimMessage(message).ToLower();
-        //    var analysis = Analyse(message);
-        //    var choosenOnes = GetResults(analysis, message);
-        //    var choosenOne = choosenOnes.SelectRandom();
-        //    var reply = GetTriggerOrResponse(choosenOne, message);
-        //    return reply;
-        //}
-
-        public (string message, IEnumerable<Analysis> analysis) Analyse(string message)
-            => (message, AnalyseAsync(message).Result);
-
-        public async Task<IEnumerable<Analysis>> AnalyseAsync(string message)
+        public async Task<(int wordCount, IEnumerable<Analysis> analysis)> AnalyseAsync(string message)
         {
-            var history = await Task.FromResult(ChatCollection.FindAll());
+            var history = ChatCollection.FindAll().ToArray();
             var analysed = new ConcurrentBag<Analysis>();
             var (wordCount, words) = message.GetWordCount(null);
-            var filtered = history
-                .AsParallel()
-                .Where(x => FilterBySentenceLength(x.Message, wordCount))
-                .ToArray();
-            var count = filtered.Length;
+            var trimed = history
+                .Take(history.Length - 1)
+                .Skip(1);
 
-            Parallel.ForEach(filtered, (item, state, index) =>
+            Parallel.ForEach(trimed, (item, state, index) =>
             {
                 var score = ComputeScore(item.Message, words, wordCount);
                 var result = new Analysis
                 {
                     Score = score,
-                    Trigger = index == 0 ? default : filtered[index - 1],
-                    Rephrase = item,
-                    Response = index + 1 == count ? default : filtered[index + 1],
+                    Trigger = history[index],
+                    Rephrase = history[index + 1],
+                    Response = history[index + 2],
                 };
 
                 analysed.Add(result);
             });
 
-            return analysed;
+            await Task.CompletedTask;
+
+            return (wordCount, analysed);
         }
 
-        public string GetRandomReply((bool rephraseOrResponse, string message, IEnumerable<Analysis> analysis) input)
-        {
-            var (rephraseOrResponse, message, analysis) = input;
-            var choosen = analysis.SelectRandom();
-            var reply = rephraseOrResponse ? choosen.Rephrase.Message : (choosen.Response == null ? choosen.Rephrase.Message : choosen.Response.Message);
+        //IEnumerable<Analysis> Results(ConcurrentBag<Analysis> analysis)
+        //{
+        //    while (!analysis.IsEmpty)
+        //    {
+        //        analysis.TryTake(out Analysis result);
+        //        yield return result;
+        //    }
+        //}
 
-            LogMessage(new
-            {
-                Message = message,
-                Result = choosen,
-                Reply = reply
-            });
-
-            return reply;
-        }
-
-        public (bool rephraseOrResponse, string message, IEnumerable<Analysis> results) GetResults((string message, IEnumerable<Analysis> analysis) input)
-            => GetResults(input.message, input.analysis);
-
-        public (bool rephraseOrResponse, string message, IEnumerable<Analysis> results) GetResults(string message, IEnumerable<Analysis> analysis)
+        public IEnumerable<Analysis> GetResults(int wordCount, IEnumerable<Analysis> analysis)
         {
             var query = analysis.AsParallel();
-            var wordCount = message.GetWordCount();
-            var rephraseOrResponse = IsGettingRephraseOrResponse(wordCount);
             float wordCountTarget = wordCount;
             float matchRate = 0.9f;
 
@@ -176,7 +164,7 @@ namespace Cerlancism.ChatSystem
 
                 if (matchRate <= 0)
                 {
-                    return (rephraseOrResponse, message, analysis);
+                    return query;
                 }
             }
 
@@ -192,20 +180,25 @@ namespace Cerlancism.ChatSystem
                 }
             }
 
-            var results = query.Where(x => x.Score >= matchRate)
-                .Where(x => rephraseOrResponse ? FilterBySentenceLength(x.Rephrase.Message, wordCount) : true);
+            var results = query.Where(x => x.Score >= matchRate);
 
-            return (rephraseOrResponse, message, results);
+            return results;
         }
 
-        private static bool FilterBySentenceLength(string message, int wordCount)
+        public string GetRandomReply(int wordCount, IEnumerable<Analysis> analysis, out Analysis result)
         {
-            return message.GetWordCount() <= wordCount * 4;
+            result = analysis.SelectRandom();
+            var rephraseOrResponse = IsGettingRephraseOrResponse(wordCount);
+            var reply = rephraseOrResponse ? result.Rephrase.Message : result.Response.Message;
+
+            return reply;
         }
 
         public void Dispose()
         {
             _chatDatabase?.Dispose();
+            _chatDatabase = null;
+            _chatCollection = null;
         }
     }
 }

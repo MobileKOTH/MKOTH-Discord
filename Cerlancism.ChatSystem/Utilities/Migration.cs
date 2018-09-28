@@ -9,14 +9,15 @@ using Newtonsoft.Json;
 
 namespace Cerlancism.ChatSystem.Utilities
 {
+    using static Extensions.StringExtensions;
+
     public static class Migration
     {
         public static void Migrate(string fileName = "ChatHistory")
         {
             var json = $"[{File.ReadAllText($"{fileName}.dat")}]";
             var historyList = JsonConvert.DeserializeObject<List<string>>(json)
-                .Where(x => !string.IsNullOrEmpty(x))
-                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Where(x => !x.IsNullOrEmptyOrWhiteSpace())
                 .Select(x => new Entry
                 {
                     Message = x
