@@ -51,7 +51,7 @@ namespace Cerlancism.ChatSystem
                 return;
             }
 
-            if (previousUserId != default && previousUserId == userId)
+            if (previousUserId == userId)
             {
                 var lastMessage = GetLastChatHistory();
                 lastMessage.Message += " " + message;
