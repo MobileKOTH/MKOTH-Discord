@@ -22,7 +22,6 @@ namespace MKOTHDiscordBot.Handlers
         private ResponseService responseService;
 
         private ulong currentUserId;
-        private Timer GCtimer;
 
         public MessageHandler(
             DiscordSocketClient client, 
@@ -45,39 +44,40 @@ namespace MKOTHDiscordBot.Handlers
 
         async Task Handle(SocketMessage socketMessage)
         {
+            // No handle to null or own message.
+            if (!(socketMessage is SocketUserMessage message)) return;
+            if (message.Author.Id == currentUserId) return;
+
+            var context = new SocketCommandContext(client, message);
+            int argPos = 0;
+
+            // Debug log non dm messages.
+            if (!context.IsPrivate)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine(message.Timestamp.ToLocalTime() + "\tUser: " + message.Author.Username + "\nMessage: " + message.Content);
+                Console.ResetColor();
+            }
+            // Special test mode command handling.
+            if (!ReplyToTestServer && message.Content == ".settest")
+            {
+                ReplyToTestServer = true;
+                await context.Channel.SendMessageAsync("Replying to test server");
+                return;
+            }
+            // Special test mode to not handle certain messages.
+            if (!context.IsPrivate)
+            {
+                if (!Program.TestMode && !ReplyToTestServer && (context.Guild.Id == ApplicationContext.TestGuild.Guild.Id)) return;
+                if (Program.TestMode && (context.Guild.Id == ApplicationContext.MKOTHGuild.Guild.Id)) return;
+            }
+            else if (context.IsPrivate && context.User.Id != ApplicationContext.BotOwner.Id)
+            {
+                if (Program.TestMode) return;
+            }
+
             using (var chatService = services.GetRequiredService<ChatService>())
             {
-                // No handle to null or own message.
-                if (!(socketMessage is SocketUserMessage message)) return;
-                if (message.Author.Id == currentUserId) return;
-
-                var context = new SocketCommandContext(client, message);
-                int argPos = 0;
-
-                // Debug log non dm messages.
-                if (!context.IsPrivate)
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Console.WriteLine(message.Timestamp.ToLocalTime() + "\tUser: " + message.Author.Username + "\nMessage: " + message.Content);
-                    Console.ResetColor();
-                }
-                // Special test mode command handling.
-                if (!ReplyToTestServer && message.Content == ".settest")
-                {
-                    ReplyToTestServer = true;
-                    await context.Channel.SendMessageAsync("Replying to test server");
-                    return;
-                }
-                // Special test mode to not handle certain messages.
-                if (!context.IsPrivate)
-                {
-                    if (!Program.TestMode && !ReplyToTestServer && (context.Guild.Id == ApplicationContext.TestGuild.Guild.Id)) return;
-                    if (Program.TestMode && (context.Guild.Id == ApplicationContext.MKOTHGuild.Guild.Id)) return;
-                }
-                else if (context.IsPrivate && context.User.Id != ApplicationContext.BotOwner.Id)
-                {
-                    if (Program.TestMode) return;
-                }
                 // Chat handling in DM.
                 if (context.IsPrivate && !(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(client.CurrentUser, ref argPos))
                 {

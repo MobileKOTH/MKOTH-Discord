@@ -1,15 +1,9 @@
 ﻿using System;
-using System.IO;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Cerlancism.ChatSystem;
-using Cerlancism.ChatSystem.Core;
-using Cerlancism.ChatSystem.Utilities;
-using System.Diagnostics;
-using LiteDB;
-using Newtonsoft.Json;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
+using Cerlancism.ChatSystem;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json;
 
 namespace UnitTest.ChatSystem
 {
@@ -41,7 +35,7 @@ namespace UnitTest.ChatSystem
             using (var chat = new Chat("ChatHistory.db"))
             {
                 // Arrange
-                var trigger = "Hello";
+                var trigger = "hi";
 
                 // Act
                 chat.Log += log => Console.WriteLine(log);

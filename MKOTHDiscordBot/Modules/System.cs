@@ -32,7 +32,6 @@ namespace MKOTHDiscordBot.Modules
         public async Task BotInfo()
         {
             var msgTask = ReplyAsync(string.Empty, embed: buildEmbed());
-            GC.Collect();
 
             var (ramUsageMB, freeRamGB, ramSizeGB, cpuUsagePercent) = ApplicationManager.GetResourceUsage();
 
@@ -129,6 +128,27 @@ namespace MKOTHDiscordBot.Modules
             if (Program.TestMode) return;
             Handlers.MessageHandler.ReplyToTestServer = false;
             await ReplyAsync("Disabled replying to test server");
+        }
+
+        [Command("SendError")]
+        [RequireDeveloper]
+        public Task SendError()
+        {
+            try
+            {
+                throw new TestError();
+            }
+            catch (TestError e)
+            {
+                _ = ErrorResolver.SendErrorAndCheckRestartAsync(e);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        class TestError : Exception
+        {
+            public override string Message => "This is a test error";
         }
 
         [Command("Restart")]

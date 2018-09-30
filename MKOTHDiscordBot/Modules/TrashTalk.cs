@@ -67,8 +67,6 @@ namespace MKOTHDiscordBot.Modules
         public void Dispose()
         {
             chatService.Dispose();
-            chatService = null;
-            GC.Collect();
         }
     }
 }

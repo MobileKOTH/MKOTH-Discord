@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Timers;
 using System.Reflection;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Discord;
 using Discord.WebSocket;
-using System.Configuration;
-using System.Collections.Immutable;
+using Newtonsoft.Json;
 
 namespace MKOTHDiscordBot
 {

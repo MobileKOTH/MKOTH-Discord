@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.Linq;
-using System.Text;
+using System.Threading.Tasks;
 using Cerlancism.ChatSystem.Core;
-using Cerlancism.ChatSystem.Utilities;
 using Newtonsoft.Json;
 
 namespace Cerlancism.ChatSystem
 {
-    using static Extensions.StringExtensions;
     using static Extensions.GenericExtensions;
+    using static Extensions.StringExtensions;
 
     public partial class Chat
     {
@@ -23,18 +21,81 @@ namespace Cerlancism.ChatSystem
         public static string RemovePunctuations(string message)
             => new string(message.Where(c => !char.IsPunctuation(c)).ToArray());
 
-        public static string RemovePunctuationsAndLower(string message)
-            => RemovePunctuations(message).ToLower();
-
-        private static bool FilterBySentenceLength(string message, int wordCount, int mutiplier = 4)
+        private static bool IsSentenceLengthMultiple(string message, int wordCount, int mutiplier = 4)
             => message.GetWordCount() > wordCount * mutiplier;
+
+        public async Task<(int wordCount, IEnumerable<Analysis> analysis)> AnalyseAsync(string message)
+        {
+            var history = historyCache.AsReadOnly();
+            var (wordCount, words) = message.GetWordCount(null);
+            var indexes = ParallelEnumerable.Range(1, history.Count - 2);
+
+            var analysed = indexes.Select(index =>
+            {
+                var entry = history[index];
+                return new Analysis
+                {
+                    Score = ComputeScore(entry.Message, words, wordCount),
+                    Trigger = history[index - 1],
+                    Rephrase = entry,
+                    Response = history[index + 1]
+                };
+            }).ToArray();
+
+            await Task.CompletedTask;
+
+            return (wordCount, analysed);
+        }
+
+        public IEnumerable<Analysis> GetResults(int wordCount, IEnumerable<Analysis> analysis)
+        {
+            var query = analysis.AsParallel();
+            float wordCountTarget = wordCount;
+            float matchRate = 0.9f;
+
+            while (!query.Any(x => x.Score >= matchRate))
+            {
+                wordCountTarget--;
+                matchRate = NextMatchRate();
+
+                if (matchRate <= 0)
+                {
+                    return query.ToArray();
+                }
+            }
+
+            float NextMatchRate()
+            {
+                if (wordCount > 4)
+                {
+                    return matchRate - 0.15f;
+                }
+                else
+                {
+                    return wordCountTarget / wordCount;
+                }
+            }
+
+            var results = query.Where(x => x.Score >= matchRate);
+
+            return results.ToArray();
+        }
+
+        public string GetRandomReply(int wordCount, IEnumerable<Analysis> analysis, out Analysis result)
+        {
+            result = analysis.SelectRandom();
+            var rephraseOrResponse = IsGettingRephraseOrResponse(wordCount);
+            var reply = rephraseOrResponse ? result.Rephrase.Message : result.Response.Message;
+
+            return reply;
+        }
 
         private float ComputeScore(string history, string[] words, int wordCount)
         {
             var matchCount = 0f;
             var historyLowerCase = history.ToLower();
 
-            if (FilterBySentenceLength(history, wordCount))
+            if (IsSentenceLengthMultiple(history, wordCount))
             {
                 return 0;
             }

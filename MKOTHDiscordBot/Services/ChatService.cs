@@ -17,9 +17,15 @@ namespace MKOTHDiscordBot.Services
 
         public Chat ChatSystem;
 
-        public ChatService()
+        private ResponseService responseService;
+        private Stopwatch stopWatch;
+
+        public ChatService(ResponseService responseService)
         {
+            this.responseService = responseService;
+
             ChatSystem = new Chat(ConnectionString);
+            ChatSystem.Log += HandleLog;
         }
 
         public async Task AddSync(SocketCommandContext context)
@@ -36,10 +42,10 @@ namespace MKOTHDiscordBot.Services
                     return;
                 }
                 string CleanMessage = context.Message.Content;
-                for (int i = 0; i < context.Message.MentionedUsers.Count; i++)
+                foreach (var user in context.Message.MentionedUsers)
                 {
-                    CleanMessage = CleanMessage.Replace("<@" + context.Message.MentionedUsers.ElementAt(i).Id.ToString(), "<@!" + context.Message.MentionedUsers.ElementAt(i).Id.ToString());
-                    CleanMessage = CleanMessage.Replace(context.Message.MentionedUsers.ElementAt(i).Mention, context.Message.MentionedUsers.ElementAt(i).Username);
+                    CleanMessage = CleanMessage.Replace("<@" + user.Id.ToString(), "<@!" + user.Id.ToString());
+                    CleanMessage = CleanMessage.Replace(user.Mention, user.Username);
                 }
                 message = CleanMessage.Trim();
             }
@@ -60,42 +66,39 @@ namespace MKOTHDiscordBot.Services
                 return;
             }
 
-            await ResponseService.Instance.TriggerTypingAsync(context);
+            var typing = responseService.StartTypingAsync(context);
 
-            var stopWatch = Stopwatch.StartNew();
-            ChatSystem.Log += HandleLog;
-            var fullLog = "";
+            stopWatch = Stopwatch.StartNew();
 
             var reply = await ChatSystem.ReplyAsync(message);
+            reply = reply.SliceBack(1900);
 
             stopWatch.Stop();
 
-            await ResponseService.Instance.SendToContextAsync(context, reply);
+            await responseService.SendToContextAsync(context, reply, typing);
             if (context.IsPrivate && context.User.Id != ApplicationContext.BotOwner.Id)
             {
-                await ResponseService.Instance.SendToChannelAsync(ApplicationContext.TestGuild.BotTest, "DM chat received:", new EmbedBuilder()
+                await responseService.SendToChannelAsync(ApplicationContext.TestGuild.BotTest, "DM chat received:", new EmbedBuilder()
                     .WithAuthor(context.User)
                     .WithDescription(message)
                     .AddField("Response", reply)
                     .Build());
             }
+        }
 
-            ChatSystem.Log -= HandleLog;
-
-            void HandleLog(string log)
-            {
-                var time = stopWatch.Elapsed.TotalMilliseconds;
-                fullLog = $"{log} \n" +
-                    $"**Time Used:** `{time}` ms";
-                Logger.Log(fullLog, LogType.TrashReply);
-            }
+        void HandleLog(string log)
+        {
+            var time = stopWatch.Elapsed.TotalMilliseconds;
+            var fullLog = $"{log} \n" +
+                $"**Time Used:** `{time}` ms";
+            Logger.Log(fullLog, LogType.TrashReply);
         }
 
         public void Dispose()
         {
             Logger.Debug("Disposed", "ChatSystem");
+            ChatSystem.Log -= HandleLog;
             ChatSystem.Dispose();
-            ChatSystem = null;
         }
     }
 }

@@ -155,9 +155,10 @@
     <Compile Include="Services\ChatService.cs" />
     <Compile Include="Services\ServiceExtensions.cs" />
     <Compile Include="Services\SingletonServiceAttribute.cs" />
-    <Compile Include="Services\StatusCycler.cs" />
+    <Compile Include="Services\ActivityCycler.cs" />
     <Compile Include="Utilities\ApplicationContext.cs" />
     <Compile Include="Utilities\Directories.cs" />
+    <Compile Include="Utilities\ErrorResolver.cs" />
     <Compile Include="Utilities\Extensions.cs" />
     <Compile Include="Utilities\Logger.cs" />
     <Compile Include="Services\ResponseService.cs" />

@@ -1,9 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Discord.WebSocket;
-using MKOTHDiscordBot.Services;
 
 namespace MKOTHDiscordBot
 {
@@ -20,8 +17,6 @@ namespace MKOTHDiscordBot
 
     public static class Logger
     {
-        public static int ResponderErrors = 0;
-
         public static void Log(string log, LogType type)
         {
             switch (type)
@@ -93,44 +88,6 @@ namespace MKOTHDiscordBot
                     "Error generating object data".AddTab() + obj.GetType().ToString().AddTab() + description.AddLine() +
                     e.Message.AddLine() +
                     e.StackTrace);
-            }
-        }
-
-        public static async Task SendErrorAsync(Exception error)
-        {
-            try
-            {
-                string stacktrace = error.StackTrace ?? "Null Stacktrace";
-                stacktrace = stacktrace.SliceFront(1800);
-                await ResponseService.Instance.SendToChannelAsync(ApplicationContext.TestGuild.BotTest, error.Message + stacktrace.MarkdownCodeBlock("yaml"));
-                if (++ResponderErrors > 3)
-                {
-                    ResponderErrors = 0;
-                    throw new TooManyErrorsException();
-                }
-            }
-            catch (TooManyErrorsException e)
-            {
-                await SendErrorAsync(e);
-                ApplicationManager.RestartApplication(ApplicationContext.TestGuild.BotTest.Id);
-            }
-            catch (Exception e)
-            {
-                LogError(e);
-            }
-            finally
-            {
-                LogError(error);
-            }
-        }
-
-        private class TooManyErrorsException : Exception
-        {
-            public override string Message => "The application has experienced too many errors and is attempting to auto restart";
-
-            public TooManyErrorsException()
-            {
-
             }
         }
     }

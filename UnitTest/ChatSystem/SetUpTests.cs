@@ -1,12 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Threading.Tasks;
 using Cerlancism.ChatSystem;
 using Cerlancism.ChatSystem.Core;
 using Cerlancism.ChatSystem.Utilities;
-using System.Diagnostics;
-using System.Threading.Tasks;
 using LiteDB;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace UnitTest.ChatSystem
 {

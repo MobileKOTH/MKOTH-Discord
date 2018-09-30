@@ -1,24 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Cerlancism.ChatSystem.Core;
 using LiteDB;
 
 namespace Cerlancism.ChatSystem
 {
-    using static Extensions.FuncExtensions;
-    using static Extensions.GenericExtensions;
     using static Extensions.StringExtensions;
 
     using static Utilities.DatabaseUtilities;
-    using static Utilities.FuncUtilities;
 
     public partial class Chat : IDisposable
     {
         public event Action<string> Log;
+
+        private static Task delayDisposal;
+        private static CancellationTokenSource cancelDelayDisposal = new CancellationTokenSource();
+        private static int Instances = 0;
+        private static List<Entry> _historyCache;
+        private List<Entry> historyCache
+        {
+            get
+            {
+                if (_historyCache == null)
+                {
+                    _historyCache = ChatCollection.FindAll().ToList();
+                }
+                return _historyCache;
+            }
+            set
+            {
+                _historyCache = value;
+            }
+        }
 
         private static int lastId = default;
         private static ulong previousUserId = default;
@@ -36,6 +52,13 @@ namespace Cerlancism.ChatSystem
 
         public Chat(string connectionString)
         {
+            if (cancelDelayDisposal != null)
+            {
+                cancelDelayDisposal.Cancel();
+                cancelDelayDisposal = null;
+            }
+            Instances++;
+            
             this.connectionString = connectionString;
         }
 
@@ -64,15 +87,21 @@ namespace Cerlancism.ChatSystem
         {
             var lastMessage = await GetLastChatHistoryAsync();
             lastMessage.Message += " " + message;
+            if (historyCache != null)
+            {
+                historyCache.Last().Message = lastMessage.Message;
+            }
             await Task.FromResult(ChatCollection.Update(lastMessage));
         }
 
         private async Task AddMessageAsync(ulong userId, string message)
         {
-            lastId = await Task.FromResult(ChatCollection.Insert(new Entry
+            var entry = new Entry
             {
                 Message = message
-            }));
+            };
+            lastId = await Task.FromResult(ChatCollection.Insert(entry));
+            historyCache?.Add(entry);
 
             previousUserId = userId;
             previousMessage = message;
@@ -86,7 +115,7 @@ namespace Cerlancism.ChatSystem
 
         public async Task<string> ReplyAsync(string message)
         {
-            var cleanedMessage = RemovePunctuationsAndLower(message);
+            var cleanedMessage = RemovePunctuations(message).ToLower();
             var (wordCount, analysis) = await AnalyseAsync(cleanedMessage);
             var results = GetResults(wordCount, analysis);
             var choosen = GetRandomReply(wordCount, results, out Analysis result);
@@ -114,91 +143,26 @@ namespace Cerlancism.ChatSystem
 
         //=> GetTriggerOrResponse(GetResults(Analyse(TrimMessage(message).ToLower()), message).SelectRandom(), message);
 
-        public async Task<(int wordCount, IEnumerable<Analysis> analysis)> AnalyseAsync(string message)
-        {
-            var history = ChatCollection.FindAll().ToArray();
-            var analysed = new ConcurrentBag<Analysis>();
-            var (wordCount, words) = message.GetWordCount(null);
-            var trimed = history
-                .Take(history.Length - 1)
-                .Skip(1);
-
-            Parallel.ForEach(trimed, (item, state, index) =>
-            {
-                var score = ComputeScore(item.Message, words, wordCount);
-                var result = new Analysis
-                {
-                    Score = score,
-                    Trigger = history[index],
-                    Rephrase = history[index + 1],
-                    Response = history[index + 2],
-                };
-
-                analysed.Add(result);
-            });
-
-            await Task.CompletedTask;
-
-            return (wordCount, analysed);
-        }
-
-        //IEnumerable<Analysis> Results(ConcurrentBag<Analysis> analysis)
-        //{
-        //    while (!analysis.IsEmpty)
-        //    {
-        //        analysis.TryTake(out Analysis result);
-        //        yield return result;
-        //    }
-        //}
-
-        public IEnumerable<Analysis> GetResults(int wordCount, IEnumerable<Analysis> analysis)
-        {
-            var query = analysis.AsParallel();
-            float wordCountTarget = wordCount;
-            float matchRate = 0.9f;
-
-            while (!query.Any(x => x.Score >= matchRate))
-            {
-                wordCountTarget--;
-                matchRate = NextMatchRate();
-
-                if (matchRate <= 0)
-                {
-                    return query;
-                }
-            }
-
-            float NextMatchRate()
-            {
-                if (wordCount > 4)
-                {
-                    return matchRate - 0.15f;
-                }
-                else
-                {
-                    return wordCountTarget / wordCount;
-                }
-            }
-
-            var results = query.Where(x => x.Score >= matchRate);
-
-            return results;
-        }
-
-        public string GetRandomReply(int wordCount, IEnumerable<Analysis> analysis, out Analysis result)
-        {
-            result = analysis.SelectRandom();
-            var rephraseOrResponse = IsGettingRephraseOrResponse(wordCount);
-            var reply = rephraseOrResponse ? result.Rephrase.Message : result.Response.Message;
-
-            return reply;
-        }
-
         public void Dispose()
         {
             _chatDatabase?.Dispose();
             _chatDatabase = null;
             _chatCollection = null;
+            Instances--;
+            Task.Run(async () =>
+            {
+                if (Instances == 0 && _historyCache != null)
+                {
+                    cancelDelayDisposal = new CancellationTokenSource();
+                    var token = cancelDelayDisposal.Token;
+                    await Task.Delay(20000, token);
+                    _historyCache.Clear();
+                    _historyCache = null;
+                    GC.Collect(0);
+                    await Task.Delay(5000, token);
+                    GC.Collect();
+                }
+            });
         }
     }
 }

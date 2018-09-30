@@ -10,47 +10,29 @@ namespace MKOTHDiscordBot.Services
     [SingletonService("Helper class to send Discord messages.")]
     public class ResponseService
     {
-        public static ResponseService Instance { get; private set; }
-
-        private int currentTypingSecond = 0;
-        private Timer secondCounter = new Timer(1000);
-
         public ResponseService()
         {
-            if (Instance != null)
-            {
-                return;
-            }
-
-            secondCounter.Elapsed += HandleTimeCounter;
-            secondCounter.Start();
-
-            Instance = this;
-
             Logger.Debug("Started", "Responder Service");
         }
 
-        public async Task TriggerTypingAsync(SocketCommandContext context)
+        public IDisposable StartTypingAsync(SocketCommandContext context)
         {
             try
             {
-                if (currentTypingSecond == 0)
-                {
-                    currentTypingSecond = 10;
-                    await context.Channel.TriggerTypingAsync();
-                }
+                return context.Channel.EnterTypingState();
             }
             catch (Exception e)
             {
                 Logger.LogError(e);
+                return null;
             }
         }
 
-        public async Task SendToContextAsync(SocketCommandContext context, string reply)
+        public async Task SendToContextAsync(SocketCommandContext context, string reply, IDisposable typingState = null)
         {
             try
             {
-                currentTypingSecond = 0;
+                typingState?.Dispose();
                 await context.Channel.SendMessageAsync(reply);
             }
             catch (Exception e)
@@ -69,11 +51,6 @@ namespace MKOTHDiscordBot.Services
             {
                 Logger.LogError(e);
             }
-        }
-
-        private void HandleTimeCounter(object _, ElapsedEventArgs __)
-        {
-            currentTypingSecond = currentTypingSecond > 0 ? currentTypingSecond - 1 : 0;
         }
     }
 }

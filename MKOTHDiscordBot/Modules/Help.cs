@@ -132,8 +132,8 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Info")]
         [Alias("MkothHelp", "Mkoth Help", "Mkoth Info", "Information", "Mkoth Information", "MkothInfo")]
-        [Summary("Redirect to common MKOTH related helps, equivalent to as `.help information` and `.help management` together.")]
+        [Summary("What is MKOTH all about.")]
         public async Task Info() 
-            => await Task.WhenAll(HelpCommand("information"), HelpCommand("management"));
+            => await ReplyAsync("The competitive community for BTD Battles.");
     }
 }
