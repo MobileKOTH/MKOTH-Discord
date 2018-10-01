@@ -18,12 +18,12 @@ namespace Cerlancism.ChatSystem
         public event Action<string> Log;
 
         private static CancellationTokenSource cancelDelayDisposal = new CancellationTokenSource();
-        private static int Instances = 0;
         private static List<Entry> historyCache;
         private List<Entry> HistoryCache
         {
             get
             {
+                accessedCache = true;
                 if (historyCache == null)
                 {
                     historyCache = ChatCollection.FindAll().ToList();
@@ -38,6 +38,7 @@ namespace Cerlancism.ChatSystem
                 }
             }
         }
+        private bool accessedCache = false;
 
         private static int lastId = default;
         private static ulong previousUserId = default;
@@ -54,14 +55,7 @@ namespace Cerlancism.ChatSystem
         private LiteCollection<Entry> _chatCollection;
 
         public Chat(string connectionString)
-        {
-            if (cancelDelayDisposal != null)
-            {
-                cancelDelayDisposal.Cancel();
-                cancelDelayDisposal = null;
-            }
-            Instances++;
-            
+        {   
             this.connectionString = connectionString;
         }
 
@@ -156,25 +150,26 @@ namespace Cerlancism.ChatSystem
             _chatDatabase?.Dispose();
             _chatDatabase = null;
             _chatCollection = null;
-            Instances--;
-            Task.Run(async () =>
-            {
-                if (Instances == 0 && historyCache != null)
-                {
-                    cancelDelayDisposal = new CancellationTokenSource();
-                    var token = cancelDelayDisposal.Token;
 
+            if (accessedCache)
+            {
+                cancelDelayDisposal?.Cancel();
+                cancelDelayDisposal = new CancellationTokenSource();
+                var token = cancelDelayDisposal.Token;
+                _ = Task.Run(async () =>
+                {
                     await Task.Delay(20000, token);
 
-                    historyCache.Clear();
-                    historyCache = null;
+                    HistoryCache.Clear();
+                    HistoryCache = null;
                     GC.Collect();
 
                     await Task.Delay(5000, token);
 
+                    cancelDelayDisposal = null;
                     GC.Collect();
-                }
-            });
+                });
+            }
         }
     }
 }

@@ -114,9 +114,10 @@ namespace MKOTHDiscordBot.Handlers
                 return;
             }
 
-            using (var chatService = services.GetRequiredService<ChatService>())
+            
+            if (!message.Author.IsBot && !message.HasMentionPrefix(client.CurrentUser, ref argPos))
             {
-                if (!message.Author.IsBot && !message.HasMentionPrefix(client.CurrentUser, ref argPos))
+                using (var chatService = services.GetRequiredService<ChatService>())
                 {
                     await chatService.AddSync(context);
                 }

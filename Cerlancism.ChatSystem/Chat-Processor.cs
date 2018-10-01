@@ -42,6 +42,8 @@ namespace Cerlancism.ChatSystem
                 };
             }).ToArray();
 
+            history = null;
+            indexes = null;
             await Task.CompletedTask;
 
             return (wordCount, analysed);
@@ -86,6 +88,7 @@ namespace Cerlancism.ChatSystem
             result = analysis.SelectRandom();
             var rephraseOrResponse = IsGettingRephraseOrResponse(wordCount);
             var reply = rephraseOrResponse ? result.Rephrase.Message : result.Response.Message;
+            analysis = null;
 
             return reply;
         }
