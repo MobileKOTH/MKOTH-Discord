@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,23 +17,25 @@ namespace Cerlancism.ChatSystem
     {
         public event Action<string> Log;
 
-        private static Task delayDisposal;
         private static CancellationTokenSource cancelDelayDisposal = new CancellationTokenSource();
         private static int Instances = 0;
-        private static List<Entry> _historyCache;
-        private List<Entry> historyCache
+        private static List<Entry> historyCache;
+        private List<Entry> HistoryCache
         {
             get
             {
-                if (_historyCache == null)
+                if (historyCache == null)
                 {
-                    _historyCache = ChatCollection.FindAll().ToList();
+                    historyCache = ChatCollection.FindAll().ToList();
                 }
-                return _historyCache;
+                return historyCache;
             }
             set
             {
-                _historyCache = value;
+                lock(historyCache)
+                {
+                    historyCache = value;
+                }
             }
         }
 
@@ -87,9 +90,9 @@ namespace Cerlancism.ChatSystem
         {
             var lastMessage = await GetLastChatHistoryAsync();
             lastMessage.Message += " " + message;
-            if (historyCache != null)
+            if (HistoryCache != null)
             {
-                historyCache.Last().Message = lastMessage.Message;
+                HistoryCache.Last().Message = lastMessage.Message;
             }
             await Task.FromResult(ChatCollection.Update(lastMessage));
         }
@@ -115,16 +118,21 @@ namespace Cerlancism.ChatSystem
 
         public async Task<string> ReplyAsync(string message)
         {
+            var stopWatch = Stopwatch.StartNew();
             var cleanedMessage = RemovePunctuations(message).ToLower();
             var (wordCount, analysis) = await AnalyseAsync(cleanedMessage);
             var results = GetResults(wordCount, analysis);
             var choosen = GetRandomReply(wordCount, results, out Analysis result);
 
+            stopWatch.Stop();
+
             LogMessage(new
             {
                 Message = message,
                 Result = result,
-                Reply = choosen
+                Possibilities = ((Analysis[])results).Length,
+                Reply = choosen,
+                TimeUsedMs = stopWatch.Elapsed.TotalMilliseconds
             });
 
             return choosen;
@@ -151,15 +159,19 @@ namespace Cerlancism.ChatSystem
             Instances--;
             Task.Run(async () =>
             {
-                if (Instances == 0 && _historyCache != null)
+                if (Instances == 0 && historyCache != null)
                 {
                     cancelDelayDisposal = new CancellationTokenSource();
                     var token = cancelDelayDisposal.Token;
+
                     await Task.Delay(20000, token);
-                    _historyCache.Clear();
-                    _historyCache = null;
-                    GC.Collect(0);
+
+                    historyCache.Clear();
+                    historyCache = null;
+                    GC.Collect();
+
                     await Task.Delay(5000, token);
+
                     GC.Collect();
                 }
             });

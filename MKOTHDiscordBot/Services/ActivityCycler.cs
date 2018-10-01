@@ -69,7 +69,7 @@ namespace MKOTHDiscordBot.Services
 
         private DiscordSocketClient client;
         private (IActivity current, IActivity last) activity;
-        private Timer statusTimer = new Timer(15000);
+        private Timer changeTimer = new Timer(15000);
 
 
         public ActivityCycler(DiscordSocketClient client)
@@ -77,18 +77,18 @@ namespace MKOTHDiscordBot.Services
             this.client = client;
 
             activity = (helpHint, ActivitySequence.Last());
-            statusTimer.Elapsed += async (_, __) => await ChangeStatusAsync();
+            changeTimer.Elapsed += async (_, __) => await ChangeActivityAsync();
 
             client.Connected += () =>
             {
-                statusTimer.Start();
+                changeTimer.Start();
                 Logger.Log("Client Connected", LogType.ClientEvent);
                 return Task.CompletedTask;
             };
 
             client.Disconnected += (_) =>
             {
-                statusTimer.Stop();
+                changeTimer.Stop();
                 Logger.Log("Client Disconnected", LogType.ClientEvent);
                 return Task.CompletedTask;
             };
@@ -96,7 +96,7 @@ namespace MKOTHDiscordBot.Services
             Logger.Debug("Started", nameof(ActivityCycler));
         }
 
-        public async Task ChangeStatusAsync()
+        public async Task ChangeActivityAsync()
         {
             if (Program.TestMode)
             {
@@ -111,14 +111,14 @@ namespace MKOTHDiscordBot.Services
 
                 if (activity.current is HelpHint)
                 {
-                    setNextStatus();
+                    setNextActivity();
                     return;
                 }
 
                 activity.last = activity.current;
                 activity.current = helpHint;
 
-                void setNextStatus()
+                void setNextActivity()
                 {
                     var targetNode = ActivitySequence.Find(activity.last);
                     activity.current = targetNode.Next == null ? targetNode.List.First.Value : targetNode.Next.Value;

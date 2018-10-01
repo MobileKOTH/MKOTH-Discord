@@ -18,7 +18,6 @@ namespace MKOTHDiscordBot.Services
         public Chat ChatSystem;
 
         private ResponseService responseService;
-        private Stopwatch stopWatch;
 
         public ChatService(ResponseService responseService)
         {
@@ -30,9 +29,20 @@ namespace MKOTHDiscordBot.Services
 
         public async Task AddSync(SocketCommandContext context)
         {
-            if (context.IsPrivate) return;
-            if (context.User.IsWebhook) return;
-            if (context.Channel.Id != ApplicationContext.MKOTHGuild.Official.Id) return;
+            if (context.IsPrivate)
+            {
+                return;
+            }
+
+            if (context.User.IsWebhook)
+            {
+                return;
+            }
+
+            if (context.Channel.Id != ApplicationContext.MKOTHGuild.Official.Id)
+            {
+                return;
+            }
 
             var message = context.Message.Content;
             if (context.Message.MentionedUsers.Count > 0)
@@ -66,14 +76,17 @@ namespace MKOTHDiscordBot.Services
                 return;
             }
 
+            var stopWatch = Stopwatch.StartNew();
             var typing = responseService.StartTypingAsync(context);
-
-            stopWatch = Stopwatch.StartNew();
 
             var reply = await ChatSystem.ReplyAsync(message);
             reply = reply.SliceBack(1900);
 
             stopWatch.Stop();
+            if (stopWatch.Elapsed.TotalMilliseconds < 500)
+            {
+                await Task.Delay(500 - (int)stopWatch.Elapsed.TotalMilliseconds);
+            }
 
             await responseService.SendToContextAsync(context, reply, typing);
             if (context.IsPrivate && context.User.Id != ApplicationContext.BotOwner.Id)
@@ -88,10 +101,7 @@ namespace MKOTHDiscordBot.Services
 
         void HandleLog(string log)
         {
-            var time = stopWatch.Elapsed.TotalMilliseconds;
-            var fullLog = $"{log} \n" +
-                $"**Time Used:** `{time}` ms";
-            Logger.Log(fullLog, LogType.TrashReply);
+            Logger.Log(log, LogType.TrashReply);
         }
 
         public void Dispose()

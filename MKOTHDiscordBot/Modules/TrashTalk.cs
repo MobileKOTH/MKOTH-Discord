@@ -64,6 +64,13 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync($"`Message Id: #{id}`", embed: embed.Build());
         }
 
+        [Command("Reply", RunMode = RunMode.Async)]
+        [Summary("Get a reply against the input content")]
+        public async Task Reply([Remainder] string input)
+        {
+            await chatService.ReplyAsync(Context, input);
+        }
+
         public void Dispose()
         {
             chatService.Dispose();

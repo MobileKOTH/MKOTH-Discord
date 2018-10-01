@@ -16,7 +16,7 @@ namespace Cerlancism.ChatSystem
             => LogMessage(JsonConvert.SerializeObject(logObject, Formatting.Indented));
 
         private void LogMessage(string log)
-            => Log?.Invoke($"[ChatSystem] {log}");
+            => Log?.Invoke($"[ChatSystem]\n```json\n{log}\n```");
 
         public static string RemovePunctuations(string message)
             => new string(message.Where(c => !char.IsPunctuation(c)).ToArray());
@@ -26,7 +26,7 @@ namespace Cerlancism.ChatSystem
 
         public async Task<(int wordCount, IEnumerable<Analysis> analysis)> AnalyseAsync(string message)
         {
-            var history = historyCache.AsReadOnly();
+            var history = HistoryCache.AsReadOnly();
             var (wordCount, words) = message.GetWordCount(null);
             var indexes = ParallelEnumerable.Range(1, history.Count - 2);
 
