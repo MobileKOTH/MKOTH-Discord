@@ -138,7 +138,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Components\Player.cs" />
     <Compile Include="Credentials.cs" />
     <Compile Include="Handlers\ReadyHandler.cs" />
     <Compile Include="Handlers\DiscordClientEventHandlerBase.cs" />

@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Configuration;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 using Cerlancism.ChatSystem;
-using Discord.Commands;
 using Discord;
+using Discord.Commands;
 
 namespace MKOTHDiscordBot.Services
 {

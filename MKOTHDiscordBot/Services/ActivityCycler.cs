@@ -29,7 +29,7 @@ namespace MKOTHDiscordBot.Services
             {
                 get
                 {
-                    var kingname = Player.List.First(x => x.Class == PlayerClass.KING).Name;
+                    var kingname = "No king yet";
                     var kingstatus = "King: " + kingname.SliceBack(18);
                     return kingstatus;
                 }
@@ -49,7 +49,7 @@ namespace MKOTHDiscordBot.Services
             {
                 get
                 {
-                    var count = Player.List.Sum(x => (x.Wins + x.Loss + x.Draws) / 2);
+                    var count = 0;
                     var gamestatus = count + " total games played";
                     return gamestatus;
                 }
@@ -105,8 +105,6 @@ namespace MKOTHDiscordBot.Services
 
             try
             {
-                Console.WriteLine(activity);
-
                 await client.SetActivityAsync(activity.current);
 
                 if (activity.current is HelpHint)

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Configuration;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -10,6 +9,11 @@ using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using MKOTHDiscordBot.Handlers;
 using MKOTHDiscordBot.Services;
+
+#if DEBUG
+using System.Configuration;
+using System.IO;
+#endif
 
 using static MKOTHDiscordBot.Services.ServiceExtensions;
 
@@ -40,7 +44,7 @@ namespace MKOTHDiscordBot
             var buildNumber = int.Parse(buildNumberStr);
             config.AppSettings.Settings["BuildNumber"].Value = (buildNumber + 1).ToString();
             config.Save(ConfigurationSaveMode.Modified);
-            config.SaveAs(System.IO.Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.FullName + @"\App.config", ConfigurationSaveMode.Modified);
+            config.SaveAs(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.FullName + @"\App.config", ConfigurationSaveMode.Modified);
             ConfigurationManager.RefreshSection("appSettings");
 #else
             Console.WriteLine("Release Build");

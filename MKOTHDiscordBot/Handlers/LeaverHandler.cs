@@ -28,7 +28,7 @@ namespace MKOTHDiscordBot.Handlers
 
                 var bans = ApplicationContext.MKOTHGuild.Guild.GetBansAsync().Result;
 
-                if (Player.List.Exists(x => x.DiscordId == user.Id && !x.IsRemoved))
+                if (false)//Player.List.Exists(x => x.DiscordId == user.Id && !x.IsRemoved))
                 {
                     if (bans.ToList().Exists(x => x.User.Id == user.Id))
                     {

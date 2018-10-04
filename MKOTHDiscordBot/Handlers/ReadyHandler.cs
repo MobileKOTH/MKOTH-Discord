@@ -30,9 +30,6 @@ namespace MKOTHDiscordBot.Handlers
                         Console.WriteLine($"Owner Id: {ApplicationContext.BotOwner.Id}");
                     });
 
-                // Player Data
-                _ = Player.Load();
-
                 if (Program.FirstArgument == "Restarted")
                 {
                     var restartChannel = client.GetChannel(ulong.Parse(Program.SecondArgument));
