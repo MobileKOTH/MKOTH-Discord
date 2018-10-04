@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using MKOTHDiscordBot.Services;
+using Cerlancism.ChatSystem;
+using Cerlancism.ChatSystem.Core;
 
 namespace MKOTHDiscordBot.Modules
 {
@@ -28,10 +30,17 @@ namespace MKOTHDiscordBot.Modules
         {
             DateTime start = DateTime.Now;
             var chatSystem = chatService.ChatSystem;
-            var (wordCount, analysis) = await chatSystem.AnalyseAsync(message);
+            var purgedMessage = Chat.PurgeMessage(message);
+            var (wordCount, analysis) = await chatSystem.AnalyseAsync(purgedMessage);
             var results = chatSystem.GetResults(wordCount, analysis).ToArray();
             var takeResults = results.Take(25).ToArray();
             var embed = new EmbedBuilder();
+
+            if (results.First().Score == 0)
+            {
+                await ReplyAsync($"No results for: ```{purgedMessage.SliceBack(1900)}```");
+                return;
+            }
 
             foreach (var item in takeResults)
             {
@@ -48,7 +57,7 @@ namespace MKOTHDiscordBot.Modules
 
             embed.Title = "Trigger, rephrase and reply pool";
             embed.Description = "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`";
-            await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"{message.SliceBack(100)}\"", false, embed.Build());
+            await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"{purgedMessage.SliceBack(100)}\"", false, embed.Build());
         }
 
         [Command("TrashMessage", RunMode = RunMode.Async)]
@@ -58,10 +67,56 @@ namespace MKOTHDiscordBot.Modules
         public async Task TrashMessage(int id)
         {
             var entry = await chatService.ChatSystem.GetChatHistoryByIdAsync(id);
+            await ReplyEntry(entry);
+        }
+
+        [Command("LastMessage", RunMode = RunMode.Async)]
+        [Summary("Displays the last recorded message.")]
+        [Alias("lm")]
+        [RequireBotTest]
+        public async Task LastMessage()
+        {
+            var entry = await chatService.ChatSystem.GetLastChatHistoryAsync();
+            await ReplyEntry(entry);
+        }
+
+        public async Task ReplyEntry(Entry entry)
+        {
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
-                .WithDescription(entry.Message.SliceBack(1900));
-            await ReplyAsync($"`Message Id: #{id}`", embed: embed.Build());
+                .WithDescription(entry?.Message.SliceBack(1900) ?? "`No message found.`");
+            await ReplyAsync($"`Message Id: #{entry?.Id}`", embed: embed.Build());
+        }
+
+        [Command("QueryLength", RunMode = RunMode.Async)]
+        [Summary("Find messages with certain character length")]
+        [Alias("ql")]
+        [RequireBotTest]
+        public async Task QueryLength(int length)
+        {
+            var history = chatService.ChatSystem.HistoryCache;
+            var results = history.Where(x => x.Message.Length >= length).ToArray();
+            var takeResults = results.Take(25).ToArray();
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange);
+
+            if (results.Count() > 0)
+            {
+                embed.WithDescription($"Messages with length of `{length}`: ");
+                var omission = takeResults.Length < results.Length ? results.Length - takeResults.Length : 0;
+                embed.WithFooter($"Results: {takeResults.Length}" + (omission > 0 ? $", omitted: {omission}" : ""));
+            }
+            else
+            {
+                embed.WithDescription($"No results with length of `{length}`");
+            }
+
+            foreach (var item in takeResults)
+            {
+                embed.AddField($"{item.Message.Length}", $"`#{item.Id}` {item.Message.SliceBack(100)}");
+            }
+
+            await ReplyAsync(string.Empty, embed: embed.Build());
         }
 
         [Command("Reply", RunMode = RunMode.Async)]

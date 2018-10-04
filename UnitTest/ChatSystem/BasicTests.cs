@@ -12,6 +12,23 @@ namespace UnitTest.ChatSystem
     public class BasicTests
     {
         [TestMethod]
+        public void StringSplitMultiSpaceTest_TreatedAsOneSpace()
+        {
+            // Arrange
+            var text = "Hello  World";
+
+            // Act
+            var splits = text.Split(' ').Where(x => !string.IsNullOrEmpty(x)).ToArray();
+
+            // Assert
+            Assert.AreEqual(splits.Length, 2);
+            foreach (var item in splits)
+            {
+                Console.WriteLine(item);
+            }
+        }
+
+        [TestMethod]
         public void TrimMessageTest()
         {
             // Arrange

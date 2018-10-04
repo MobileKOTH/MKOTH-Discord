@@ -87,8 +87,9 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Alt")]
         [Summary("Checks the user's registration and server join date.")]
-        public async Task Alt(IGuildUser user)
+        public async Task Alt(IGuildUser user = null)
         {
+            user = user ?? Context.User as IGuildUser;
             var resgistrationDate = user.CreatedAt;
             var joinedDate = user.JoinedAt.Value;
             var difference = joinedDate - resgistrationDate;
@@ -106,7 +107,7 @@ namespace MKOTHDiscordBot.Modules
                 embed.Description += $"\n\nThe user is currently **{Enum.GetName(typeof(ActivityType), activity.Type).ToLower()}:** {activity.Name}";
             }
 
-            await ReplyAsync(string.Empty, embed: embed.Build());
+            await ReplyAsync(user == Context.User ? "Checking yourself." : string.Empty, embed: embed.Build());
         }
 
         [Command("SubmitKing")]

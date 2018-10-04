@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using Cerlancism.ChatSystem.Core;
 using Newtonsoft.Json;
 
@@ -18,15 +19,22 @@ namespace Cerlancism.ChatSystem
         private void LogMessage(string log)
             => Log?.Invoke($"[ChatSystem]\n```json\n{log}\n```");
 
+        public static string PurgeMessage(string message)
+            => Regex.Replace(RemovePunctuations(message)
+                .ToLower()
+                .Trim()
+                .Trim('\n'), @"\s+", " ");
+
         public static string RemovePunctuations(string message)
-            => new string(message.Where(c => !char.IsPunctuation(c)).ToArray());
+            => new string(message.Select(c => char.IsPunctuation(c) ? ' ' : c)
+                .ToArray());
 
         private static bool IsSentenceLengthMultiple(string message, int wordCount, int mutiplier = 4)
             => message.GetWordCount() > wordCount * mutiplier;
 
         public async Task<(int wordCount, IEnumerable<Analysis> analysis)> AnalyseAsync(string message)
         {
-            var history = HistoryCache.AsReadOnly();
+            var history = HistoryCache;
             var (wordCount, words) = message.GetWordCount(null);
             var indexes = ParallelEnumerable.Range(1, history.Count - 2);
 

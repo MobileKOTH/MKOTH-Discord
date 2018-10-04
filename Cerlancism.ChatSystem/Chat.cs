@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
+using System.Runtime.Caching;
 using System.Threading.Tasks;
 using Cerlancism.ChatSystem.Core;
 using LiteDB;
@@ -10,6 +11,7 @@ using LiteDB;
 namespace Cerlancism.ChatSystem
 {
     using static Extensions.StringExtensions;
+    using static Extensions.ObjectCacheExtensions;
 
     using static Utilities.DatabaseUtilities;
 
@@ -17,28 +19,40 @@ namespace Cerlancism.ChatSystem
     {
         public event Action<string> Log;
 
-        private static CancellationTokenSource cancelDelayDisposal = new CancellationTokenSource();
+        private static ObjectCache cache = MemoryCache.Default;
         private static List<Entry> historyCache;
-        private List<Entry> HistoryCache
+        private static CacheItemPolicy cachePolicy;
+        private static string HistoryCacheKey => "historyCache";
+        public ReadOnlyCollection<Entry> HistoryCache
         {
             get
             {
-                accessedCache = true;
-                if (historyCache == null)
+                cachePolicy = new CacheItemPolicy
                 {
-                    historyCache = ChatCollection.FindAll().ToList();
-                }
-                return historyCache;
-            }
-            set
-            {
-                lock(historyCache)
-                {
-                    historyCache = value;
-                }
+                    SlidingExpiration = TimeSpan.FromSeconds(20),
+                    RemovedCallback = x => Task.Run(async () =>
+                    {
+                        historyCache = null;
+                        GC.Collect();
+                        await Task.Delay(5000);
+                        GC.Collect();
+                    })
+                };
+                historyCache = cache.AddOrGetExisting(HistoryCacheKey, () => ChatCollection.FindAll().ToList(), cachePolicy);
+                return historyCache.AsReadOnly();
             }
         }
-        private bool accessedCache = false;
+
+        private void UpdateCache(Action<List<Entry>> update)
+        {
+            if (historyCache != null)
+            {
+                update(historyCache);
+                var cached = cache.GetCacheItem(HistoryCacheKey);
+                cached.Value = historyCache;
+                cache.Set(cached, cachePolicy);
+            }
+        }
 
         private static int lastId = default;
         private static ulong previousUserId = default;
@@ -84,10 +98,7 @@ namespace Cerlancism.ChatSystem
         {
             var lastMessage = await GetLastChatHistoryAsync();
             lastMessage.Message += " " + message;
-            if (HistoryCache != null)
-            {
-                HistoryCache.Last().Message = lastMessage.Message;
-            }
+            UpdateCache(x => x.Last().Message = lastMessage.Message);
             await Task.FromResult(ChatCollection.Update(lastMessage));
         }
 
@@ -98,7 +109,7 @@ namespace Cerlancism.ChatSystem
                 Message = message
             };
             lastId = await Task.FromResult(ChatCollection.Insert(entry));
-            historyCache?.Add(entry);
+            UpdateCache(x => x.Add(entry));
 
             previousUserId = userId;
             previousMessage = message;
@@ -113,8 +124,7 @@ namespace Cerlancism.ChatSystem
         public async Task<string> ReplyAsync(string message)
         {
             var stopWatch = Stopwatch.StartNew();
-            var cleanedMessage = RemovePunctuations(message).ToLower();
-            var (wordCount, analysis) = await AnalyseAsync(cleanedMessage);
+            var (wordCount, analysis) = await AnalyseAsync(message);
             var results = GetResults(wordCount, analysis);
             var choosen = GetRandomReply(wordCount, results, out Analysis result);
 
@@ -150,26 +160,6 @@ namespace Cerlancism.ChatSystem
             _chatDatabase?.Dispose();
             _chatDatabase = null;
             _chatCollection = null;
-
-            if (accessedCache)
-            {
-                cancelDelayDisposal?.Cancel();
-                cancelDelayDisposal = new CancellationTokenSource();
-                var token = cancelDelayDisposal.Token;
-                _ = Task.Run(async () =>
-                {
-                    await Task.Delay(20000, token);
-
-                    HistoryCache.Clear();
-                    HistoryCache = null;
-                    GC.Collect();
-
-                    await Task.Delay(5000, token);
-
-                    cancelDelayDisposal = null;
-                    GC.Collect();
-                });
-            }
         }
     }
 }

@@ -8,7 +8,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using MKOTHDiscordBot.Services;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading;
+using Cerlancism.ChatSystem;
 
 namespace MKOTHDiscordBot.Handlers
 {
@@ -187,7 +187,7 @@ namespace MKOTHDiscordBot.Handlers
                 _ = commands.Commands
                     .Where(x => x.Name == "Reply")
                     .Single()
-                    .ExecuteAsync(context, new object[1] { input }, null, services);
+                    .ExecuteAsync(context, new object[1] { Chat.PurgeMessage(input) }, null, services);
             }
         }
     }
