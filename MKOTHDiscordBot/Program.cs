@@ -15,7 +15,6 @@ using static MKOTHDiscordBot.Services.ServiceExtensions;
 
 namespace MKOTHDiscordBot
 {
-    // TODO: Change config file name.
     class Program
     {
         public static bool TestMode = false;

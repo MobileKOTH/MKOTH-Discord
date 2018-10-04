@@ -19,7 +19,7 @@ namespace MKOTHDiscordBot
             .GetTypes()
             .Where(x => x.IsClass && !x.IsNested).ToImmutableArray();
 
-        public static Credentials Credentials => JsonConvert.DeserializeObject<Credentials>(File.ReadAllText(Directories.ConfigFile));
+        public static Credentials Credentials => JsonConvert.DeserializeObject<Credentials>(File.ReadAllText(Directories.Credentials));
 
         public static string BuildVersion => $"{Assembly.GetExecutingAssembly().GetName().Version.Major}.{Assembly.GetExecutingAssembly().GetName().Version.Minor}." +  ConfigurationManager.AppSettings["BuildNumber"].PadLeft(4, '0');
         public static readonly DateTime DeploymentTime = DateTime.Now;

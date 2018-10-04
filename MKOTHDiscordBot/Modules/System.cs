@@ -12,20 +12,6 @@ namespace MKOTHDiscordBot.Modules
     [Summary("Contains the diagnostics and maintenance information of the bot.")]
     public class System : ModuleBase<SocketCommandContext>
     {
-
-        /*
-        [Command("")]
-        [Alias("")]
-        [Summary("")]
-        public async Task Test([Remainder] string para)
-        {
-            EmbedBuilder embed = new EmbedBuilder();
-            IUserMessage msg;
-
-            msg = await ReplyAsync("Test");
-        }
-        */
-
         [Command("BotInfo", RunMode = RunMode.Async)]
         [Alias("BotStats", "SystemInfo", "sys", "system")]
         [Summary("Displays the bot information and statistics.")]
@@ -125,7 +111,11 @@ namespace MKOTHDiscordBot.Modules
         [RequireDeveloper]
         public async Task SetTest()
         {
-            if (Program.TestMode) return;
+            if (Program.TestMode)
+            {
+                return;
+            }
+
             Handlers.MessageHandler.ReplyToTestServer = false;
             await ReplyAsync("Disabled replying to test server");
         }
@@ -136,19 +126,14 @@ namespace MKOTHDiscordBot.Modules
         {
             try
             {
-                throw new TestError();
+                throw new Exception("This is a test error");
             }
-            catch (TestError e)
+            catch (Exception e)
             {
                 _ = ErrorResolver.SendErrorAndCheckRestartAsync(e);
             }
 
             return Task.CompletedTask;
-        }
-
-        class TestError : Exception
-        {
-            public override string Message => "This is a test error";
         }
 
         [Command("Restart")]

@@ -14,8 +14,6 @@ namespace Cerlancism.ChatSystem
     using static Extensions.ObjectCacheExtensions;
     using static Extensions.FuncExtensions;
 
-    using static Utilities.DatabaseUtilities;
-
     public partial class Chat : IDisposable
     {
         public event Action<string> Log;
@@ -31,7 +29,7 @@ namespace Cerlancism.ChatSystem
                 cachePolicy = new CacheItemPolicy
                 {
                     SlidingExpiration = TimeSpan.FromSeconds(20),
-                    RemovedCallback = x => Task.Run(async () =>
+                    RemovedCallback = _ => Task.Run(async () =>
                     {
                         historyCache = null;
                         GC.Collect();
@@ -39,7 +37,7 @@ namespace Cerlancism.ChatSystem
                         GC.Collect();
                     })
                 };
-                historyCache = cache.AddOrGetExisting(HistoryCacheKey, () => ChatCollection.FindAll().ToList(), cachePolicy);
+                historyCache = cache.AddOrGetExisting(HistoryCacheKey, () => ChatCollection.Value.FindAll().ToList(), cachePolicy);
                 return historyCache.AsReadOnly();
             }
         }
@@ -63,15 +61,14 @@ namespace Cerlancism.ChatSystem
 
         private string connectionString;
 
-        private LiteDatabase ChatDatabase => _chatDatabase ?? GetAndOutDataBase(out _chatDatabase, connectionString);
-        private LiteCollection<Entry> ChatCollection => _chatCollection ?? GetAndOutCollection(ChatDatabase, out _chatCollection);
-
-        private LiteDatabase _chatDatabase;
-        private LiteCollection<Entry> _chatCollection;
+        private Lazy<LiteDatabase> ChatDatabase;
+        private Lazy<LiteCollection<Entry>> ChatCollection;
 
         public Chat(string connectionString)
         {   
             this.connectionString = connectionString;
+            ChatDatabase = new Lazy<LiteDatabase>(() => new LiteDatabase(connectionString));
+            ChatCollection = new Lazy<LiteCollection<Entry>>(() => ChatDatabase.Value.GetCollection<Entry>());
         }
 
         public async Task AddAsync(ulong userId, string message)
@@ -88,39 +85,39 @@ namespace Cerlancism.ChatSystem
 
             if (previousUserId == userId)
             {
-                await UpdateMessageAsync(message);
+                await UpdateEntryAsync(message);
                 return;
             }
 
-            await AddMessageAsync(userId, message);
+            await AddEntryAsync(userId, message);
         }
 
-        private async Task UpdateMessageAsync(string message)
+        private async Task UpdateEntryAsync(string message)
         {
-            var lastMessage = await GetLastChatHistoryAsync();
+            var lastMessage = await GetLastEntryAsync();
             lastMessage.Message += " " + message;
             UpdateCache(x => x.Last().Message = lastMessage.Message);
-            await Task.FromResult(ChatCollection.Update(lastMessage));
+            await Task.FromResult(ChatCollection.Value.Update(lastMessage));
         }
 
-        private async Task AddMessageAsync(ulong userId, string message)
+        private async Task AddEntryAsync(ulong userId, string message)
         {
             var entry = new Entry
             {
                 Message = message
             };
-            lastId = await Task.FromResult(ChatCollection.Insert(entry));
+            lastId = await Task.FromResult(ChatCollection.Value.Insert(entry));
             UpdateCache(x => x.Add(entry));
 
             previousUserId = userId;
             previousMessage = message;
         }
 
-        public async Task<Entry> GetChatHistoryByIdAsync(int id)
-            => await Task.FromResult(ChatCollection.FindById(id));
+        public async Task<Entry> GetEntryByIdAsync(int id)
+            => await Task.FromResult(ChatCollection.Value.FindById(id));
 
-        public async Task<Entry> GetLastChatHistoryAsync()
-            => lastId == default ? (await Task.FromResult(ChatCollection.FindOne(Query.All(Query.Descending))))
+        public async Task<Entry> GetLastEntryAsync()
+            => lastId == default ? ChatCollection.Value.FindOne(Query.All(Query.Descending))
             .Forward(x =>
             {
                 lastId = x.Id;
@@ -131,8 +128,8 @@ namespace Cerlancism.ChatSystem
                 });
 
                 return x;
-            }) : 
-            await GetChatHistoryByIdAsync(lastId);
+            })
+            : await GetEntryByIdAsync(lastId);
 
         public async Task<string> ReplyAsync(string message)
         {
@@ -152,6 +149,9 @@ namespace Cerlancism.ChatSystem
                 TimeUsedMs = stopWatch.Elapsed.TotalMilliseconds
             });
 
+            results = null;
+            analysis = null;
+
             return choosen;
         }
         //=> Funcify<string, string>(RemovePunctuationsAndLower)
@@ -170,9 +170,12 @@ namespace Cerlancism.ChatSystem
 
         public void Dispose()
         {
-            _chatDatabase?.Dispose();
-            _chatDatabase = null;
-            _chatCollection = null;
+            if (ChatDatabase.IsValueCreated)
+            {
+                ChatDatabase.Value.Dispose();
+            }
+            ChatDatabase = null;
+            ChatCollection = null;
         }
     }
 }

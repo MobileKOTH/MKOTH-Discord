@@ -13,7 +13,7 @@ namespace MKOTHDiscordBot
 
         private static class FileNames
         {
-            public static string Config_json => ConfigurationManager.AppSettings["Config.json File"];
+            public static string Credentials_json => ConfigurationManager.AppSettings["Credentials.json File"];
             public static string GeneralLogs_md => ConfigurationManager.AppSettings["General Logs.md File"];
             public static string ErrorLogs_md => ConfigurationManager.AppSettings["Error Logs.md File"];
             public static string ChatLogs_md => ConfigurationManager.AppSettings["Chat Logs.md File"];
@@ -35,7 +35,7 @@ namespace MKOTHDiscordBot
         public static string LogsFolder => Root + FoldersNames.Logs;
 
 
-        public static string ConfigFile => Root + FileNames.Config_json;
+        public static string Credentials => Root + FileNames.Credentials_json;
         public static string GeneralLogsFile => LogsFolder + FileNames.GeneralLogs_md;
         public static string ErrorLogsFile => LogsFolder + FileNames.ErrorLogs_md;
         public static string ChatLogsFile => LogsFolder + FileNames.ChatLogs_md;

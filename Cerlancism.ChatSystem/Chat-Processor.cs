@@ -70,7 +70,10 @@ namespace Cerlancism.ChatSystem
 
                 if (matchRate <= 0)
                 {
-                    return query.ToArray();
+                    var full = query.ToArray();
+                    analysis = null;
+                    query = null;
+                    return full; 
                 }
             }
 
@@ -86,9 +89,10 @@ namespace Cerlancism.ChatSystem
                 }
             }
 
-            var results = query.Where(x => x.Score >= matchRate);
-
-            return results.ToArray();
+            var results = query.Where(x => x.Score >= matchRate).ToArray();
+            analysis = null;
+            query = null;
+            return results;
         }
 
         public string GetRandomReply(int wordCount, IEnumerable<Analysis> analysis, out Analysis result)

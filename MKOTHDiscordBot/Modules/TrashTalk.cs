@@ -58,6 +58,9 @@ namespace MKOTHDiscordBot.Modules
             embed.Title = "Trigger, rephrase and reply pool";
             embed.Description = "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`";
             await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"{purgedMessage.SliceBack(100)}\"", false, embed.Build());
+            analysis = null;
+            results = null;
+            takeResults = null;
         }
 
         [Command("TrashMessage", RunMode = RunMode.Async)]
@@ -66,7 +69,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireBotTest]
         public async Task TrashMessage(int id)
         {
-            var entry = await chatService.ChatSystem.GetChatHistoryByIdAsync(id);
+            var entry = await chatService.ChatSystem.GetEntryByIdAsync(id);
             await ReplyEntry(entry);
         }
 
@@ -76,7 +79,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireBotTest]
         public async Task LastMessage()
         {
-            var entry = await chatService.ChatSystem.GetLastChatHistoryAsync();
+            var entry = await chatService.ChatSystem.GetLastEntryAsync();
             await ReplyEntry(entry);
         }
 
@@ -89,7 +92,7 @@ namespace MKOTHDiscordBot.Modules
         }
 
         [Command("QueryLength", RunMode = RunMode.Async)]
-        [Summary("Find messages with certain character length")]
+        [Summary("Find messages with certain character length.")]
         [Alias("ql")]
         [RequireBotTest]
         public async Task QueryLength(int length)

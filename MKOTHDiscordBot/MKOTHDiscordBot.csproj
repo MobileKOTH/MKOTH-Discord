@@ -199,10 +199,6 @@
       <Project>{f911c9c4-ee8a-4bbc-a3d9-57c7c41eb158}</Project>
       <Name>Cerlancism.ChatSystem</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Cerlancism.Discord.InteractiveReaction\Cerlancism.Discord.InteractiveReaction.csproj">
-      <Project>{b5250b03-a44c-4e99-82a7-a3f7ec701694}</Project>
-      <Name>Cerlancism.Discord.InteractiveReaction</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Cerlancism.EloHeadToHeadSystem\Cerlancism.EloHeadToHeadSystem.csproj">
       <Project>{e3f8c89c-ffaa-48a9-89a2-027c74835fa9}</Project>
       <Name>Cerlancism.EloHeadToHeadSystem</Name>

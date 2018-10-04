@@ -5,11 +5,9 @@ VisualStudioVersion = 15.0.26430.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MKOTHDiscordBot", "MKOTHDiscordBot\MKOTHDiscordBot.csproj", "{55066602-6B3D-4D1E-8452-5607E7191F0E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cerlancism.ChatSystem", "Cerlancism.ChatSystem\Cerlancism.ChatSystem.csproj", "{F911C9C4-EE8A-4BBC-A3D9-57C7C41EB158}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cerlancism.ChatSystem", "Cerlancism.ChatSystem\Cerlancism.ChatSystem.csproj", "{F911C9C4-EE8A-4BBC-A3D9-57C7C41EB158}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTest", "UnitTest\UnitTest.csproj", "{B2A44D42-EFD5-4F15-8456-22516E3F1405}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cerlancism.Discord.InteractiveReaction", "Cerlancism.Discord.InteractiveReaction\Cerlancism.Discord.InteractiveReaction.csproj", "{B5250B03-A44C-4E99-82A7-A3F7EC701694}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cerlancism.EloHeadToHeadSystem", "Cerlancism.EloHeadToHeadSystem\Cerlancism.EloHeadToHeadSystem.csproj", "{E3F8C89C-FFAA-48A9-89A2-027C74835FA9}"
 EndProject
@@ -31,10 +29,6 @@ Global
 		{B2A44D42-EFD5-4F15-8456-22516E3F1405}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2A44D42-EFD5-4F15-8456-22516E3F1405}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2A44D42-EFD5-4F15-8456-22516E3F1405}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B5250B03-A44C-4E99-82A7-A3F7EC701694}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B5250B03-A44C-4E99-82A7-A3F7EC701694}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B5250B03-A44C-4E99-82A7-A3F7EC701694}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B5250B03-A44C-4E99-82A7-A3F7EC701694}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E3F8C89C-FFAA-48A9-89A2-027C74835FA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E3F8C89C-FFAA-48A9-89A2-027C74835FA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E3F8C89C-FFAA-48A9-89A2-027C74835FA9}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -60,7 +60,7 @@ namespace UnitTest.ChatSystem
             using (Chat chatSystem = new Chat("ChatHistory.db"))
             {
                 stopwatch.Start();
-                var lastMessage = await chatSystem.GetLastChatHistoryAsync();
+                var lastMessage = await chatSystem.GetLastEntryAsync();
                 stopwatch.Stop();
 
                 Assert.AreEqual(lastMessage != null, true);
