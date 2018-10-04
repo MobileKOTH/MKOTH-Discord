@@ -15,7 +15,7 @@ namespace UnitTest.ChatSystem
         public void StringSplitMultiSpaceTest_TreatedAsOneSpace()
         {
             // Arrange
-            var text = "Hello  World";
+            var text = "Hello         World";
 
             // Act
             var splits = text.Split(' ').Where(x => !string.IsNullOrEmpty(x)).ToArray();

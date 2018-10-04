@@ -12,6 +12,7 @@ namespace Cerlancism.ChatSystem
 {
     using static Extensions.StringExtensions;
     using static Extensions.ObjectCacheExtensions;
+    using static Extensions.FuncExtensions;
 
     using static Utilities.DatabaseUtilities;
 
@@ -119,7 +120,19 @@ namespace Cerlancism.ChatSystem
             => await Task.FromResult(ChatCollection.FindById(id));
 
         public async Task<Entry> GetLastChatHistoryAsync()
-            => await GetChatHistoryByIdAsync(lastId = lastId == default ? ChatCollection.FindOne(Query.All(Query.Descending)).Id : lastId);
+            => lastId == default ? (await Task.FromResult(ChatCollection.FindOne(Query.All(Query.Descending))))
+            .Forward(x =>
+            {
+                lastId = x.Id;
+                Task.Run(async () =>
+                {
+                    await Task.Delay(1000);
+                    GC.Collect();
+                });
+
+                return x;
+            }) : 
+            await GetChatHistoryByIdAsync(lastId);
 
         public async Task<string> ReplyAsync(string message)
         {
