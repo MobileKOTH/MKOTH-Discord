@@ -2,16 +2,32 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Text;
 using Discord;
+using Discord.WebSocket;
 using Discord.Commands;
+using Discord.Addons.Interactive;
 
 namespace MKOTHDiscordBot.Modules
 {
     [Summary("Provides the guidance of using the MKOTH Discord Bot.")]
     [Remarks("Module A")]
-    public class Help : ModuleBase<SocketCommandContext>
+    public class Help : InteractiveBase
     {
         private CommandService commands;
+        private List<Emoji> NumberEmotes => new List<Emoji>
+        {
+            new Emoji("1⃣"),
+            new Emoji("2⃣"),
+            new Emoji("3⃣"),
+            new Emoji("4⃣"),
+            new Emoji("5⃣"),
+            new Emoji("6⃣"),
+            new Emoji("7⃣"),
+            new Emoji("8⃣"),
+            new Emoji("9⃣"),
+            new Emoji("🔟")
+        };
 
         public Help(CommandService commands) 
             => this.commands = commands;
@@ -24,19 +40,61 @@ namespace MKOTHDiscordBot.Modules
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithTitle("❓ Manual")
-                .WithDescription("This shows the list of command modules. " +
-                "A command module is a catergory for a group of related commands.\n" +
-                "Use `.help <module>` to show the commands in the module.\n" +
-                "Use `.help <.command>` to show the details of the command.\n" +
-                "Most commands will also come with alias(abbreviation) to ease typing, e.g `.h` is the same for `.help`. " +
-                "Alias for a command can be found in the command details of it.");
+                .WithDescription("Here is the list of command modules.\n" +
+                "A module is a catergory for a group of related commands.\n" +
+                "Press the corresponding emote or enter `.help <module>` to view the commands in a module.\n")
+                .WithFooter("Press the respective emote to expand the module list.");
 
-            commands.Modules
+            var range = Enumerable.Range(0, commands.Modules.Count() - 1);
+
+            var moduleEmoteOrders = commands.Modules
                 .OrderBy(x => x.Remarks ?? "Module Z")
-                .ToList()
-                .ForEach(x => embed.AddField(x.Name, x.Summary ?? "In Development".MarkdownCodeBlock()));
+                .Zip(range, (x, y) => new KeyValuePair<Emoji, ModuleInfo>(NumberEmotes[y], x));
 
-            await ReplyAsync(string.Empty, false, embed.Build());
+            embed.Fields = getOriginalFields();
+
+            IUserMessage msg = default;
+            var reactionCallbacksData = new ReactionCallbackData(string.Empty, embed.Build(), false, false, TimeSpan.FromSeconds(60), c => onExpire());
+
+            foreach (var item in moduleEmoteOrders)
+            {
+                reactionCallbacksData = reactionCallbacksData.WithCallback(item.Key, (c, r) =>
+                {
+                    embed.Description = "Enter `.help .<command>` to view the details of a command";
+                    embed.Fields = getOriginalFields();
+                    embed.Fields.Single(x => x.Name.Contains(item.Value.Name)).Value = GetCommnadListFormatted(moduleEmoteOrders.Single(x => x.Key.Name == r.Emote.Name).Value);
+                    modifyHelp(c, r.MessageId, embed.Build(), r);
+                    return Task.CompletedTask;
+                });
+            }
+
+            msg = await InlineReactionReplyAsync(reactionCallbacksData);
+
+            List<EmbedFieldBuilder> getOriginalFields()
+            => moduleEmoteOrders.Select(x => new EmbedFieldBuilder()
+                .WithName($"{x.Key.Name} {x.Value.Name}")
+                .WithValue(x.Value.Summary ?? "In Development".MarkdownCodeBlock()))
+                .ToList();
+
+            async Task onExpire()
+            {
+                Console.WriteLine("Expired");
+                var expireEmbed = msg.Embeds.First().ToEmbedBuilder()
+                    .WithFooter("Emote interactive expired");
+                expireEmbed.Description = expireEmbed.Description.Replace("Press the corresponding emote or e", "E");
+                _ = msg.RemoveAllReactionsAsync();
+                await msg.ModifyAsync(x => x.Embed = expireEmbed.Build());
+            }
+
+            void modifyHelp(SocketCommandContext modifyingContext, ulong messageId, Embed expandedEmbed, SocketReaction reaction)
+            {
+                var reactionMsg = (IUserMessage)modifyingContext.Channel.GetMessageAsync(messageId).Result;
+                reactionMsg.RemoveReactionAsync(reaction.Emote, reaction.User.Value);
+                reactionMsg.ModifyAsync(x =>
+                {
+                    x.Embed = expandedEmbed;
+                });
+            }
         }
 
         [Command("Help")]
@@ -48,18 +106,18 @@ namespace MKOTHDiscordBot.Modules
             var embed = new EmbedBuilder().WithColor(Color.Orange);
 
             var module = commands.Modules
-                .ToList()
-                .Find(x => x.Name.ToLower().StartsWith(para));
+                .FirstOrDefault(x => x.Name.ToLower().StartsWith(para))
+                ?? (int.TryParse(para, out int result) ? commands.Modules
+                .OrderBy(x => x.Remarks ?? "Module Z")
+                .ElementAtOrDefault(result - 1)
+                : null);
             if (module != null)
             {
-                string commandList = "";
-                module.Commands
-                    .ToList()
-                    .ForEach(x => commandList += $".{x.Name.AddSpace() + x.GetCommandParametersInfo()}\n");
+                var commandList = GetCommnadListFormatted(module);
                 embed.WithAuthor("📦 Module Information")
                     .WithTitle(module.Name)
                     .WithDescription(module.Summary ?? "In Development".MarkdownCodeBlock())
-                    .AddField("Commands", commandList.MarkdownCodeBlock("css"));
+                    .AddField("Commands", commandList);
                 goto helpReplyProcedure;
             }
 
@@ -128,6 +186,13 @@ namespace MKOTHDiscordBot.Modules
 
             helpReplyProcedure:
             await ReplyAsync(string.Empty, false, embed.Build());
+        }
+
+        private string GetCommnadListFormatted(ModuleInfo module)
+        {
+            string commandList = string.Join("\n", module.Commands
+                   .Select(x => $".{x.Name.AddSpace() + x.GetCommandParametersInfo()}"));
+            return commandList.MarkdownCodeBlock("css");
         }
 
         [Command("Info")]

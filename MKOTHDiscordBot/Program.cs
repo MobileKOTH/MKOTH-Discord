@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Discord.Addons.Interactive;
 using Microsoft.Extensions.DependencyInjection;
 using MKOTHDiscordBot.Handlers;
 using MKOTHDiscordBot.Services;
@@ -14,8 +15,6 @@ using MKOTHDiscordBot.Services;
 using System.Configuration;
 using System.IO;
 #endif
-
-using static MKOTHDiscordBot.Services.ServiceExtensions;
 
 namespace MKOTHDiscordBot
 {
@@ -65,7 +64,7 @@ namespace MKOTHDiscordBot
 
             var commands = new CommandService(new CommandServiceConfig
             {
-                LogLevel = LogSeverity.Debug
+                LogLevel = LogSeverity.Debug,
             });
 
             commands.Log += async (msg) =>
@@ -75,9 +74,12 @@ namespace MKOTHDiscordBot
                 Console.ResetColor();
             };
 
+            var interactives = new InteractiveService(client);
+
             var services = new ServiceCollection()
                 .AddSingleton(client)
                 .AddSingleton(commands)
+                .AddSingleton(interactives)
                 .ConfigureSingletonServices()
                 .AddTransient<ChatService>()
                 .BuildServiceProvider()

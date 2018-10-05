@@ -54,6 +54,9 @@
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Discord.Addons.Interactive, Version=2.0.3.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Discord.Addons.PassiveInteractive.2.0.3\lib\netstandard2.0\Discord.Addons.Interactive.dll</HintPath>
+    </Reference>
     <Reference Include="Discord.Net.Commands, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Discord.Net.Commands.2.0.0-beta\lib\netstandard1.1\Discord.Net.Commands.dll</HintPath>
     </Reference>
