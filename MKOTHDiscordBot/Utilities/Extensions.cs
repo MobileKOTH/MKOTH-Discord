@@ -10,6 +10,19 @@ namespace MKOTHDiscordBot
 {
     public static class Extensions
     {
+        #region Func ------------------------------------------------------------------------------
+        public static Func<T, TResult2> After<T, TResult1, TResult2>(
+            this Func<TResult1, TResult2> function2, Func<T, TResult1> function1) =>
+            value => function2(function1(value));
+
+        public static Func<T, TResult2> Then<T, TResult1, TResult2>( // Before.
+            this Func<T, TResult1> function1, Func<TResult1, TResult2> function2) =>
+            value => function2(function1(value));
+
+        public static TResult Forward<T, TResult>(this T value, Func<T, TResult> function) =>
+            function(value);
+        #endregion
+
         #region IComparable -------------------------------------------------------------------------------
         public static bool IsInRange(this IComparable number, IComparable lower, IComparable upper)
             => number.CompareTo(lower) >= 0 && number.CompareTo(upper) <= 0;
@@ -120,9 +133,47 @@ namespace MKOTHDiscordBot
             => user.Nickname ?? user.Username;
         #endregion
 
+        #region IMessageChannel -------------------------------------------------------------------
+        public static string GetMention(this IMessageChannel channel)
+            => (channel as IMentionable)?.Mention ?? channel.Name;
+        #endregion
+
         #region CommandInfo -----------------------------------------------------------------------
         public static string GetCommandParametersInfo(this CommandInfo command)
             => string.Join(" ", command.Parameters.Select(x => x.Name.WrapAround("<", ">")));
+        #endregion
+
+        #region Precondition ----------------------------------------------------------------------
+        public static string GetDescription(this PreconditionAttribute precondition)
+        {
+            var description = precondition.ToString();
+            if (description.StartsWith("Discord"))
+            {
+                switch (precondition)
+                {
+                    case RequireContextAttribute attribute:
+                        description = "Require " + attribute.Contexts.ToString() + " Context";
+                        break;
+
+                    case RequireUserPermissionAttribute attribute:
+                        description = "Require User " 
+                            + (attribute.ChannelPermission.HasValue 
+                            ? attribute.ChannelPermission.Value.ToString()
+                            : attribute.GuildPermission.Value.ToString())
+                            + " Permission";
+                        break;
+
+                    case RequireBotPermissionAttribute attribute:
+                        description = "Require Bot "
+                            + (attribute.ChannelPermission.HasValue
+                            ? attribute.ChannelPermission.Value.ToString()
+                            : attribute.GuildPermission.Value.ToString())
+                            + " Permission";
+                        break;
+                }
+            }
+            return description;
+        }
         #endregion
     }
 }

@@ -147,6 +147,7 @@
     <Compile Include="Handlers\LeaverHandler.cs" />
     <Compile Include="Handlers\MessageHandler.cs" />
     <Compile Include="Handlers\ReactionHandler.cs" />
+    <Compile Include="Modules\Administration.cs" />
     <Compile Include="Modules\System.cs" />
     <Compile Include="Modules\TrashTalk.cs" />
     <Compile Include="Preconditions\RequireBotTestAttribute.cs" />
@@ -155,6 +156,7 @@
     <Compile Include="Preconditions\RequireMKOTHMemberAttribute.cs" />
     <Compile Include="Preconditions\RequireMKOTHModAttribute.cs" />
     <Compile Include="Services\ChatService.cs" />
+    <Compile Include="Services\RankingSystem.cs" />
     <Compile Include="Services\ServiceExtensions.cs" />
     <Compile Include="Services\SingletonServiceAttribute.cs" />
     <Compile Include="Services\ActivityCycler.cs" />
@@ -172,6 +174,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\SpamWatch.cs" />
     <Compile Include="Utilities\ApplicationManager.cs" />
+    <Compile Include="Utilities\StringUtilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
@@ -181,9 +184,7 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Moderation\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.1">
       <Visible>False</Visible>
@@ -201,9 +202,9 @@
       <Project>{f911c9c4-ee8a-4bbc-a3d9-57c7c41eb158}</Project>
       <Name>Cerlancism.ChatSystem</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Cerlancism.EloHeadToHeadSystem\Cerlancism.EloHeadToHeadSystem.csproj">
-      <Project>{e3f8c89c-ffaa-48a9-89a2-027c74835fa9}</Project>
-      <Name>Cerlancism.EloHeadToHeadSystem</Name>
+    <ProjectReference Include="..\Cerlancism.TieredEloRankingSystem\Cerlancism.TieredEloRankingSystem.csproj">
+      <Project>{56823d28-8053-480f-8d95-99fa759be300}</Project>
+      <Name>Cerlancism.TieredEloRankingSystem</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

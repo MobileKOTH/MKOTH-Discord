@@ -11,7 +11,7 @@ namespace MKOTHDiscordBot.Services
 {
     public class ChatService : IDisposable
     {
-        public string ConnectionString => ConfigurationManager.ConnectionStrings["ChatHistory"].ConnectionString;
+        private string ConnectionString => ConfigurationManager.ConnectionStrings["ChatHistory"].ConnectionString;
 
         public Chat ChatSystem;
 

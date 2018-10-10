@@ -15,19 +15,22 @@ namespace MKOTHDiscordBot.Modules
     public class Help : InteractiveBase
     {
         private CommandService commands;
-        private List<Emoji> NumberEmotes => new List<Emoji>
+        private IEnumerable<Emoji> NumberEmotes
         {
-            new Emoji("1⃣"),
-            new Emoji("2⃣"),
-            new Emoji("3⃣"),
-            new Emoji("4⃣"),
-            new Emoji("5⃣"),
-            new Emoji("6⃣"),
-            new Emoji("7⃣"),
-            new Emoji("8⃣"),
-            new Emoji("9⃣"),
-            new Emoji("🔟")
-        };
+            get
+            {
+                yield return new Emoji("1⃣");
+                yield return new Emoji("2⃣");
+                yield return new Emoji("3⃣");
+                yield return new Emoji("4⃣");
+                yield return new Emoji("5⃣");
+                yield return new Emoji("6⃣");
+                yield return new Emoji("7⃣");
+                yield return new Emoji("8⃣");
+                yield return new Emoji("9⃣");
+                yield return new Emoji("🔟");
+            }
+        }
 
         public Help(CommandService commands) 
             => this.commands = commands;
@@ -45,11 +48,9 @@ namespace MKOTHDiscordBot.Modules
                 "Press the corresponding emote or enter `.help <module>` to view the commands in a module.\n")
                 .WithFooter("Press the respective emote to expand the module list.");
 
-            var range = Enumerable.Range(0, commands.Modules.Count() - 1);
-
             var moduleEmoteOrders = commands.Modules
                 .OrderBy(x => x.Remarks ?? "Module Z")
-                .Zip(range, (x, y) => new KeyValuePair<Emoji, ModuleInfo>(NumberEmotes[y], x));
+                .Zip(NumberEmotes, (x, y) => new KeyValuePair<Emoji, ModuleInfo>(y, x));
 
             embed.Fields = getOriginalFields();
 
@@ -67,7 +68,6 @@ namespace MKOTHDiscordBot.Modules
                     return Task.CompletedTask;
                 });
             }
-
             msg = await InlineReactionReplyAsync(reactionCallbacksData);
 
             List<EmbedFieldBuilder> getOriginalFields()
@@ -78,8 +78,8 @@ namespace MKOTHDiscordBot.Modules
 
             async Task onExpire()
             {
-                Console.WriteLine("Expired");
-                var expireEmbed = msg.Embeds.First().ToEmbedBuilder()
+                var expireEmbed = msg.Embeds.First()
+                    .ToEmbedBuilder()
                     .WithFooter("Emote interactive expired");
                 expireEmbed.Description = expireEmbed.Description.Replace("Press the corresponding emote or e", "E");
                 _ = msg.RemoveAllReactionsAsync();
@@ -158,10 +158,10 @@ namespace MKOTHDiscordBot.Modules
                 string restrictions = null;
                 baseCommand.Module.Preconditions
                     .ToList()
-                    .ForEach(x => restrictions += x.ToString().MarkdownCodeLine().AddLine());
+                    .ForEach(x => restrictions += x.GetDescription().MarkdownCodeLine().AddLine());
                 baseCommand.Preconditions
                     .ToList()
-                    .ForEach(x => restrictions += x.ToString().MarkdownCodeLine().AddLine());
+                    .ForEach(x => restrictions += x.GetDescription().MarkdownCodeLine().AddLine());
                 if (restrictions != null)
                 {
                     embed.AddField("Restrictions", restrictions);

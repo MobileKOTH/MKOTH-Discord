@@ -9,7 +9,7 @@ namespace MKOTHDiscordBot.Modules
     using static ApplicationContext.MKOTHGuild;
 
     [Summary("Performs user moderations for MKOTH chat.")]
-    [Remarks("Module D")]
+    [Remarks("Module E")]
     [RequireMKOTHMember]
     public class Moderation : ModuleBase<SocketCommandContext>
     {

@@ -11,7 +11,7 @@ using static MKOTHDiscordBot.ApplicationContext.MKOTHGuild;
 namespace MKOTHDiscordBot.Modules
 {
     [Summary("Contains the utilities for MKOTH needs and management.")]
-    [Remarks("Module C")]
+    [Remarks("Module D")]
     public class Management : ModuleBase<SocketCommandContext>
     {
         [Command("Alt")]

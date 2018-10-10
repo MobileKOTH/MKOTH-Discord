@@ -159,12 +159,12 @@ namespace MKOTHDiscordBot.Handlers
                         return;
                     }
                 }
-                await context.Channel.SendMessageAsync(result.ErrorReason);
+                await context.Channel.SendMessageAsync($"❌ {result.ErrorReason}");
                 return;
             }
             else if (result.Error == CommandError.Unsuccessful || result.Error == CommandError.Exception)
             {
-                await context.Channel.SendMessageAsync(result.ErrorReason);
+                await context.Channel.SendMessageAsync($"❌ {result.ErrorReason}");
             }
             else if (result.Error == CommandError.UnknownCommand)
             {// Chat reply.
