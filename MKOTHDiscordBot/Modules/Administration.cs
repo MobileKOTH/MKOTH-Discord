@@ -9,6 +9,7 @@ using Discord.Commands;
 using MKOTHDiscordBot.Services;
 using Cerlancism.TieredEloRankingSystem;
 using System.IO;
+using Cerlancism.TieredEloRankingSystem.Actions;
 
 namespace MKOTHDiscordBot.Modules
 {
@@ -75,10 +76,18 @@ namespace MKOTHDiscordBot.Modules
         [Command("AddPlayer")]
         [Alias("ap")]
         [Summary("Add player to the ranking system.")]
-        public async Task AddPlayer(IUser user, [Remainder] string playerName)
+        public async Task AddPlayer(IGuildUser user, [Remainder] string playerName)
         {
             RankingSystem.Processor.AddPlayer(playerName, user.Id);
-            await ReplyAsync($"Added player {playerName}");
+            await ReplyAsync($"Added player {Format.Bold(playerName)}");
+        }
+
+        [Command("RemovePlayer")]
+        [Alias("rp")]
+        public async Task RemovePlayer(IGuildUser user)
+        {
+            var action = RankingSystem.Processor.RemovePlayer(user.Id);
+            await ReplyAsync($"Removed player {Format.Bold((action as RemovePlayerAction).Player.Name)} {(user.GetDisplayName() + user.Discriminator).MarkdownCodeLine()}");
         }
 
         [Command("undo")]
@@ -94,7 +103,7 @@ namespace MKOTHDiscordBot.Modules
             var action = RankingSystem.Processor.RedoLastUndo();
             if (action != null)
             {
-                await ReplyAsync($"Redid Action Id: {action.Id}");
+                await ReplyAsync($"Redid Action Id: `{action.Id}`.");
             }
             else
             {

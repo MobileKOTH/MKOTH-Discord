@@ -6,6 +6,7 @@ using Cerlancism.TieredEloRankingSystem.Actions;
 using Cerlancism.TieredEloRankingSystem.Core;
 using Cerlancism.TieredEloRankingSystem.Exceptions;
 using Cerlancism.TieredEloRankingSystem.Models;
+using LiteDB;
 
 namespace Cerlancism.TieredEloRankingSystem
 {
@@ -16,15 +17,19 @@ namespace Cerlancism.TieredEloRankingSystem
 
     public partial class RankingProcessor
     {
+        private LiteQueryable<IPlayer> PlayerQuery
+            => repository.Query<IPlayer>()
+            .Include(x => x.Rank);
+
         public IEnumerable<IPlayer> GetAllPlayers()
-            => PlayerCollection.Value
-            .IncludeAll()
-            .FindAll();
+            => PlayerQuery
+            .ToEnumerable();
 
         public IEnumerable<ActivePlayer> GetActivePlayers()
-            => GetAllPlayers()
+            => PlayerQuery
             .Where(x => !(x is HolidayPlayer))
             .Where(x => !(x is RemovedPlayer))
+            .ToEnumerable()
             .Select(x => x as ActivePlayer);
 
         /// <summary>
@@ -38,9 +43,9 @@ namespace Cerlancism.TieredEloRankingSystem
             {
                 throw new PlayerNameException("Player name too long, must be within 30 characters");
             }
-            if (name.Length < 3)
+            if (name.Length < 2)
             {
-                throw new PlayerNameException("Player name too short, must be more than 3 characters");
+                throw new PlayerNameException("Player name too short, must be more than 2 characters");
             }
             if (GetAllPlayers().Any(x => x.Name.ToLower() == name.ToLower()))
             {
@@ -83,33 +88,59 @@ namespace Cerlancism.TieredEloRankingSystem
             return player;
         }
 
-        internal ActivePlayer AddPlayerInternal(ActivePlayer player)
+        internal IPlayer AddPlayerInternal(IPlayer player)
         {
-            player.Id = PlayerCollection.Value.Insert(player);
-            var rank = new PlayerRank { Player = player };
-            RankingCollection.Value.Insert(rank);
+            player.Id = repository.Insert(player);
+            player.Rank = new PlayerRank { Player = player as ActivePlayer };
+            player.Rank.Position = repository.Insert(player.Rank);
+            repository.Update(player);
+            return player;
+        }
+
+        public IAction RemovePlayer(ulong discordId)
+        {
+            var player = PlayerQuery.Where(x => x.DiscordId == discordId).SingleOrDefault();
+            if (player == default)
+            {
+                throw new PlayerInvalidException("Player not found.");
+            }
+
+            var removePlayer = Utilities.TypeCaster.CastToNew<RemovedPlayer>(player);
+            removePlayer.RemovedDate = DateTime.Now;
+
+            var action = new RemovePlayerAction
+            {
+                OldState = player,
+                Player = removePlayer
+            };
+
+            return PerformAction(action);
+        }
+
+        public IPlayer RemovePlayerInternal(IPlayer player)
+        {
+            repository.Update(player);
+            if (repository.FirstOrDefault<PlayerRank>(x => x.Player.Id == player.Id) != null)
+            {
+                repository.Delete<PlayerRank>(player.Rank.Position);
+                UpdateRankingsInternal(Rankings);
+            }
             return player;
         }
 
         internal IPlayer DeletePlayerInternal(int id)
         {
-            var player = PlayerCollection.Value.FindById(id);
+            var player = PlayerQuery.SingleById(id);
             if (player == null)
             {
                 throw new PlayerInvalidException();
             }
+
             var rankings = Rankings;
             rankings.Remove(rankings.Single(x => x.Player.Id == id));
-            var listings = Enumerable.Range(1, rankings.Count);
-            var newRankings = listings.Zip(rankings, (i, r) => new PlayerRank
-            {
-                Position = i,
-                Player = r.Player
-            });
+            UpdateRankingsInternal(rankings);
 
-            database.DropCollection(RankingCollection.Value.Name);
-            RankingCollection.Value.InsertBulk(newRankings);
-            PlayerCollection.Value.Delete(player.Id);
+            repository.Delete<IPlayer>(player.Id);
             return player;
         }
 

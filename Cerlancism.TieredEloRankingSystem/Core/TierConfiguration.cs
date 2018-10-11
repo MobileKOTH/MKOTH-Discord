@@ -17,6 +17,7 @@ namespace Cerlancism.TieredEloRankingSystem.Core
         public string Icon { get; set; }
         public string Name { get; set; }
         public bool AllowHoliday { get; set; }
+        public bool IsEloTier { get; set; }
         public int DemotionDays { get; set; }
         public float? CapPercent { get; set; }
         public int? HardCap { get; set; }

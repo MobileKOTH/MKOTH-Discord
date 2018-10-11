@@ -24,6 +24,8 @@ namespace Cerlancism.TieredEloRankingSystem.Models
         public int WinStreaksSameClass { get; set; }
         public int WinStreaksSameOrLowerClass { get; set; }
 
+        public PlayerRank Rank { get; set; }
+
         public override string ToString()
         {
             return $"{Name} ({TierName}) |{DiscordId}|";

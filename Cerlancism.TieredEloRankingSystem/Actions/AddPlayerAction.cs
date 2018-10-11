@@ -18,11 +18,11 @@ namespace Cerlancism.TieredEloRankingSystem.Actions
         {
             if (Player != null)
             {
-                Player.Id = default;
-                Player = processor.AddPlayerInternal(Player);
+                processor.AddPlayerInternal(Player);
                 return this;
             }
             Player = processor.AddPlayerInternal(PlayerName, DiscordId);
+            Player.Rank = null;
             return this;
         }
 

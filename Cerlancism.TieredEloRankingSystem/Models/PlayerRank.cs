@@ -11,7 +11,7 @@ namespace Cerlancism.TieredEloRankingSystem.Models
         [BsonId]
         public int Position { get; set; }
 
-        [BsonRef("IPlayer")]
+        // Ref
         public ActivePlayer Player { get; set; }
     }
 }

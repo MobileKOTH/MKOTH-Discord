@@ -46,6 +46,7 @@ namespace Cerlancism.TieredEloRankingSystem.Models
                 Name = "Squire",
                 Icon = "⚔",
                 AllowHoliday = true,
+                IsEloTier = true,
                 DemotionDays = 3,
                 CapPercent = 1f/3f,
                 RewardPoint = 6,
@@ -62,6 +63,7 @@ namespace Cerlancism.TieredEloRankingSystem.Models
                 Name = "Vassal",
                 Icon = "🗡",
                 AllowHoliday = true,
+                IsEloTier = true,
                 DemotionDays = 7,
                 CapPercent = 0.75f,
                 RewardPoint = 4,
@@ -88,7 +90,6 @@ namespace Cerlancism.TieredEloRankingSystem.Models
         };
 
         public int HolidayModeDays { get; set; } = 30;
-        public bool UseEloTiers { get; set; } = true;
         public float EloKFactor { get; set; } = 32;
         public int EloTBDGames { get; set; } = 5;
 

@@ -16,16 +16,11 @@ namespace Cerlancism.TieredEloRankingSystem
     {
         private static Dictionary<ulong, Stack<IAction>> RedoStacks = new Dictionary<ulong, Stack<IAction>>();
         private Stack<IAction> RedoStack { get => RedoStacks[guildId]; set => RedoStacks[guildId] = value; }
-        public IAction LastAction => ActionCollection.Value.FindOne(Query.All(Query.Descending));
+        public IAction LastAction => repository.Database.GetCollection<IAction>().FindOne(Query.All(Query.Descending));
 
         private readonly ulong guildId;
-        private LiteDatabase database;
-        private Lazy<LiteRepository> repository;
-        private Lazy<LiteCollection<GuildSetting>> GuildSettings;
-
-        public Lazy<LiteCollection<IPlayer>> PlayerCollection;
-        public Lazy<LiteCollection<IAction>> ActionCollection;
-        public Lazy<LiteCollection<PlayerRank>> RankingCollection;
+        public LiteDatabase Database => repository.Database;
+        public LiteRepository repository;
 
         public Lazy<GuildSetting> GuildSetting;
         public Lazy<LinkedList<TierConfiguration>> Tiers;
@@ -33,47 +28,55 @@ namespace Cerlancism.TieredEloRankingSystem
         public RankingProcessor(ulong guildId, string connectionString)
         {
             this.guildId = guildId;
-            database = new LiteDatabase(connectionString);
-            repository = new Lazy<LiteRepository>(() => new LiteRepository(connectionString));
+            repository = new LiteRepository(connectionString);
 
-            GuildSettings = new Lazy<LiteCollection<GuildSetting>>(() => database.GetCollection<GuildSetting>());
-            GuildSetting = new Lazy<GuildSetting>(() => GuildSettings.Value.FindOne(x => x.GuildId == guildId) ?? throw new GuildInitialisationException());
+            GuildSetting = new Lazy<GuildSetting>(() => repository.SingleOrDefault<GuildSetting>(x => x.GuildId == guildId) ?? throw new GuildInitialisationException());
             Tiers = new Lazy<LinkedList<TierConfiguration>>(() => new LinkedList<TierConfiguration>(GuildSetting.Value.Tiers));
-            PlayerCollection = new Lazy<LiteCollection<IPlayer>>(() => database.GetCollection<IPlayer>());
-            ActionCollection = new Lazy<LiteCollection<IAction>>(() => database.GetCollection<IAction>());
-            RankingCollection = new Lazy<LiteCollection<PlayerRank>>(() => database.GetCollection<PlayerRank>());
 
             if (!RedoStacks.Any(x => x.Key == guildId))
             {
                 RedoStacks.Add(guildId, new Stack<IAction>());
             };
+
+            var mappper = BsonMapper.Global;
+
+            mappper.Entity<IPlayer>()
+                .DbRef(x => x.Rank);
+
+            mappper.Entity<PlayerRank>()
+                .DbRef(x => x.Player, nameof(IPlayer));
         }
 
         public GuildSetting InitialiseGuild(ulong defaultChannelId)
         {
-            if (GuildSettings.Value.Exists(x => x.GuildId == guildId))
+            if (repository.Query<GuildSetting>().SingleOrDefault() != default)
             {
                 throw new GuildInitialisationException("Guild has already initialised.");
             }
 
-            PlayerCollection.Value.EnsureIndex(x => x.DiscordId);
+            repository.Database.GetCollection<IPlayer>()
+                .EnsureIndex(x => x.DiscordId);
 
             var setting = new GuildSetting(guildId, defaultChannelId);
-            GuildSettings.Value.Insert(setting);
+            repository.Insert(setting);
             return setting;
         }
 
-        public IAction PerformAction(IAction action)
+        public IAction PerformAction(IAction action, bool clearStack = true)
         {
+            if (clearStack)
+            {
+                RedoStack.Clear();
+            }
             action.Execute(this);
-            ActionCollection.Value.Insert(action);
+            repository.Insert(action);
             return action;
         }
 
         public IAction UndoLastAction()
         {
             var lastAction = LastAction;
-            ActionCollection.Value.Delete(lastAction.Id);
+            repository.Delete<IAction>(lastAction.Id);
             lastAction.TimeStamp = DateTime.Now;
             var oldId = lastAction.Id;
             lastAction.Id = default;
@@ -99,11 +102,7 @@ namespace Cerlancism.TieredEloRankingSystem
 
         public void Dispose()
         {
-            if (repository.IsValueCreated)
-            {
-                repository.Value.Dispose();
-            }
-            database.Dispose();
+            repository.Dispose();
         }
     }
 }

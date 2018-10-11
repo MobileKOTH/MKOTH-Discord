@@ -11,7 +11,6 @@ namespace Cerlancism.TieredEloRankingSystem.Models
         public ulong DiscordId { get; set; }
         public string Name { get; set; }
         public DateTime JointDate { get; set; }
-        public PlayerRank Rank { get; set; }
         public float Points { get; set; }
         public List<EloHistory> EloHistory { get; set; }
         public string TierName { get; set; }
@@ -20,6 +19,8 @@ namespace Cerlancism.TieredEloRankingSystem.Models
         public int WinStreaksMatureClass { get; set; }
         public int WinStreaksSameClass { get; set; }
         public int WinStreaksSameOrLowerClass { get; set; }
+
+        public PlayerRank Rank { get; set; }
 
         public DateTime HolidayDate { get; set; }
     }

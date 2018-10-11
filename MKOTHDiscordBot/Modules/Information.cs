@@ -35,9 +35,12 @@ namespace MKOTHDiscordBot.Modules
                 var name = $"<@!{x.Player.DiscordId}>";
                 var rank = x.Position.ToString().PadLeft(2, '0');
                 var elo = x.Player.EloHistory.Count < RankingSystem.Processor.GuildSetting.Value.EloTBDGames
-                ? "TBD:" + (RankingSystem.Processor.GuildSetting.Value.EloTBDGames - x.Player.EloHistory.Count).ToString().PadLeft(2, '0')
+                ? "TBD: " + (RankingSystem.Processor.GuildSetting.Value.EloTBDGames - x.Player.EloHistory.Count).ToString().PadLeft(2, '0')
                 : x.Player.EloHistory.Last().Elo.ToString("N2");
-                return $"`#{rank}`\t`{elo}`\t`{x.Player.Points.ToString().PadRight(3, ' ')}p`\t {RankingSystem.Processor.GetTier(x.Player).Icon} {name}";
+
+                return $"`#{rank}`\t" +
+                $"`{elo}`\t`{x.Player.Points.ToString().PadLeft(2, '0').PadRight(3, ' ')}p`" +
+                $"\t {RankingSystem.Processor.GetTier(x.Player).Icon} {name}";
             }).Forward(x => StringUtilities.LineJoin(x));
 
             var embed = new EmbedBuilder()

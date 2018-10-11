@@ -20,5 +20,7 @@ namespace Cerlancism.TieredEloRankingSystem.Core
         int WinStreaksMatureClass { get; set; }
         int WinStreaksSameClass { get; set; }
         int WinStreaksSameOrLowerClass { get; set; }
+
+        PlayerRank Rank { get; set; }
     }
 }

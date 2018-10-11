@@ -36,7 +36,7 @@ namespace Cerlancism.TieredEloRankingSystem.Utilities
 
             IPlayer validatePlayer(ulong discordId)
             {
-                var player = processor.PlayerCollection.Value.FindOne(x => x.DiscordId == discordId) ?? throw new PlayerInvalidException("Player(s) not registered.");
+                var player = processor.repository.SingleOrDefault<IPlayer>(x => x.DiscordId == discordId) ?? throw new PlayerInvalidException("Player(s) not registered.");
                 if (player is RemovedPlayer)
                 {
                     throw new PlayerInvalidException("Contains removed player(s).");
