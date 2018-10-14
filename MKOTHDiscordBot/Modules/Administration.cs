@@ -87,7 +87,7 @@ namespace MKOTHDiscordBot.Modules
         public async Task RemovePlayer(IGuildUser user)
         {
             var action = RankingSystem.Processor.RemovePlayer(user.Id);
-            await ReplyAsync($"Removed player {Format.Bold((action as RemovePlayerAction).Player.Name)} {(user.GetDisplayName() + user.Discriminator).MarkdownCodeLine()}");
+            await ReplyAsync($"Removed player {Format.Bold((action as RemovePlayerAction).Player.Name)} {(user.GetDisplayNameWithDiscriminator() + user.Discriminator).MarkdownCodeLine()}");
         }
 
         [Command("undo")]

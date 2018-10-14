@@ -47,7 +47,7 @@ namespace Cerlancism.TieredEloRankingSystem
             {
                 throw new PlayerNameException("Player name too short, must be more than 2 characters");
             }
-            if (GetAllPlayers().Any(x => x.Name.ToLower() == name.ToLower()))
+            if (repository.SingleOrDefault<IPlayer>(x => x.Name.ToLower() == name.ToLower()) != null)
             {
                 throw new PlayerNameException($"Player name already exist for {name}");
             }
@@ -55,7 +55,7 @@ namespace Cerlancism.TieredEloRankingSystem
 
         public void ValidateDiscordId(ulong id)
         {
-            if (GetAllPlayers().Any(x => x.DiscordId == id))
+            if (repository.SingleOrDefault<IPlayer>(x => x.DiscordId == id) != null)
             {
                 throw new PlayerInvalidException("Player already registered with this Discord account.");
             }

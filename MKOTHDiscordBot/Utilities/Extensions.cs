@@ -131,6 +131,9 @@ namespace MKOTHDiscordBot
         #region IGuildUser ------------------------------------------------------------------------
         public static string GetDisplayName(this IGuildUser user)
             => user.Nickname ?? user.Username;
+
+        public static string GetDisplayNameWithDiscriminator(this IGuildUser user)
+            => user.GetDisplayName() + "#" + user.Discriminator;
         #endregion
 
         #region IMessageChannel -------------------------------------------------------------------
