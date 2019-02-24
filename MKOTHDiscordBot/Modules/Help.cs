@@ -19,16 +19,17 @@ namespace MKOTHDiscordBot.Modules
         {
             get
             {
-                yield return new Emoji("1⃣");
-                yield return new Emoji("2⃣");
-                yield return new Emoji("3⃣");
-                yield return new Emoji("4⃣");
-                yield return new Emoji("5⃣");
-                yield return new Emoji("6⃣");
-                yield return new Emoji("7⃣");
-                yield return new Emoji("8⃣");
-                yield return new Emoji("9⃣");
-                yield return new Emoji("🔟");
+                yield return new Emoji("\u0030\u20E3");
+                yield return new Emoji("\u0031\u20E3");
+                yield return new Emoji("\u0032\u20E3");
+                yield return new Emoji("\u0033\u20E3");
+                yield return new Emoji("\u0034\u20E3");
+                yield return new Emoji("\u0035\u20E3");
+                yield return new Emoji("\u0036\u20E3");
+                yield return new Emoji("\u0037\u20E3");
+                yield return new Emoji("\u0038\u20E3");
+                yield return new Emoji("\u0039\u20E3");
+                yield return new Emoji("\uD83D\uDD1F");
             }
         }
 
@@ -50,7 +51,7 @@ namespace MKOTHDiscordBot.Modules
 
             var moduleEmoteOrders = commands.Modules
                 .OrderBy(x => x.Remarks ?? "Module Z")
-                .Zip(NumberEmotes, (x, y) => new KeyValuePair<Emoji, ModuleInfo>(y, x));
+                .Zip(NumberEmotes.Skip(1), (x, y) => new KeyValuePair<Emoji, ModuleInfo>(y, x));
 
             embed.Fields = getOriginalFields();
 
