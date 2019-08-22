@@ -21,7 +21,6 @@ namespace Cerlancism.ChatSystem
 
         public static string PurgeMessage(string message)
             => Regex.Replace(RemovePunctuations(message)
-                .ToLower()
                 .Trim()
                 .Trim('\n'), @"\s+", " ");
 
@@ -108,7 +107,6 @@ namespace Cerlancism.ChatSystem
         private float ComputeScore(string history, string[] words, int wordCount)
         {
             var matchCount = 0f;
-            var historyLowerCase = history.ToLower();
 
             if (IsSentenceLengthMultiple(history, wordCount))
             {
@@ -117,7 +115,7 @@ namespace Cerlancism.ChatSystem
 
             foreach (var word in words)
             {
-                if (historyLowerCase.Contains(word))
+                if (history.IndexOf(word, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     matchCount++;
                 }
