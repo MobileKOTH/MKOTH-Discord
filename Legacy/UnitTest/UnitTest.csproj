@@ -63,16 +63,6 @@
     <Compile Include="RankingSystem\ActionTests.cs" />
     <Compile Include="RankingSystem\GeneralTests.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Cerlancism.ChatSystem\Cerlancism.ChatSystem.csproj">
-      <Project>{f911c9c4-ee8a-4bbc-a3d9-57c7c41eb158}</Project>
-      <Name>Cerlancism.ChatSystem</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Cerlancism.TieredEloRankingSystem\Cerlancism.TieredEloRankingSystem.csproj">
-      <Project>{56823d28-8053-480f-8d95-99fa759be300}</Project>
-      <Name>Cerlancism.TieredEloRankingSystem</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

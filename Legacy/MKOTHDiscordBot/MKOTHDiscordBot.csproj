@@ -184,7 +184,16 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Cerlancism.ChatSystem\Cerlancism.ChatSystem.csproj">
+      <Project>{248e5b65-dc04-42cd-9bb3-832cdacc38db}</Project>
+      <Name>Cerlancism.ChatSystem</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Cerlancism.TieredEloRankingSystem\Cerlancism.TieredEloRankingSystem.csproj">
+      <Project>{7f78fd6b-8c00-4a95-ba8d-b782528dd126}</Project>
+      <Name>Cerlancism.TieredEloRankingSystem</Name>
+    </ProjectReference>
+  </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.1">
       <Visible>False</Visible>
@@ -196,16 +205,6 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Cerlancism.ChatSystem\Cerlancism.ChatSystem.csproj">
-      <Project>{f911c9c4-ee8a-4bbc-a3d9-57c7c41eb158}</Project>
-      <Name>Cerlancism.ChatSystem</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Cerlancism.TieredEloRankingSystem\Cerlancism.TieredEloRankingSystem.csproj">
-      <Project>{56823d28-8053-480f-8d95-99fa759be300}</Project>
-      <Name>Cerlancism.TieredEloRankingSystem</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\NETStandard.Library.2.0.1\build\netstandard2.0\NETStandard.Library.targets" Condition="Exists('..\packages\NETStandard.Library.2.0.1\build\netstandard2.0\NETStandard.Library.targets')" />

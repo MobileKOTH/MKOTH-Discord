@@ -28,7 +28,7 @@ namespace MKOTHDiscordBot.Modules
             Embed buildEmbed(string ramUsage = "Loading...", string systemInfo = "Loading...")
                 => new EmbedBuilder()
                 .WithTitle("System Information")
-                .WithDescription("[__**Official MKOTH Website**__](https://MobileKOTH.github.io)\n\nOfficial MKOTH Management Bot. In early development and testing phase.")
+                .WithDescription("[**__Official MKOTH Website__**](https://MobileKOTH.github.io)\n\nOfficial MKOTH Management Bot. In early development and testing phase.")
                 .WithUrl("https://github.com/MobileKOTH")
                 .WithThumbnailUrl("https://cdn.discordapp.com/attachments/341163606605299716/360336022745382912/13615239_1204861226212220_2613382245523520956_n.png")
                 .WithAuthor(new EmbedAuthorBuilder()
