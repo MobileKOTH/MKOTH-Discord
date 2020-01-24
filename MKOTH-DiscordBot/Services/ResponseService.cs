@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +15,7 @@ namespace MKOTHDiscordBot.Services
             Logger.Debug("Started", "Responder Service");
         }
 
-        public IDisposable StartTypingAsync(SocketCommandContext context)
+        public IDisposable StartTypingAsync(ICommandContext context)
         {
             try
             {
@@ -29,7 +28,7 @@ namespace MKOTHDiscordBot.Services
             }
         }
 
-        public async Task SendToContextAsync(SocketCommandContext context, string reply, IDisposable typingState = null)
+        public async Task SendToContextAsync(ICommandContext context, string reply, IDisposable typingState = null)
         {
             try
             {
@@ -42,7 +41,7 @@ namespace MKOTHDiscordBot.Services
             }
         }
 
-        public async Task SendToChannelAsync(SocketTextChannel channel, string message, Embed embed = null)
+        public async Task SendToChannelAsync(ITextChannel channel, string message, Embed embed = null)
         {
             try
             {

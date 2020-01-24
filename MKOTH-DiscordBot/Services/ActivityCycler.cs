@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using System.Timers;
 using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.Options;
+using MKOTHDiscordBot.Properties;
 
 namespace MKOTHDiscordBot.Services
 {
@@ -13,6 +15,12 @@ namespace MKOTHDiscordBot.Services
     {
         class HelpHint : IActivity
         {
+            private readonly string prefix;
+
+            public HelpHint(string prefix)
+            {
+                this.prefix = prefix;
+            }
             public string Name => ".op help for general help";
             public ActivityType Type => ActivityType.Listening;
         }
@@ -25,20 +33,23 @@ namespace MKOTHDiscordBot.Services
             public ActivityType Type => ActivityType.Watching;
         }
 
-        private readonly HelpHint helpHint = new HelpHint();
 
         private readonly DiscordSocketClient client;
-
+        private readonly string commandPrefix;
         private (IActivity current, IActivity last) activity;
         private Timer changeTimer = new Timer(15000);
 
+        private readonly HelpHint helpHint;
 
-        public ActivityCycler(DiscordSocketClient client)
+        public ActivityCycler(DiscordSocketClient client, IOptions<AppSettings> setting)
         {
             this.client = client;
 
             activity = (helpHint, GetActivityList().First());
             changeTimer.Elapsed += async (_, __) => await ChangeActivityAsync();
+            commandPrefix = setting.Value.Settings.DefaultCommandPrefix;
+
+            helpHint = new HelpHint(commandPrefix);
 
             client.Connected += () =>
             {

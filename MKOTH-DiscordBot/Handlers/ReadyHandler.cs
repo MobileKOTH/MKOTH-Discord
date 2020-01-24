@@ -4,34 +4,26 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.WebSocket;
+using MKOTHDiscordBot.Properties;
 using MKOTHDiscordBot.Services;
 
 namespace MKOTHDiscordBot.Handlers
 {
     public class ReadyHandler : DiscordClientEventHandlerBase
     {
+        private readonly IServiceProvider services;
+
         private async Task RunTests()
         {
-            //var testChannel = ApplicationContext.MKOTHHQGuild.Test;
-            //var outputText = string.Join(", ", Utilities.EmojiPresets.Numbers);
-
-            //var embed = new Discord.EmbedBuilder()
-            //    .WithTitle(outputText)
-            //    .WithDescription(outputText + $"```{outputText}``` `{outputText}`");
-
-            //var message = await testChannel.SendMessageAsync(embed: embed.Build());
-            //foreach (var item in Utilities.EmojiPresets.Numbers)
-            //{
-            //    _ = message.AddReactionAsync(item);
-            //}
+            await ApplicationContext.MKOTHHQGuild.Test.SendMessageAsync($"Appsettings ```json\n {services.GetScoppedSettings<AppSettings>().ToString()} ```");
 
             await Task.CompletedTask;
         }
 
-        public ReadyHandler(DiscordSocketClient client, ActivityCycler _) : base(client)
+        public ReadyHandler(DiscordSocketClient client, ActivityCycler _, IServiceProvider services) : base(client)
         {
             ApplicationContext.DiscordClient = client;
-
+            this.services = services;
             this.client.Ready += HandleReady;
         }
 

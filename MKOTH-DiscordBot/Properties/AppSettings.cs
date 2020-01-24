@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace MKOTHDiscordBot.Properties
 {
@@ -24,5 +25,6 @@ namespace MKOTHDiscordBot.Properties
     public class Settings
     {
         public string DefaultCommandPrefix { get; set; }
+        public ulong[] LeaveAnnounceGuilds { get; set; }
     }
 }
