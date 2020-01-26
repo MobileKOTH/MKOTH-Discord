@@ -45,7 +45,7 @@ namespace MKOTHDiscordBot.Services
         {
             this.client = client;
 
-            activity = (helpHint, GetActivityList().First());
+            activity = (helpHint, activityList.First.Value);
             changeTimer.Elapsed += async (_, __) => await ChangeActivityAsync();
             commandPrefix = setting.Value.Settings.DefaultCommandPrefix;
 
@@ -68,8 +68,8 @@ namespace MKOTHDiscordBot.Services
             Logger.Debug("Started", nameof(ActivityCycler));
         }
 
-        public LinkedList<IActivity> GetActivityList()
-            => new LinkedList<IActivity>(new IActivity[]
+
+        private readonly LinkedList<IActivity> activityList = new LinkedList<IActivity>(new IActivity[]
             {
                 new ShowMemory(),
             });
@@ -84,7 +84,7 @@ namespace MKOTHDiscordBot.Services
             try
             {
                 await client.SetActivityAsync(activity.current);
-                
+
 
                 if (activity.current is StreamingGame)
                 {
@@ -106,8 +106,7 @@ namespace MKOTHDiscordBot.Services
 
                 void setNextActivity()
                 {
-                    var activitySequence = GetActivityList();
-                    var targetNode = activitySequence.Find(activitySequence.Single(x => x.GetType() == activity.last.GetType()));
+                    var targetNode = activityList.Find(activityList.Single(x => x.GetType() == activity.last.GetType()));
                     activity.current = targetNode.Next == null ? targetNode.List.First.Value : targetNode.Next.Value;
                 }
             }
