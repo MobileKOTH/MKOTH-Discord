@@ -32,13 +32,14 @@ namespace MKOTHDiscordBot.Modules
         [Summary("Displays the general help information.")]
         public async Task HelpCommand()
         {
+            var timeoutSeconds = 60;
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithTitle("❓ User Guide")
                 .WithDescription("Here is the list of command modules.\n" +
                 "A module is a catergory for a group of related commands.\n" +
                 $"Press the corresponding emote or enter `{defaultCommandPrefix}help <module>` to view the commands in a module.\n")
-                .WithFooter("Press the respective emote to expand the module list.");
+                .WithFooter($"Press the respective emote to expand the module list (expire in {timeoutSeconds} seconds).");
 
             var moduleEmoteOrders = commands.Modules
                 .OrderBy(x => x.Remarks ?? "Module Z")
@@ -47,7 +48,7 @@ namespace MKOTHDiscordBot.Modules
             embed.Fields = getOriginalFields();
 
             IUserMessage msg = default;
-            var reactionCallbacksData = new ReactionCallbackData(string.Empty, embed.Build(), false, false, TimeSpan.FromSeconds(10), c => onExpire());
+            var reactionCallbacksData = new ReactionCallbackData(string.Empty, embed.Build(), false, false, TimeSpan.FromSeconds(timeoutSeconds), c => onExpire());
 
             foreach (var item in moduleEmoteOrders)
             {

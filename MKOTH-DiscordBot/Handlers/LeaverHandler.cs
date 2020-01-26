@@ -12,36 +12,38 @@ namespace MKOTHDiscordBot.Handlers
 {
     public class LeaverHandler : DiscordClientEventHandlerBase
     {
-        private ResponseService responseService;
-        private Dictionary<IGuild, ITextChannel> announceGuilds;
+        private readonly ResponseService responseService;
         private readonly Settings settings;
+        private readonly Lazy<IGuild> lazyguild;
+        private readonly Lazy<ITextChannel> lazyChannel;
+        private readonly Lazy<IRole> lazyRole;
+        private IGuild guild => lazyguild.Value;
+        private ITextChannel channel => lazyChannel.Value;
+        private IRole role => lazyRole.Value;
 
         public LeaverHandler(DiscordSocketClient client, ResponseService responseService, IOptions<AppSettings> settings) : base (client)
         {
             this.responseService = responseService;
             this.settings = settings.Value.Settings;
             this.client.UserLeft += Handle;
-            this.client.Ready += Init;
-        }
 
-        private Task Init()
-        {
-            announceGuilds = settings.LeaveAnnounceGuilds.ToDictionary(x => (client.GetChannel(x) as IGuildChannel).Guild, x => client.GetChannel(x) as ITextChannel);
-            return Task.CompletedTask;
+            lazyguild = new Lazy<IGuild>(() => client.GetGuild(this.settings.ProductionGuild.Id));
+            lazyChannel = new Lazy<ITextChannel>(() => client.GetChannel(this.settings.ProductionGuild.Leave) as ITextChannel);
+            lazyRole = new Lazy<IRole>(() => guild.GetRole(this.settings.ProductionGuild.MemberRole));
         }
 
         Task Handle(IGuildUser user)
         {
             try
             {
-                if (!announceGuilds.ContainsKey(user.Guild))
+                if (user.GuildId != guild.Id)
                 {
                     return Task.CompletedTask;
                 }
 
                 var bans = user.Guild.GetBansAsync().Result;
 
-                if (false)//Player.List.Exists(x => x.DiscordId == user.Id && !x.IsRemoved))
+                if (user.RoleIds.Any(x => x == role.Id))
                 {
                     if (bans.ToList().Exists(x => x.User.Id == user.Id))
                     {
@@ -50,8 +52,8 @@ namespace MKOTHDiscordBot.Handlers
                     else
                     {
                         SendLeaveMessage("a MKOTH Member has left from the server.");
-                        SendDmMessage("You left the MKOTH Server, note that you are still part of the community unless you are officially removed. " + 
-                            "You are welcomed join back anytime using the link below:");
+                        //SendDmMessage("You left the MKOTH Server, note that you are still part of the community unless you are officially removed. " + 
+                        //    "You are welcomed join back anytime using the link below:");
                     }
                 }
                 else
@@ -63,7 +65,7 @@ namespace MKOTHDiscordBot.Handlers
                     else
                     {
                         SendLeaveMessage("a public user has left from the server.");
-                        SendDmMessage("Thank you for your interests in MKOTH, if you are keen to join back in the future, use the invite link below:");
+                        //SendDmMessage("Thank you for your interests in MKOTH, if you are keen to join back in the future, use the invite link below:");
                     }
                 }
 
@@ -74,15 +76,15 @@ namespace MKOTHDiscordBot.Handlers
                         .WithAuthor($"{user.GetDisplayName()}#{user.DiscriminatorValue}", user.GetAvatarUrl())
                         .WithDescription($"{user.Mention}, {message}");
 
-                    _ = responseService.SendToChannelAsync(announceGuilds.Single(x => x.Key == user.Guild).Value, string.Empty, embed.Build());
+                    _ = responseService.SendToChannelAsync(channel, string.Empty, embed.Build());
                 }
 
-                void SendDmMessage(string message)
-                {
-                    var inviteLink = "https://discord.me/MKOTH";
+                //void SendDmMessage(string message)
+                //{
+                //    var inviteLink = "https://discord.me/MKOTH";
 
-                    _ = user.SendMessageAsync($"{message}\n\n{inviteLink}");
-                }
+                //    _ = user.SendMessageAsync($"{message}\n\n{inviteLink}");
+                //}
             }
             catch (Exception e)
             {

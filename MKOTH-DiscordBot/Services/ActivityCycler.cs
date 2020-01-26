@@ -21,7 +21,7 @@ namespace MKOTHDiscordBot.Services
             {
                 this.prefix = prefix;
             }
-            public string Name => ".op help for general help";
+            public string Name => $"{prefix}help for general help";
             public ActivityType Type => ActivityType.Listening;
         }
 
@@ -43,13 +43,14 @@ namespace MKOTHDiscordBot.Services
 
         public ActivityCycler(DiscordSocketClient client, IOptions<AppSettings> setting)
         {
+            commandPrefix = setting.Value.Settings.DefaultCommandPrefix;
+            helpHint = new HelpHint(commandPrefix);
+
             this.client = client;
 
             activity = (helpHint, activityList.First.Value);
             changeTimer.Elapsed += async (_, __) => await ChangeActivityAsync();
-            commandPrefix = setting.Value.Settings.DefaultCommandPrefix;
 
-            helpHint = new HelpHint(commandPrefix);
 
             client.Connected += () =>
             {
@@ -62,6 +63,12 @@ namespace MKOTHDiscordBot.Services
             {
                 changeTimer.Stop();
                 Logger.Log("Client Disconnected", LogType.ClientEvent);
+                return Task.CompletedTask;
+            };
+
+            client.Ready += () =>
+            {
+                _ = ChangeActivityAsync();
                 return Task.CompletedTask;
             };
 

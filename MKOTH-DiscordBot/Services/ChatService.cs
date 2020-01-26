@@ -18,9 +18,13 @@ namespace MKOTHDiscordBot.Services
 
         private readonly ResponseService responseService;
 
+        private readonly ulong officialChat;
+
         public ChatService(ResponseService responseService, IOptions<AppSettings> appSettings)
         {
             this.responseService = responseService;
+            
+            officialChat = appSettings.Value.Settings.ProductionGuild.Official;
 
             ChatSystem = new Chat(appSettings.Value.ConnectionStrings.ChatHistory);
             ChatSystem.Log += HandleLog;
@@ -34,6 +38,11 @@ namespace MKOTHDiscordBot.Services
             }
 
             if (context.User.IsWebhook)
+            {
+                return;
+            }
+
+            if (context.Channel.Id != officialChat)
             {
                 return;
             }

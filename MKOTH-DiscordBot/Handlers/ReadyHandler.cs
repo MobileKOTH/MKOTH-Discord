@@ -15,7 +15,7 @@ namespace MKOTHDiscordBot.Handlers
 
         private async Task RunTests()
         {
-            await ApplicationContext.MKOTHHQGuild.Test.SendMessageAsync($"Appsettings ```json\n {services.GetScoppedSettings<AppSettings>().ToString()} ```");
+            //await ApplicationContext.MKOTHHQGuild.Test.SendMessageAsync($"Appsettings ```json\n {services.GetScoppedSettings<AppSettings>().ToString()} ```");
 
             await Task.CompletedTask;
         }
