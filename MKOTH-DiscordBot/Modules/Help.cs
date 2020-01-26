@@ -6,8 +6,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using MKOTHDiscordBot.Utilities;
 using MKOTHDiscordBot.Properties;
+using MKOTHDiscordBot.Services;
 
 namespace MKOTHDiscordBot.Modules
 {
@@ -17,14 +19,14 @@ namespace MKOTHDiscordBot.Modules
     {
         private CommandService commands;
         private IServiceProvider services;
-        private readonly string defaultCommandPrefix;
+        private readonly string prefix;
 
-        public Help(CommandService commands, IServiceProvider services)
+        public Help(CommandService commandsService, IServiceProvider serviceProvider)
         {
-            this.commands = commands;
-            this.services = services;
+            commands = commandsService;
+            services = serviceProvider;
             
-            defaultCommandPrefix = this.services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
+            prefix = services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
         }
 
         [Command("Help")]
@@ -38,7 +40,7 @@ namespace MKOTHDiscordBot.Modules
                 .WithTitle("❓ User Guide")
                 .WithDescription("Here is the list of command modules.\n" +
                 "A module is a catergory for a group of related commands.\n" +
-                $"Press the corresponding emote or enter `{defaultCommandPrefix}help <module>` to view the commands in a module.\n")
+                $"Press the corresponding emote or enter `{prefix}help <module>` to view the commands in a module.\n")
                 .WithFooter($"Press the respective emote to expand the module list (expire in {timeoutSeconds} seconds).");
 
             var moduleEmoteOrders = commands.Modules
@@ -54,7 +56,7 @@ namespace MKOTHDiscordBot.Modules
             {
                 reactionCallbacksData = reactionCallbacksData.WithCallback(item.Key, (c, r) =>
                 {
-                    embed.Description = $"Enter `{defaultCommandPrefix}help {defaultCommandPrefix}<command>` to view the details of a command";
+                    embed.Description = $"Enter `{prefix}help {prefix}<command>` to view the details of a command";
                     embed.Fields = getOriginalFields();
                     embed.Fields.Single(x => x.Name.Contains(item.Value.Name)).Value = GetCommnadListFormatted(moduleEmoteOrders.Single(x => x.Key.Name == r.Emote.Name).Value);
                     modifyHelp(c, r.MessageId, embed.Build(), r);
@@ -114,7 +116,7 @@ namespace MKOTHDiscordBot.Modules
                 goto helpReplyProcedure;
             }
 
-            para = para.StartsWith(defaultCommandPrefix) ? para.Substring(defaultCommandPrefix.Length) : para;
+            para = para.StartsWith(prefix) ? para.Substring(prefix.Length) : para;
             var command = commands.Commands
                 .Where(x => x.Name.EqualsIgnoreCase(para) || x.Aliases.Any(y => y.EqualsIgnoreCase(para)))
                 .ToList();
@@ -135,7 +137,7 @@ namespace MKOTHDiscordBot.Modules
                     .WithDescription(commandDescription);
                 if (baseCommand.Aliases.Count > 0)
                 {
-                    var alias = baseCommand.Aliases.Select(x => $"{(defaultCommandPrefix + x).MarkdownCodeLine()}\t");
+                    var alias = baseCommand.Aliases.Select(x => $"{(prefix + x).MarkdownCodeLine()}\t");
                     embed.AddField("Alias", string.Join(" ", alias));
                 }
                 string restrictions = null;
@@ -150,7 +152,7 @@ namespace MKOTHDiscordBot.Modules
                     embed.AddField("Restrictions", restrictions);
                 }
 
-                var usages = command.Select(x => $"{defaultCommandPrefix}{x.Name.AddSpace() + x.GetCommandParametersInfo()}");
+                var usages = command.Select(x => $"{prefix}{x.Name.AddSpace() + x.GetCommandParametersInfo()}");
                 embed.AddField("Usage", string.Join("\n", usages).MarkdownCodeBlock("css"));
 
                 string example = "";
@@ -174,7 +176,7 @@ namespace MKOTHDiscordBot.Modules
         private string GetCommnadListFormatted(ModuleInfo module)
         {
             string commandList = string.Join("\n", module.Commands
-                   .Select(x => $"{defaultCommandPrefix}{x.Name.AddSpace() + x.GetCommandParametersInfo()}"));
+                   .Select(x => $"{prefix}{x.Name.AddSpace() + x.GetCommandParametersInfo()}"));
             return commandList.MarkdownCodeBlock("css");
         }
 
@@ -185,6 +187,18 @@ namespace MKOTHDiscordBot.Modules
             await commands.Commands
                     .Single(x => x.Name == "BotInfo")
                     .ExecuteAsync(Context, new object[] { }, null, services);
+        }
+
+        [Command("Submit")]
+        public async Task Submit()
+        {
+            var limiter = services.GetService<SubmissionRateLimiter>();
+
+            if (limiter.Audit(Context))
+            {
+                return;
+            }
+            await ReplyAsync("Test Submit");
         }
     }
 }

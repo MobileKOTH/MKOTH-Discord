@@ -21,13 +21,13 @@ namespace MKOTHDiscordBot.Modules
     public class System : ModuleBase<SocketCommandContext>, IDisposable
     {
         private readonly LazyDisposable<IssueTracker> lazyIssueTracker;
-        private readonly string defaultCommandPrefix;
+        private readonly string prefix;
         private static Process nodeJS = null;
 
         public System(IServiceProvider services)
         {
             lazyIssueTracker = new LazyDisposable<IssueTracker>(() => services.GetRequiredService<IssueTracker>());
-            defaultCommandPrefix = services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
+            prefix = services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
         }
 
         [Command("BotInfo", RunMode = RunMode.Async)]
@@ -55,7 +55,7 @@ namespace MKOTHDiscordBot.Modules
                     .WithIconUrl(ApplicationContext.BotOwner.GetAvatarUrl()))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Help")
-                    .WithValue($"{defaultCommandPrefix}help".MarkdownCodeBlock("yaml")))
+                    .WithValue($"{prefix}help".MarkdownCodeBlock("yaml")))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Library")
                     .WithValue($"Discord.Net v{ApplicationContext.DiscordVersion}".MarkdownCodeBlock("yaml"))

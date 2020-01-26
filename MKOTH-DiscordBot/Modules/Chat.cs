@@ -21,14 +21,14 @@ namespace MKOTHDiscordBot.Modules
     [Summary("Chat, reply and translation system.")]
     public class Chat : ModuleBase<SocketCommandContext>, IDisposable
     {
-        private readonly LazyDisposable<Task<DiscordWebhookClient>> WebhookLoader;
-        private readonly LazyDisposable<ChatService> LazyChatService;
+        private readonly LazyDisposable<Task<DiscordWebhookClient>> webhookLoader;
+        private readonly LazyDisposable<ChatService> lazyChatService;
 
-        private ChatService ChatService => LazyChatService.Value;
+        private ChatService ChatService => lazyChatService.Value;
 
-        public Chat(IServiceProvider service)
+        public Chat(IServiceProvider services)
         {
-            WebhookLoader = new LazyDisposable<Task<DiscordWebhookClient>>(async () =>
+            webhookLoader = new LazyDisposable<Task<DiscordWebhookClient>>(async () =>
             {
                 var webhooks = await Context.Guild.GetWebhooksAsync();
                 var webhookInfo = webhooks?.FirstOrDefault(x => x.ChannelId == Context.Channel.Id)
@@ -36,9 +36,9 @@ namespace MKOTHDiscordBot.Modules
                 return new DiscordWebhookClient(webhookInfo);
             });
 
-            LazyChatService = new LazyDisposable<ChatService>(() =>
+            lazyChatService = new LazyDisposable<ChatService>(() =>
             {
-                return service.GetRequiredService<ChatService>();
+                return services.GetRequiredService<ChatService>();
             });
         }
 
@@ -64,7 +64,7 @@ namespace MKOTHDiscordBot.Modules
                 throw new Exception("Message not found.");
             }
 
-            var loadWebhook = WebhookLoader.Value;
+            var loadWebhook = webhookLoader.Value;
             var embedLink = message.Embeds.Count > 0 ? $"\n{Format.Bold("Embed Content")}\n{message.Embeds.First().Author}: {message.Embeds.First().Description}" : "";
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
@@ -86,7 +86,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireContext(ContextType.Guild)]
         public async Task Impersonate(IGuildUser user, [Remainder] string reply)
         {
-            var webhook = await WebhookLoader.Value;
+            var webhook = await webhookLoader.Value;
             _ = webhook.SendMessageAsync(reply, false, null, user.GetDisplayName(), user.GetAvatarUrl());
             _ = Context.Message.DeleteAsync();
         }
@@ -300,8 +300,8 @@ namespace MKOTHDiscordBot.Modules
 
         public void Dispose()
         {
-            LazyChatService.Dispose();
-            WebhookLoader.Dispose();
+            lazyChatService.Dispose();
+            webhookLoader.Dispose();
         }
     }
 }

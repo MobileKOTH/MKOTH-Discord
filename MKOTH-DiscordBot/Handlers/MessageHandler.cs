@@ -19,7 +19,7 @@ namespace MKOTHDiscordBot.Handlers
 
         private readonly IServiceProvider services;
         private readonly CommandService commands;
-        private readonly RateLimiter rateLimiter;
+        private readonly UsageRateLimiter rateLimiter;
         private readonly ResponseService responseService;
         private readonly string defaultCommandPrefix;
 
@@ -28,7 +28,7 @@ namespace MKOTHDiscordBot.Handlers
         public MessageHandler(
             DiscordSocketClient client,
             CommandService commands,
-            RateLimiter rateLimiter,
+            UsageRateLimiter rateLimiter,
             ResponseService responseService,
             IServiceProvider services) : base(client)
         {
@@ -186,8 +186,7 @@ namespace MKOTHDiscordBot.Handlers
                 }
             }
 
-            bool audit() => rateLimiter.Audit(context.User.Id, ()
-                => _ = responseService.SendToContextAsync(context, "You are now rate limited"));
+            bool audit() => rateLimiter.Audit(context, responseService);
 
             void sendHelp()
                 => _ = commands.Commands

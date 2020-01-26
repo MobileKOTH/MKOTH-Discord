@@ -6,6 +6,8 @@ using Cerlancism.ChatSystem;
 using MKOTHDiscordBot.Properties;
 using Discord;
 using Discord.Commands;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 using UwuTranslator = MKOTHDiscordBot.Utilities.UwuTranslator;
@@ -14,15 +16,14 @@ namespace MKOTHDiscordBot.Services
 {
     public class ChatService : IDisposable
     {
-        public Chat ChatSystem;
+        public readonly Chat ChatSystem;
 
         private readonly ResponseService responseService;
-
         private readonly ulong officialChat;
 
-        public ChatService(ResponseService responseService, IOptions<AppSettings> appSettings)
+        public ChatService(IServiceProvider services, IOptions<AppSettings> appSettings)
         {
-            this.responseService = responseService;
+            responseService = services.GetService<ResponseService>();
             
             officialChat = appSettings.Value.Settings.ProductionGuild.Official;
 

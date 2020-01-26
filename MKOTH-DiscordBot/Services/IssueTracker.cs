@@ -13,22 +13,22 @@ namespace MKOTHDiscordBot.Services
     public class IssueTracker: IDisposable
     {
         private readonly LiteDatabase database;
-        private readonly LiteCollection<Issue> featureRequestsCollection;
+        private readonly LiteCollection<Issue> collection;
 
         public IssueTracker(IOptions<AppSettings> appSettings)
         {
             database = new LiteDatabase(appSettings.Value.ConnectionStrings.ApplicationDb);
-            featureRequestsCollection = database.GetCollection<Issue>();
+            collection = database.GetCollection<Issue>();
         }
 
         public void CreateIssue(string title, string content)
         {
-            featureRequestsCollection.Insert(new Issue { Title = title, Content = content });
+            collection.Insert(new Issue { Title = title, Content = content });
         }
 
         public bool UpdateIssue(int id, string title, string content)
         {
-            var issue = featureRequestsCollection.FindById(id);
+            var issue = collection.FindById(id);
             if (issue == null)
             {
                 return false;
@@ -37,19 +37,19 @@ namespace MKOTHDiscordBot.Services
             {
                 issue.Title = title;
                 issue.Content = content;
-                featureRequestsCollection.Update(id, issue);
+                collection.Update(id, issue);
                 return true;
             }
         }
 
         public IEnumerable<Issue> GetIssues()
         {
-            return featureRequestsCollection.FindAll();
+            return collection.FindAll();
         }
 
         public bool DeleteId(int id)
         {
-            return featureRequestsCollection.Delete(id);
+            return collection.Delete(id);
         }
 
         public void Dispose()

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 using Discord;
@@ -41,16 +40,15 @@ namespace MKOTHDiscordBot.Services
 
         private readonly HelpHint helpHint;
 
-        public ActivityCycler(DiscordSocketClient client, IOptions<AppSettings> setting)
+        public ActivityCycler(DiscordSocketClient socketClient, IOptions<AppSettings> setting)
         {
             commandPrefix = setting.Value.Settings.DefaultCommandPrefix;
             helpHint = new HelpHint(commandPrefix);
 
-            this.client = client;
+            client = socketClient;
 
             activity = (helpHint, activityList.First.Value);
             changeTimer.Elapsed += async (_, __) => await ChangeActivityAsync();
-
 
             client.Connected += () =>
             {
@@ -68,8 +66,7 @@ namespace MKOTHDiscordBot.Services
 
             client.Ready += () =>
             {
-                _ = ChangeActivityAsync();
-                return Task.CompletedTask;
+                return _ = ChangeActivityAsync();
             };
 
             Logger.Debug("Started", nameof(ActivityCycler));
