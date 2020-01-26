@@ -22,9 +22,27 @@ namespace MKOTHDiscordBot.Properties
         public string ApplicationDb { get; set; }
     }
 
+
     public class Settings
     {
         public string DefaultCommandPrefix { get; set; }
-        public ulong[] LeaveAnnounceGuilds { get; set; }
+        public Developmentguild DevelopmentGuild { get; set; }
+        public Productionguild ProductionGuild { get; set; }
     }
+
+
+    public class Developmentguild
+    {
+        public ulong Id { get; set; }
+        public ulong Test { get; set; }
+    }
+
+    public class Productionguild
+    {
+        public ulong Id { get; set; }
+        public ulong MemberRole { get; set; }
+        public ulong Official { get; set; }
+        public ulong Leave { get; set; }
+    }
+
 }
