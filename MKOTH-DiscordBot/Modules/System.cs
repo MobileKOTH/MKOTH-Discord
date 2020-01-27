@@ -436,7 +436,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireDeveloper]
         public async Task Python([Remainder] string input)
         {
-            await CommandPrompt("py", $"-c \"{input.Replace("\"", "\\\"")}\"");
+            await Run("py", $"-c \"{input.Replace("\"", "\\\"")}\"");
         }
 
         [Command("Javascript")]
@@ -445,21 +445,21 @@ namespace MKOTHDiscordBot.Modules
         [RequireDeveloper]
         public async Task JavaScript([Remainder] string input)
         {
-            await CommandPrompt("node", $"-e \"{input.Replace("\"", "\\\"")}\"");
+            await Run("node", $"-e \"{input.Replace("\"", "\\\"")}\"");
         }
 
         [Command("Run")]
         [Summary("Command line interface.")]
         [RequireDeveloper]
-        public async Task CommandPrompt(string command)
+        public async Task Run(string command)
         {
-            await CommandPrompt(command, null);
+            await Run(command, null);
         }
 
         [Command("Run")]
         [Summary("Command line interface.")]
         [RequireDeveloper]
-        public async Task CommandPrompt(string command, [Remainder] string input)
+        public async Task Run(string command, [Remainder] string input)
         {
             var process = new Process();
             process.StartInfo.CreateNoWindow = true;
@@ -506,6 +506,16 @@ namespace MKOTHDiscordBot.Modules
         public async Task ShutDown()
         {
             await ReplyAsync("Shutting Down...");
+            _ = Task.Run(() => ApplicationManager.ShutDownApplication());
+        }
+
+        [Command("Update")]
+        [Summary("Updates the bot.")]
+        [RequireDeveloper]
+        public async Task Update()
+        {
+            await ReplyAsync("Updating...");
+            Process.Start("../update.bat", Context.Channel.Id.ToString());
             _ = Task.Run(() => ApplicationManager.ShutDownApplication());
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -39,21 +40,30 @@ namespace MKOTHDiscordBot.Handlers
                         Console.WriteLine($"Owner Id: {ApplicationContext.BotOwner.Id}");
                     });
 
-                if (Program.FirstArgument == "Restarted")
+
+                switch (Program.FirstArgument)
                 {
-                    var restartChannel = client.GetChannel(ulong.Parse(Program.SecondArgument));
-                    if (restartChannel != null)
-                    {
-                        ((SocketTextChannel)restartChannel).SendMessageAsync("Bot has restarted");
-                    }
-                    else
-                    {
-                        ApplicationContext.MKOTHHQGuild.Log.SendMessageAsync("Bot has restarted");
-                    }
-                }
-                else if (Program.FirstArgument != null)
-                {
-                    ApplicationContext.MKOTHHQGuild.Log.SendMessageAsync("Something happened: " + Program.FirstArgument);
+                    case "Restarted":
+                        {
+                            var restartChannel = client.GetChannel(ulong.Parse(Program.SecondArgument)) as SocketTextChannel ?? ApplicationContext.MKOTHHQGuild.Log;
+                            restartChannel.SendMessageAsync("Bot has restarted");
+                            break;
+                        }
+                    case "Updated":
+                        {
+                            var restartChannel = client.GetChannel(ulong.Parse(Program.SecondArgument)) as SocketTextChannel ?? ApplicationContext.MKOTHHQGuild.Log;
+                            restartChannel.SendMessageAsync($"Bot updated: {File.ReadAllText("../updatelog.txt").SliceBack(1900).MarkdownCodeBlock("c")}");
+                            break;
+                        }
+                    default:
+                        {
+                            if (Program.FirstArgument == null)
+                            {
+                                break;
+                            }
+                            ApplicationContext.MKOTHHQGuild.Log.SendMessageAsync("Something happened: " + Program.FirstArgument);
+                            break;
+                        }
                 }
             }
             catch (Exception e)
