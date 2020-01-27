@@ -90,6 +90,7 @@ namespace MKOTHDiscordBot
                 .AddSingleton<ActivityCycler>()
                 .AddTransient<ChatService>()
                 .AddTransient<IssueTracker>()
+                .AddSingleton<SeriesService>()
                 .BuildServiceProvider();
 
             var credentials = services.GetScoppedSettings<Credentials>();

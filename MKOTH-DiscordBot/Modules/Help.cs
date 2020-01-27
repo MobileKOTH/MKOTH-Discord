@@ -13,7 +13,7 @@ using MKOTHDiscordBot.Services;
 
 namespace MKOTHDiscordBot.Modules
 {
-    [Summary("Provides guidance of using this bot.")]
+    [Summary("Provides the user guide for this bot.")]
     [Remarks("Module A")]
     public class Help : InteractiveBase
     {

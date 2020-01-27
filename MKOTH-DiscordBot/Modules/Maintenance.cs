@@ -16,7 +16,7 @@ namespace MKOTHDiscordBot.Modules
 {
     using static Utilities.SnowFlakeUtils;
 
-    [Summary("Contains the diagnostics and maintenance information of the bot.")]
+    [Summary("Run diagnostics and show maintenance information of the bot environment.")]
     [Remarks("Module Z")]
     public class Maintenance : ModuleBase<SocketCommandContext>, IDisposable
     {
@@ -223,8 +223,6 @@ namespace MKOTHDiscordBot.Modules
         [RequireDeveloper]
         public async Task SetTest()
         {
-            EmbedBuilder embed = new EmbedBuilder();
-            IUserMessage msg;
             if (Program.TestMode) return;
             Handlers.MessageHandler.ReplyToTestServer = false;
             _ = await ReplyAsync("Disabled replying to test server");
@@ -287,9 +285,10 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("User")]
         [Summary("Checks the user's registration and server join date.")]
+        [RequireContext(ContextType.Guild)]
         public async Task User(IGuildUser user = null)
         {
-            user = user ?? Context.User as IGuildUser;
+            user ??= Context.User as IGuildUser;
             var isThisBot = user.Id == Context.Client.CurrentUser.Id;
             if (!isThisBot)
             {

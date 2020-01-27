@@ -21,7 +21,7 @@ namespace MKOTHDiscordBot.Handlers
             await Task.CompletedTask;
         }
 
-        public ReadyHandler(DiscordSocketClient client, ActivityCycler _, IServiceProvider services) : base(client)
+        public ReadyHandler(DiscordSocketClient client, ActivityCycler _, SeriesService __, IServiceProvider services) : base(client)
         {
             ApplicationContext.DiscordClient = client;
             this.services = services;

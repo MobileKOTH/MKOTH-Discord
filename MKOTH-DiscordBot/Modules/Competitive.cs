@@ -10,7 +10,7 @@ using MKOTHDiscordBot.Services;
 
 namespace MKOTHDiscordBot.Modules
 {
-    [Summary("Contains all the commands for usual MKOTH series and player routines.")]
+    [Summary("Contains the commands for MKOTH series and player activities.")]
     [Remarks("Module B")]
     public class Competitive : InteractiveBase
     {
@@ -42,6 +42,15 @@ namespace MKOTHDiscordBot.Modules
                 .WithCallback(new Emoji("👍"), (c, r) => c.Channel.SendMessageAsync($"{r.User.Value.Mention} replied with 👍"))
                 .WithCallback(new Emoji("👎"), (c, r) => c.Channel.SendMessageAsync($"{r.User.Value.Mention} replied with 👎")));
             Interactive.AddReactionCallback(msg, callback);
+        }
+
+        [Command("IsAdmin")]
+        public async Task IsAdmin(IGuildUser user = null)
+        {
+            user ??= Context.User as IGuildUser;
+            var embed = new EmbedBuilder()
+                .WithDescription($"{user.Mention} is {(user.GuildPermissions.Administrator ? "" : "not ")} an admin.");
+            await ReplyAsync(embed: embed.Build());
         }
     }
 }

@@ -18,7 +18,7 @@ using TrashChat = Cerlancism.ChatSystem.Chat;
 
 namespace MKOTHDiscordBot.Modules
 {
-    [Summary("Chat, reply and translation system.")]
+    [Summary("Utilities for chat, conversation reply and translation.")]
     [Remarks("Module C")]
     public class Chat : ModuleBase<SocketCommandContext>, IDisposable
     {
