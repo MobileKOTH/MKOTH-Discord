@@ -77,7 +77,7 @@ namespace MKOTHDiscordBot.Handlers
                 Console.ResetColor();
             }
             // Special test mode command handling.
-            if (!ReplyToTestServer && message.Content == defaultCommandPrefix + " settest")
+            if (!ReplyToTestServer && message.Content == defaultCommandPrefix + "settest")
             {
                 ReplyToTestServer = true;
                 await context.Channel.SendMessageAsync("Replying to test channel");

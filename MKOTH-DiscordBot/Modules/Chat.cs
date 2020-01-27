@@ -19,6 +19,7 @@ using TrashChat = Cerlancism.ChatSystem.Chat;
 namespace MKOTHDiscordBot.Modules
 {
     [Summary("Chat, reply and translation system.")]
+    [Remarks("Module C")]
     public class Chat : ModuleBase<SocketCommandContext>, IDisposable
     {
         private readonly LazyDisposable<Task<DiscordWebhookClient>> webhookLoader;

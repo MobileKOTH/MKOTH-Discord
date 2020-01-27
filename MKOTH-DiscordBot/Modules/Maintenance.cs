@@ -18,13 +18,13 @@ namespace MKOTHDiscordBot.Modules
 
     [Summary("Contains the diagnostics and maintenance information of the bot.")]
     [Remarks("Module Z")]
-    public class System : ModuleBase<SocketCommandContext>, IDisposable
+    public class Maintenance : ModuleBase<SocketCommandContext>, IDisposable
     {
         private readonly LazyDisposable<IssueTracker> lazyIssueTracker;
         private readonly string prefix;
         private static Process nodeJS = null;
 
-        public System(IServiceProvider services)
+        public Maintenance(IServiceProvider services)
         {
             lazyIssueTracker = new LazyDisposable<IssueTracker>(() => services.GetRequiredService<IssueTracker>());
             prefix = services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;

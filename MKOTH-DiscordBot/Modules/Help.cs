@@ -188,17 +188,5 @@ namespace MKOTHDiscordBot.Modules
                     .Single(x => x.Name == "BotInfo")
                     .ExecuteAsync(Context, new object[] { }, null, services);
         }
-
-        [Command("Submit")]
-        public async Task Submit()
-        {
-            var limiter = services.GetService<SubmissionRateLimiter>();
-
-            if (limiter.Audit(Context))
-            {
-                return;
-            }
-            await ReplyAsync("Test Submit");
-        }
     }
 }
