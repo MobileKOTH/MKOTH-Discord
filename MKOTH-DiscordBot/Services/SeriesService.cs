@@ -10,6 +10,7 @@ using RestSharp;
 using Microsoft.Extensions.DependencyInjection;
 using Discord;
 using Discord.WebSocket;
+using System.Threading.Tasks;
 
 namespace MKOTHDiscordBot.Services
 {
@@ -37,20 +38,20 @@ namespace MKOTHDiscordBot.Services
             restClient = new RestClient(endPoint);
 
             pendingList = new List<Series>();
-            Refresh();
+            _ = Refresh();
         }
 
-        public void Refresh()
+        public async Task Refresh()
         {
             var request = new RestRequest()
                 //.AddQueryParameter("admin", adminKey)
                 .AddQueryParameter("spreadSheet", "_series")
                 .AddQueryParameter("operation", "all");
-            var response = restClient.Get<List<Series>>(request);
+            var response = await restClient.GetAsync<List<Series>>(request);
 
-            seriesList = response.Data;
+            seriesList = response;
 
-            Logger.Debug(response.Data, "Series Service Refresh");
+            Logger.Debug(response.Count, "Series Service Refresh Data Size");
         }
 
         public void Post()

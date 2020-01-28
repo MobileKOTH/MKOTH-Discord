@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
+
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
+
 using Microsoft.Extensions.DependencyInjection;
 
 using MKOTHDiscordBot.Services;
@@ -16,9 +18,11 @@ namespace MKOTHDiscordBot.Modules
     {
         private readonly DiscordSocketClient client;
         private readonly SubmissionRateLimiter submissionRateLimiter;
+        private readonly SeriesService seriesService;
         public Competitive(IServiceProvider services)
         {
             client = services.GetService<DiscordSocketClient>();
+            seriesService = services.GetService<SeriesService>();
             submissionRateLimiter = services.GetService<SubmissionRateLimiter>();
         }
         [Command("Submit")]

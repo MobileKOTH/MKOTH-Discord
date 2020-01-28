@@ -79,7 +79,7 @@ namespace MKOTHDiscordBot.Services
 
             var delay = Task.Delay(500);
             var reply = await ChatSystem.ReplyAsync(message);
-            reply = UwuTranslator.Translate(reply);
+            //reply = UwuTranslator.Translate(reply);
             reply = reply.SliceBack(1900);
 
             await delay;

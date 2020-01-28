@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using MKOTHDiscordBot.Properties;
 using MKOTHDiscordBot.Services;
 
@@ -12,7 +13,7 @@ namespace MKOTHDiscordBot.Handlers
 {
     public class ReadyHandler : DiscordClientEventHandlerBase
     {
-        private readonly IServiceProvider services;
+        private readonly ActivityCycler activityCycler;
 
         private async Task RunTests()
         {
@@ -21,17 +22,20 @@ namespace MKOTHDiscordBot.Handlers
             await Task.CompletedTask;
         }
 
-        public ReadyHandler(DiscordSocketClient client, ActivityCycler _, SeriesService __, IServiceProvider services) : base(client)
+        public ReadyHandler(DiscordSocketClient client, IServiceProvider services) : base(client)
         {
             ApplicationContext.DiscordClient = client;
-            this.services = services;
-            this.client.Ready += HandleReady;
+
+            activityCycler = services.GetService<ActivityCycler>();
+            client.Ready += HandleReady;
         }
 
         private Task HandleReady()
         {
             try
             {
+                _ = activityCycler.ChangeActivityAsync();
+
                 // Owner
                 _ = client.GetApplicationInfoAsync()
                     .ContinueWith(x =>

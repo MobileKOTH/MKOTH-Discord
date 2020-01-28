@@ -15,6 +15,7 @@ using Newtonsoft.Json;
 
 using UwuTranslator = MKOTHDiscordBot.Utilities.UwuTranslator;
 using TrashChat = Cerlancism.ChatSystem.Chat;
+using MKOTHDiscordBot.Properties;
 
 namespace MKOTHDiscordBot.Modules
 {
@@ -24,6 +25,7 @@ namespace MKOTHDiscordBot.Modules
     {
         private readonly LazyDisposable<Task<DiscordWebhookClient>> webhookLoader;
         private readonly LazyDisposable<ChatService> lazyChatService;
+        private readonly Lazy<string> lazyTranslationScriptId;
 
         private ChatService ChatService => lazyChatService.Value;
 
@@ -41,6 +43,8 @@ namespace MKOTHDiscordBot.Modules
             {
                 return services.GetRequiredService<ChatService>();
             });
+
+            lazyTranslationScriptId = new Lazy<string>(() => services.GetScoppedSettings<Credentials>().TranslationScriptId);
         }
 
         [Command("Reply")]
@@ -115,9 +119,9 @@ namespace MKOTHDiscordBot.Modules
 
         internal async Task TranslateInternal(string input, string from = "", string to = "en")
         {
-            var apiBase = "https://script.google.com/macros/s/AKfycbzgXXIUc8PGq0-h-aZkZ9gfGBnBLi-BPn3JJ9cjV5B7ZbLu2eY/exec";
-            var resource = "translate";
-            var uri = $"{apiBase}?resource={resource}&from={from}&to={to}&input={input}";
+            var apiBase = $"https://script.google.com/macros/s/{lazyTranslationScriptId.Value}/exec";
+            var query = $"resource=translate&from={from}&to={to}&input={input}";
+            var uri = $"{apiBase}?{query}";
             var request = WebRequest.Create(uri);
             var response = request.GetResponse() as HttpWebResponse;
             var json = string.Empty;

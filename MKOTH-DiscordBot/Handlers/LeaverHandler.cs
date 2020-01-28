@@ -1,18 +1,20 @@
-﻿using Discord;
-using Discord.WebSocket;
-using Microsoft.Extensions.Options;
-using MKOTHDiscordBot.Properties;
-using MKOTHDiscordBot.Services;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+
+using Discord;
+using Discord.WebSocket;
+
+using Microsoft.Extensions.Options;
+
+using MKOTHDiscordBot.Properties;
+using MKOTHDiscordBot.Services;
 
 namespace MKOTHDiscordBot.Handlers
 {
     public class LeaverHandler : DiscordClientEventHandlerBase
     {
-        private readonly ResponseService responseService;
+        private readonly ResponseService responder;
         private readonly Settings settings;
         private readonly Lazy<IGuild> lazyguild;
         private readonly Lazy<ITextChannel> lazyChannel;
@@ -21,11 +23,11 @@ namespace MKOTHDiscordBot.Handlers
         private ITextChannel channel => lazyChannel.Value;
         private IRole role => lazyRole.Value;
 
-        public LeaverHandler(DiscordSocketClient client, ResponseService responseService, IOptions<AppSettings> settings) : base (client)
+        public LeaverHandler(DiscordSocketClient client, ResponseService responseService, IOptions<AppSettings> appSettings) : base (client)
         {
-            this.responseService = responseService;
-            this.settings = settings.Value.Settings;
-            this.client.UserLeft += Handle;
+            responder = responseService;
+            settings = appSettings.Value.Settings;
+            client.UserLeft += Handle;
 
             lazyguild = new Lazy<IGuild>(() => client.GetGuild(this.settings.ProductionGuild.Id));
             lazyChannel = new Lazy<ITextChannel>(() => client.GetChannel(this.settings.ProductionGuild.Leave) as ITextChannel);
@@ -76,7 +78,7 @@ namespace MKOTHDiscordBot.Handlers
                         .WithAuthor($"{user.GetDisplayName()}#{user.DiscriminatorValue}", user.GetAvatarUrl())
                         .WithDescription($"{user.Mention}, {message}");
 
-                    _ = responseService.SendToChannelAsync(channel, string.Empty, embed.Build());
+                    _ = responder.SendToChannelAsync(channel, string.Empty, embed.Build());
                 }
 
                 //void SendDmMessage(string message)

@@ -9,6 +9,7 @@ namespace MKOTHDiscordBot.Properties
         public string TestToken { get; set; }
         public string DiscordToken { get; set; }
         public string AppsScriptAdminKey { get; set; }
+        public string TranslationScriptId { get; set; }
 
         public override string ToString()
         {

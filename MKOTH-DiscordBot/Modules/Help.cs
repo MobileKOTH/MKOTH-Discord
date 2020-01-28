@@ -1,15 +1,15 @@
-﻿using Discord;
-using Discord.Addons.Interactive;
-using Discord.Commands;
-using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using MKOTHDiscordBot.Utilities;
+
+using Discord;
+using Discord.Addons.Interactive;
+using Discord.Commands;
+using Discord.WebSocket;
+
 using MKOTHDiscordBot.Properties;
-using MKOTHDiscordBot.Services;
+using MKOTHDiscordBot.Utilities;
 
 namespace MKOTHDiscordBot.Modules
 {

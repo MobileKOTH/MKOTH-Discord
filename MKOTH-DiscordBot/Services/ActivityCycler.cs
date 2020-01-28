@@ -64,11 +64,6 @@ namespace MKOTHDiscordBot.Services
                 return Task.CompletedTask;
             };
 
-            client.Ready += () =>
-            {
-                return _ = ChangeActivityAsync();
-            };
-
             Logger.Debug("Started", nameof(ActivityCycler));
         }
 

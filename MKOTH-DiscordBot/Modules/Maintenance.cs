@@ -4,13 +4,17 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Discord;
 using Discord.Commands;
+
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
-using MKOTHDiscordBot.Services;
+
 using MKOTHDiscordBot.Common;
 using MKOTHDiscordBot.Properties;
+using MKOTHDiscordBot.Services;
+
+using Newtonsoft.Json;
 
 namespace MKOTHDiscordBot.Modules
 {

@@ -12,9 +12,9 @@ namespace MKOTHDiscordBot.Handlers
     {
         protected readonly DiscordSocketClient client;
 
-        public DiscordClientEventHandlerBase(DiscordSocketClient client)
+        public DiscordClientEventHandlerBase(DiscordSocketClient socketClient)
         {
-            this.client = client;
+            client = socketClient;
         }
 
         public static void ConfigureCommonHandlers(IServiceProvider services)
