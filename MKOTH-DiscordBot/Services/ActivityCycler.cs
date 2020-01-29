@@ -34,18 +34,20 @@ namespace MKOTHDiscordBot.Services
 
 
         private readonly DiscordSocketClient client;
+        private readonly ErrorResolver resolver;
         private readonly string commandPrefix;
         private (IActivity current, IActivity last) activity;
         private Timer changeTimer = new Timer(15000);
 
         private readonly HelpHint helpHint;
 
-        public ActivityCycler(DiscordSocketClient socketClient, IOptions<AppSettings> setting)
+        public ActivityCycler(DiscordSocketClient socketClient, ErrorResolver errorResolver, IOptions<AppSettings> setting)
         {
+            client = socketClient;
+            resolver = errorResolver;
             commandPrefix = setting.Value.Settings.DefaultCommandPrefix;
             helpHint = new HelpHint(commandPrefix);
 
-            client = socketClient;
 
             activity = (helpHint, activityList.First.Value);
             changeTimer.Elapsed += async (_, __) => await ChangeActivityAsync();
@@ -111,7 +113,7 @@ namespace MKOTHDiscordBot.Services
             }
             catch (Exception e)
             {
-                await ErrorResolver.Handle(e);
+                await resolver.Handle(e);
             }
         }
     }

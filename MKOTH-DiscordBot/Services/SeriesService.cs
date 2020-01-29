@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace MKOTHDiscordBot.Services
 {
-    public class SeriesService
+    public class SeriesService : ISeriesService
     {
         private readonly string endPoint;
         private readonly string adminKey;
@@ -29,6 +29,8 @@ namespace MKOTHDiscordBot.Services
 
         public int NextId => nextId.HasValue ? (int)(nextId = nextId.Value + 1) : (int)(nextId = seriesList.Max(x => x.Id) + 1);
 
+        private const string collectionName = "_series";
+
         public SeriesService(IServiceProvider services, IOptions<AppSettings> appSettings, IOptions<Credentials> credentials)
         {
             rankingService = services.GetService<RankingService>();
@@ -38,14 +40,14 @@ namespace MKOTHDiscordBot.Services
             restClient = new RestClient(endPoint);
 
             pendingList = new List<Series>();
-            _ = Refresh();
+            _ = RefreshAsync();
         }
 
-        public async Task Refresh()
+        public async Task RefreshAsync()
         {
             var request = new RestRequest()
                 //.AddQueryParameter("admin", adminKey)
-                .AddQueryParameter("spreadSheet", "_series")
+                .AddQueryParameter("spreadSheet", collectionName)
                 .AddQueryParameter("operation", "all");
             var response = await restClient.GetAsync<List<Series>>(request);
 
@@ -54,16 +56,16 @@ namespace MKOTHDiscordBot.Services
             Logger.Debug(response.Count, "Series Service Refresh Data Size");
         }
 
-        public void Post()
+        public async Task PostAsync()
         {
             var request = new RestRequest()
                    .AddQueryParameter("admin", adminKey)
-                   .AddQueryParameter("spreadSheet", "_series")
+                   .AddQueryParameter("spreadSheet", collectionName)
                    .AddQueryParameter("operation", "all")
                    .AddJsonBody(seriesList);
-            var response = restClient.Post<List<Series>>(request);
+            var response = await restClient.PostAsync<List<Series>>(request);
 
-            Logger.Debug(response.Data, "Series Service Update");
+            Logger.Debug(response, "Series Service Update");
         }
 
         public Series MakeSeries(ulong winner, ulong loser, int wins, int losses)
@@ -84,7 +86,7 @@ namespace MKOTHDiscordBot.Services
             pendingList.Add(series);
         }
 
-        public void Approve(int id)
+        public async Task ApproveAsync(int id)
         {
             var series = pendingList.Find(x => x.Id == id);
 
@@ -95,21 +97,21 @@ namespace MKOTHDiscordBot.Services
 
             pendingList.Remove(series);
             seriesList.Add(series);
-            Post();
+            await PostAsync();
         }
 
-        public void AdminCreate(Series series)
+        public async Task AdminCreateAsync(Series series)
         {
             seriesList.Add(series);
-            Post();
+            await PostAsync();
         }
 
-        public void Remove(int id)
+        public async Task RemoveAsync(int id)
         {
             var series = seriesList.Find(x => x.Id == id);
             seriesList.Remove(series);
-            Post();
-            Refresh();
+            await PostAsync();
+            await RefreshAsync();
         }
 
         public bool HasNewPlayer(Series series)
@@ -136,5 +138,20 @@ namespace MKOTHDiscordBot.Services
                 return series.LoserId == user.Id || user.GuildPermissions.Administrator;
             }
         }
+    }
+
+    public interface ISeriesService
+    {
+        int NextId { get; }
+
+        void AddPending(Series series);
+        Task AdminCreateAsync(Series series);
+        Task ApproveAsync(int id);
+        bool CanApprove(Series series, IGuildUser user);
+        bool HasNewPlayer(Series series);
+        Series MakeSeries(ulong winner, ulong loser, int wins, int losses);
+        Task PostAsync();
+        Task RefreshAsync();
+        Task RemoveAsync(int id);
     }
 }

@@ -7,7 +7,8 @@ using Discord.Commands;
 using Discord.WebSocket;
 
 using Microsoft.Extensions.DependencyInjection;
-
+using Microsoft.Extensions.Options;
+using MKOTHDiscordBot.Properties;
 using MKOTHDiscordBot.Services;
 
 namespace MKOTHDiscordBot.Modules
@@ -19,11 +20,13 @@ namespace MKOTHDiscordBot.Modules
         private readonly DiscordSocketClient client;
         private readonly SubmissionRateLimiter submissionRateLimiter;
         private readonly SeriesService seriesService;
-        public Competitive(IServiceProvider services)
+        private readonly ITextChannel logChannel;
+        public Competitive(IServiceProvider services, IOptions<AppSettings> appSettings)
         {
             client = services.GetService<DiscordSocketClient>();
             seriesService = services.GetService<SeriesService>();
             submissionRateLimiter = services.GetService<SubmissionRateLimiter>();
+            logChannel = (ITextChannel)client.GetChannel(appSettings.Value.Settings.DevelopmentGuild.Test);
         }
         [Command("Submit")]
         public async Task Submit()
@@ -39,7 +42,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("reaction")]
         public async Task Test_ReactionReply()
         {
-            var msg = await ApplicationContext.MKOTHHQGuild.Log.SendMessageAsync("test");
+            var msg = await logChannel.SendMessageAsync("test");
             await msg.AddReactionAsync(new Emoji("👍"));
             await msg.AddReactionAsync(new Emoji("👎"));
             var callback = new InlineReactionCallback(Interactive, Context, new ReactionCallbackData("text", null, false, true)

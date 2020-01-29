@@ -1,21 +1,24 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+
 using Cerlancism.ChatSystem.Core;
-using MKOTHDiscordBot.Common;
-using MKOTHDiscordBot.Services;
+
 using Discord;
 using Discord.Commands;
 using Discord.Webhook;
-using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 
-using UwuTranslator = MKOTHDiscordBot.Utilities.UwuTranslator;
-using TrashChat = Cerlancism.ChatSystem.Chat;
+using Microsoft.Extensions.DependencyInjection;
+
+using MKOTHDiscordBot.Common;
 using MKOTHDiscordBot.Properties;
+using MKOTHDiscordBot.Services;
+
+using RestSharp;
+
+using TrashChat = Cerlancism.ChatSystem.Chat;
+using UwuTranslator = MKOTHDiscordBot.Utilities.UwuTranslator;
 
 namespace MKOTHDiscordBot.Modules
 {
@@ -120,23 +123,20 @@ namespace MKOTHDiscordBot.Modules
         internal async Task TranslateInternal(string input, string from = "", string to = "en")
         {
             var apiBase = $"https://script.google.com/macros/s/{lazyTranslationScriptId.Value}/exec";
-            var query = $"resource=translate&from={from}&to={to}&input={input}";
-            var uri = $"{apiBase}?{query}";
-            var request = WebRequest.Create(uri);
-            var response = request.GetResponse() as HttpWebResponse;
-            var json = string.Empty;
-            using (var sr = new StreamReader(response.GetResponseStream()))
-            {
-                json = sr.ReadToEnd();
-            }
+            var request = new RestRequest()
+                .AddQueryParameter("resource", "translate")
+                .AddQueryParameter("from", from)
+                .AddQueryParameter("to", to)
+                .AddQueryParameter("input", input);
+
             try
             {
-                var result = JsonConvert.DeserializeObject<dynamic>(json);
-                await ReplyAsync(result.response.Value);
+                var response = await new RestClient(apiBase).GetAsync<dynamic>(request);
+                await ReplyAsync(response["response"]);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                await ReplyAsync("Bad Arguments.");
+                await ReplyAsync($"{e.Message}");
             }
         }
 
@@ -175,9 +175,6 @@ namespace MKOTHDiscordBot.Modules
             embed.Title = "Trigger, rephrase and reply pool";
             embed.Description = "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`";
             await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"{purgedMessage.SliceBack(100)}\"", false, embed.Build());
-            analysis = null;
-            results = null;
-            takeResults = null;
         }
 
         [Command("TrashMessage", RunMode = RunMode.Async)]
@@ -256,13 +253,13 @@ namespace MKOTHDiscordBot.Modules
             }
             var skipped = input.Take(skip).ToArray();
             var switcher = true;
-            var rest = input.Skip(skip).Select((x, i) => 
+            var rest = input.Skip(skip).Select((x, i) =>
             {
                 if (!char.IsLetter(x))
                 {
                     return x;
                 }
-                
+
                 char outputChar;
 
                 if (switcher)

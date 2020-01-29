@@ -83,6 +83,8 @@ namespace MKOTHDiscordBot
                 .Configure<Credentials>(config.GetSection("credentials"))
                 .AddSingleton(client)
                 .AddSingleton(commands)
+                .AddSingleton<DiscordLogger>()
+                .AddSingleton<ErrorResolver>()
                 .AddSingleton<InteractiveService>()
                 .AddSingleton<ResponseService>()
                 .AddSingleton<UsageRateLimiter>()

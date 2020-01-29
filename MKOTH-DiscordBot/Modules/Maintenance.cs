@@ -24,12 +24,14 @@ namespace MKOTHDiscordBot.Modules
     [Remarks("Module Z")]
     public class Maintenance : ModuleBase<SocketCommandContext>, IDisposable
     {
+        private readonly ErrorResolver resolver;
         private readonly LazyDisposable<IssueTracker> lazyIssueTracker;
         private readonly string prefix;
         private static Process nodeJS = null;
 
-        public Maintenance(IServiceProvider services)
+        public Maintenance(IServiceProvider services, ErrorResolver errorResolver)
         {
+            resolver = errorResolver;
             lazyIssueTracker = new LazyDisposable<IssueTracker>(() => services.GetRequiredService<IssueTracker>());
             prefix = services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
         }
@@ -213,7 +215,7 @@ namespace MKOTHDiscordBot.Modules
                 }
                 catch (Exception e)
                 {
-                    _ = ErrorResolver.Handle(e);
+                    _ = resolver.Handle(e);
                 }
             }
             else
@@ -242,7 +244,7 @@ namespace MKOTHDiscordBot.Modules
 
                 if (thresHoldValue > 3)
                 {
-                    ErrorResolver.Threshold = thresHoldValue;
+                    resolver.Threshold = thresHoldValue;
                     await ReplyAsync($"Restart threshold set to: `{thresHoldValue}`.");
                 }
                 else
@@ -252,7 +254,7 @@ namespace MKOTHDiscordBot.Modules
             }
             else
             {
-                await ReplyAsync($"Current Error Count: `{ErrorResolver.CriticalErrors}`\nRestart threshold: `{ErrorResolver.Threshold}`");
+                await ReplyAsync($"Current Error Count: `{resolver.CriticalErrors}`\nRestart threshold: `{resolver.Threshold}`");
             }
         }
 

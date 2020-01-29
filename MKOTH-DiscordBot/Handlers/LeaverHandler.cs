@@ -54,8 +54,6 @@ namespace MKOTHDiscordBot.Handlers
                     else
                     {
                         SendLeaveMessage("a MKOTH Member has left from the server.");
-                        //SendDmMessage("You left the MKOTH Server, note that you are still part of the community unless you are officially removed. " + 
-                        //    "You are welcomed join back anytime using the link below:");
                     }
                 }
                 else
@@ -67,7 +65,6 @@ namespace MKOTHDiscordBot.Handlers
                     else
                     {
                         SendLeaveMessage("a public user has left from the server.");
-                        //SendDmMessage("Thank you for your interests in MKOTH, if you are keen to join back in the future, use the invite link below:");
                     }
                 }
 
@@ -80,13 +77,6 @@ namespace MKOTHDiscordBot.Handlers
 
                     _ = responder.SendToChannelAsync(channel, string.Empty, embed.Build());
                 }
-
-                //void SendDmMessage(string message)
-                //{
-                //    var inviteLink = "https://discord.me/MKOTH";
-
-                //    _ = user.SendMessageAsync($"{message}\n\n{inviteLink}");
-                //}
             }
             catch (Exception e)
             {
