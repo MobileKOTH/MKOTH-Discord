@@ -92,6 +92,7 @@ namespace MKOTHDiscordBot
                 .AddSingleton<ActivityCycler>()
                 .AddTransient<ChatService>()
                 .AddTransient<IssueTracker>()
+                .AddSingleton<RankingService>()
                 .AddSingleton<SeriesService>()
                 .BuildServiceProvider();
 

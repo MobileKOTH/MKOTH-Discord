@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using LiteDB;
 using System.Linq;
+using System.Threading.Tasks;
+
+using Discord;
+
 using Microsoft.Extensions.Options;
+
 using MKOTHDiscordBot.Models;
 using MKOTHDiscordBot.Properties;
+
 using RestSharp;
-using Microsoft.Extensions.DependencyInjection;
-using Discord;
-using Discord.WebSocket;
-using System.Threading.Tasks;
 
 namespace MKOTHDiscordBot.Services
 {
@@ -18,7 +18,7 @@ namespace MKOTHDiscordBot.Services
     {
         private readonly string endPoint;
         private readonly string adminKey;
-        private readonly RankingService rankingService;
+        //private readonly RankingService rankingService;
 
         private readonly RestClient restClient;
 
@@ -27,13 +27,17 @@ namespace MKOTHDiscordBot.Services
 
         private int? nextId = null;
 
-        public int NextId => nextId.HasValue ? (int)(nextId = nextId.Value + 1) : (int)(nextId = seriesList.Max(x => x.Id) + 1);
+        public int NextId => nextId.HasValue ? (int)(nextId = nextId.Value + 1) : (seriesList.Count > 0 ? (int)(nextId = seriesList.Max(x => x.Id) + 1) : 0);
+        public IEnumerable<ulong> AllPlayers => seriesList.Select(x => ulong.Parse(x.WinnerId)).Concat(seriesList.Select(x => ulong.Parse(x.LoserId))).Distinct();
+        public IEnumerable<Series> SeriesHistory => seriesList;
 
         private const string collectionName = "_series";
 
+        public event Func<Task> Updated;
+
         public SeriesService(IServiceProvider services, IOptions<AppSettings> appSettings, IOptions<Credentials> credentials)
         {
-            rankingService = services.GetService<RankingService>();
+            //rankingService = services.GetService<RankingService>();
             endPoint = appSettings.Value.ConnectionStrings.AppsScript;
             adminKey = credentials.Value.AppsScriptAdminKey;
 
@@ -63,21 +67,25 @@ namespace MKOTHDiscordBot.Services
                    .AddQueryParameter("spreadSheet", collectionName)
                    .AddQueryParameter("operation", "all")
                    .AddJsonBody(seriesList);
-            var response = await restClient.PostAsync<List<Series>>(request);
+            var response = await restClient.PostAsync<dynamic>(request);
+
+            Updated.Invoke();
 
             Logger.Debug(response, "Series Service Update");
         }
 
-        public Series MakeSeries(ulong winner, ulong loser, int wins, int losses)
+        public Series MakeSeries(ulong winner, ulong loser, int wins, int losses, int draws, string replay)
         {
             return new Series
             {
                 Id = NextId,
                 Date = DateTime.Now,
-                WinnerId = winner,
-                LoserId = loser,
+                WinnerId = winner.ToString(),
+                LoserId = loser.ToString(),
                 Wins = wins,
-                Losses = losses
+                Losses = losses,
+                Draws = draws,
+                ReplayId = replay
             };
         }
 
@@ -135,7 +143,16 @@ namespace MKOTHDiscordBot.Services
             }
             else
             {
-                return series.LoserId == user.Id || user.GuildPermissions.Administrator;
+                return series.LoserId == user.Id.ToString()|| user.GuildPermissions.Administrator;
+            }
+        }
+
+        public IEnumerable<string> LastSeriesHistoryLines(int count)
+        {
+            var currentDate = DateTime.Now;
+            foreach (var series in seriesList.AsEnumerable().Reverse().Take(count).Reverse())
+            {
+                yield return $"`#{series.Id.ToString("D4")}` {(currentDate - series.Date).AsRoundedDuration()} ago <@!{series.WinnerId}> <@!{series.LoserId}> {series.Wins} {series.Losses}";
             }
         }
     }
@@ -149,7 +166,7 @@ namespace MKOTHDiscordBot.Services
         Task ApproveAsync(int id);
         bool CanApprove(Series series, IGuildUser user);
         bool HasNewPlayer(Series series);
-        Series MakeSeries(ulong winner, ulong loser, int wins, int losses);
+        Series MakeSeries(ulong winner, ulong loser, int wins, int losses, int draws, string replay);
         Task PostAsync();
         Task RefreshAsync();
         Task RemoveAsync(int id);

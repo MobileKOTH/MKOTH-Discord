@@ -4,9 +4,8 @@ using System.Text;
 
 namespace MKOTHDiscordBot.Models
 {
-    public class Player
+    public class SeriesPlayer : Player
     {
-        public string Id { get; set; }
-        public string Name { get; set; }
+        public double Elo { get; set; }
     }
 }
