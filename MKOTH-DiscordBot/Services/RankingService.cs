@@ -35,6 +35,8 @@ namespace MKOTHDiscordBot.Services
         public IEnumerable<SeriesPlayer> SeriesPlayers => seriesPlayers;
 
         private const string collectionName = "_players";
+
+        private bool clientReady = false;
         public RankingService(IServiceProvider services, IOptions<AppSettings> appSettings, IOptions<Credentials> credentials)
         {
             endPoint = appSettings.Value.ConnectionStrings.AppsScript;
@@ -46,12 +48,20 @@ namespace MKOTHDiscordBot.Services
 
             restClient = new RestClient(endPoint);
 
-            client.Ready += Refresh;
             seriesService.Updated += Refresh;
+            client.Ready += () => Task.Run(() =>
+            {
+                clientReady = true;
+                _ = Refresh();
+            }) ;
         }
 
         public async Task Refresh()
         {
+            if (!(seriesService.Ready && clientReady))
+            {
+                return;
+            }
             var guildUsers = await ProductionGuild.GetUsersAsync();
             seriesPlayers = seriesService.AllPlayers.Select(x => new SeriesPlayer 
             { 

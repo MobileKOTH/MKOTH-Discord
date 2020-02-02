@@ -14,13 +14,11 @@ using MKOTHDiscordBot.Common;
 using MKOTHDiscordBot.Properties;
 using MKOTHDiscordBot.Services;
 
-using Newtonsoft.Json;
-
 namespace MKOTHDiscordBot.Modules
 {
     using static Utilities.SnowFlakeUtils;
 
-    [Summary("Run diagnostics and show maintenance information of the bot environment.")]
+    [Summary("Run diagnostics and show technical information of the bot environment.")]
     [Remarks("Module Z")]
     public class Maintenance : ModuleBase<SocketCommandContext>, IDisposable
     {
@@ -338,21 +336,19 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("CreateIssue")]
         [RequireDeveloper]
-        public async Task CreateIssue([Remainder] string data)
+        public async Task CreateIssue(string title, string content)
         {
             var tracker = lazyIssueTracker.Value;
-            var issue = JsonConvert.DeserializeObject<Issue>(data, new JsonSerializerSettings { MissingMemberHandling = MissingMemberHandling.Error });
-            tracker.CreateIssue(issue.Title, issue.Content);
+            tracker.CreateIssue(title, content);
             await Issues();
         }
 
         [Command("UpdateIssue")]
         [RequireDeveloper]
-        public async Task UpdateIssue(int id, [Remainder] string data)
+        public async Task UpdateIssue(int id, string title, string content)
         {
             var tracker = lazyIssueTracker.Value;
-            var issue = JsonConvert.DeserializeObject<Issue>(data, new JsonSerializerSettings { MissingMemberHandling = MissingMemberHandling.Error });
-            var success = tracker.UpdateIssue(id, issue.Title, issue.Content);
+            var success = tracker.UpdateIssue(id, title, content);
             if (success)
             {
                 await Issues();

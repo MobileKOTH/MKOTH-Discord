@@ -35,6 +35,8 @@ namespace MKOTHDiscordBot.Services
 
         public event Func<Task> Updated;
 
+        public bool Ready { get; private set; } = false;
+
         public SeriesService(IServiceProvider services, IOptions<AppSettings> appSettings, IOptions<Credentials> credentials)
         {
             //rankingService = services.GetService<RankingService>();
@@ -44,6 +46,7 @@ namespace MKOTHDiscordBot.Services
             restClient = new RestClient(endPoint);
 
             pendingList = new List<Series>();
+
             _ = RefreshAsync();
         }
 
@@ -57,6 +60,9 @@ namespace MKOTHDiscordBot.Services
 
             seriesList = response;
 
+            Ready = true;
+            _ = Updated.Invoke();
+
             Logger.Debug(response.Count, "Series Service Refresh Data Size");
         }
 
@@ -69,7 +75,7 @@ namespace MKOTHDiscordBot.Services
                    .AddJsonBody(seriesList);
             var response = await restClient.PostAsync<dynamic>(request);
 
-            Updated.Invoke();
+            _ = Updated.Invoke();
 
             Logger.Debug(response, "Series Service Update");
         }
