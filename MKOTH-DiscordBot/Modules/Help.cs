@@ -17,8 +17,8 @@ namespace MKOTHDiscordBot.Modules
     [Remarks("Module A")]
     public class Help : InteractiveBase
     {
-        private CommandService commands;
-        private IServiceProvider services;
+        private readonly CommandService commands;
+        private readonly IServiceProvider services;
         private readonly string prefix;
 
         public Help(CommandService commandsService, IServiceProvider serviceProvider)
@@ -187,6 +187,15 @@ namespace MKOTHDiscordBot.Modules
             await commands.Commands
                     .Single(x => x.Name == "BotInfo")
                     .ExecuteAsync(Context, new object[] { }, null, services);
+        }
+
+        [Command("IsAdmin")]
+        public async Task IsAdmin(IGuildUser user = null)
+        {
+            user ??= Context.User as IGuildUser;
+            var embed = new EmbedBuilder()
+                .WithDescription($"{user.Mention} is {(user.GuildPermissions.Administrator ? "" : "not ")} an admin.");
+            await ReplyAsync(embed: embed.Build());
         }
     }
 }

@@ -50,14 +50,5 @@ namespace MKOTHDiscordBot.Modules
                 .WithCallback(new Emoji("👎"), (c, r) => c.Channel.SendMessageAsync($"{r.User.Value.Mention} replied with 👎")));
             Interactive.AddReactionCallback(msg, callback);
         }
-
-        [Command("IsAdmin")]
-        public async Task IsAdmin(IGuildUser user = null)
-        {
-            user ??= Context.User as IGuildUser;
-            var embed = new EmbedBuilder()
-                .WithDescription($"{user.Mention} is {(user.GuildPermissions.Administrator ? "" : "not ")} an admin.");
-            await ReplyAsync(embed: embed.Build());
-        }
     }
 }

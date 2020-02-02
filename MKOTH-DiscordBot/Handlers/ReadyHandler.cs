@@ -14,6 +14,7 @@ namespace MKOTHDiscordBot.Handlers
     public class ReadyHandler : DiscordClientEventHandlerBase
     {
         private readonly ActivityCycler activityCycler;
+        private readonly DiscordLogger discordLogger;
 
         private async Task RunTests()
         {
@@ -22,10 +23,11 @@ namespace MKOTHDiscordBot.Handlers
             await Task.CompletedTask;
         }
 
-        public ReadyHandler(DiscordSocketClient client, IServiceProvider services) : base(client)
+        public ReadyHandler(IServiceProvider serviceProvider) : base(serviceProvider)
         {
             ApplicationContext.DiscordClient = client;
 
+            discordLogger = services.GetService<DiscordLogger>();
             activityCycler = services.GetService<ActivityCycler>();
             client.Ready += HandleReady;
         }
@@ -49,13 +51,13 @@ namespace MKOTHDiscordBot.Handlers
                 {
                     case "Restarted":
                         {
-                            var restartChannel = client.GetChannel(ulong.Parse(Program.SecondArgument)) as SocketTextChannel ?? ApplicationContext.MKOTHHQGuild.Log;
+                            var restartChannel = client.GetChannel(ulong.Parse(Program.SecondArgument)) as SocketTextChannel ?? discordLogger.LogChannel;
                             restartChannel.SendMessageAsync("Bot has restarted");
                             break;
                         }
                     case "Updated":
                         {
-                            var restartChannel = client.GetChannel(ulong.Parse(Program.SecondArgument)) as SocketTextChannel ?? ApplicationContext.MKOTHHQGuild.Log;
+                            var restartChannel = client.GetChannel(ulong.Parse(Program.SecondArgument)) as SocketTextChannel ?? discordLogger.LogChannel;
                             restartChannel.SendMessageAsync($"Bot updated: {File.ReadAllText("../updatelog.txt").SliceBack(1900).MarkdownCodeBlock("c")}");
                             break;
                         }
@@ -65,7 +67,7 @@ namespace MKOTHDiscordBot.Handlers
                             {
                                 break;
                             }
-                            ApplicationContext.MKOTHHQGuild.Log.SendMessageAsync("Something happened: " + Program.FirstArgument);
+                            discordLogger.Log("Something happened: " + Program.FirstArgument);
                             break;
                         }
                 }

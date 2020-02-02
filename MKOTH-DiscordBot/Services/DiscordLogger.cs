@@ -32,7 +32,7 @@ namespace MKOTHDiscordBot.Services
 
         public void Log(string message)
         {
-            LogChannel.SendMessageAsync(message).Wait();
+            _ = LogChannel.SendMessageAsync(message);
         }
     }
 }

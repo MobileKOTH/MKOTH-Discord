@@ -8,6 +8,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using MKOTHDiscordBot.Properties;
 using MKOTHDiscordBot.Services;
 
@@ -17,40 +18,40 @@ namespace MKOTHDiscordBot.Handlers
     {
         public static bool ReplyToTestServer = true;
 
-        private readonly IServiceProvider services;
         private readonly CommandService commands;
         private readonly UsageRateLimiter rateLimiter;
+        private readonly DiscordLogger discordLogger;
         private readonly ResponseService responseService;
         private readonly string defaultCommandPrefix;
 
+        private ulong testChannelId;
         private ulong currentUserId;
 
-        public MessageHandler(
-            DiscordSocketClient client,
-            CommandService commands,
-            UsageRateLimiter rateLimiter,
-            ResponseService responseService,
-            IServiceProvider services) : base(client)
+        public MessageHandler(IServiceProvider serviceProvider, IOptions<AppSettings> appSettings) : base(serviceProvider)
         {
-            this.services = services;
-            this.commands = commands;
-            this.responseService = responseService;
-            this.rateLimiter = rateLimiter;
+            commands = services.GetService<CommandService>();
+            rateLimiter = services.GetService<UsageRateLimiter>();
+            discordLogger = serviceProvider.GetService<DiscordLogger>();
+            responseService = services.GetService<ResponseService>();
 
-            this.client.MessageReceived += HandleMessageAsync;
-            this.client.Ready += async () => currentUserId = await Task.FromResult(this.client.CurrentUser.Id);
+            testChannelId = appSettings.Value.Settings.DevelopmentGuild.Test;
+
+            client.Ready += async () => currentUserId = await Task.FromResult(client.CurrentUser.Id);
 
             defaultCommandPrefix = services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
 
-            this.commands.CommandExecuted += async (info, context, result) =>
+            client.MessageReceived += HandleMessageAsync;
+            commands.CommandExecuted += HandleCommandExecution;
+        }
+
+        private async Task HandleCommandExecution(Optional<CommandInfo> info, ICommandContext context, IResult result)
+        {
+            if (!result.IsSuccess && result is ExecuteResult executeResult && info.IsSpecified)
             {
-                if (!result.IsSuccess && result is ExecuteResult executeResult && info.IsSpecified)
-                {
-                    await context.Channel.SendMessageAsync(executeResult.ErrorReason + executeResult.Exception.StackTrace
-                        .SliceFront(1500)
-                        .MarkdownCodeBlock("yaml"));
-                }
-            };
+                await context.Channel.SendMessageAsync(executeResult.ErrorReason + executeResult.Exception.StackTrace
+                    .SliceFront(1500)
+                    .MarkdownCodeBlock("yaml"));
+            }
         }
 
         private async Task HandleMessageAsync(SocketMessage socketMessage)
@@ -93,12 +94,12 @@ namespace MKOTHDiscordBot.Handlers
             }
             else
             {
-                if (!Program.TestMode && !ReplyToTestServer && (context.Channel.Id == ApplicationContext.MKOTHHQGuild.Test.Id))
+                if (!Program.TestMode && !ReplyToTestServer && (context.Channel.Id == testChannelId))
                 {
                     return;
                 }
 
-                if (Program.TestMode && (context.Channel.Id != ApplicationContext.MKOTHHQGuild.Test.Id))
+                if (Program.TestMode && (context.Channel.Id != testChannelId))
                 {
                     return;
                 }
@@ -149,7 +150,7 @@ namespace MKOTHDiscordBot.Handlers
             var result = await commands.ExecuteAsync(context, argPos, services);
             if (context.IsPrivate && message.Author.Id != ApplicationContext.BotOwner.Id)
             {
-                await responseService.SendToChannelAsync(ApplicationContext.MKOTHHQGuild.Log, "DM command received:", new EmbedBuilder()
+                await responseService.SendToChannelAsync(discordLogger.LogChannel, "DM command received:", new EmbedBuilder()
                     .WithAuthor(message.Author)
                     .WithDescription(message.Content)
                     .Build());

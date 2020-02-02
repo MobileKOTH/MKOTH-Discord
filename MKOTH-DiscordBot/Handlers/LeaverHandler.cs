@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 using MKOTHDiscordBot.Properties;
@@ -19,33 +20,33 @@ namespace MKOTHDiscordBot.Handlers
         private readonly Lazy<IGuild> lazyguild;
         private readonly Lazy<ITextChannel> lazyChannel;
         private readonly Lazy<IRole> lazyRole;
-        private IGuild guild => lazyguild.Value;
-        private ITextChannel channel => lazyChannel.Value;
-        private IRole role => lazyRole.Value;
+        private IGuild Guild => lazyguild.Value;
+        private ITextChannel Channel => lazyChannel.Value;
+        private IRole Role => lazyRole.Value;
 
-        public LeaverHandler(DiscordSocketClient client, ResponseService responseService, IOptions<AppSettings> appSettings) : base (client)
+        public LeaverHandler(IServiceProvider serviceProvider, IOptions<AppSettings> appSettings) : base (serviceProvider)
         {
-            responder = responseService;
+            responder = services.GetService<ResponseService>();
             settings = appSettings.Value.Settings;
             client.UserLeft += Handle;
 
-            lazyguild = new Lazy<IGuild>(() => client.GetGuild(this.settings.ProductionGuild.Id));
-            lazyChannel = new Lazy<ITextChannel>(() => client.GetChannel(this.settings.ProductionGuild.Leave) as ITextChannel);
-            lazyRole = new Lazy<IRole>(() => guild.GetRole(this.settings.ProductionGuild.MemberRole));
+            lazyguild = new Lazy<IGuild>(() => client.GetGuild(settings.ProductionGuild.Id));
+            lazyChannel = new Lazy<ITextChannel>(() => client.GetChannel(settings.ProductionGuild.Leave) as ITextChannel);
+            lazyRole = new Lazy<IRole>(() => Guild.GetRole(settings.ProductionGuild.MemberRole));
         }
 
         Task Handle(IGuildUser user)
         {
             try
             {
-                if (user.GuildId != guild.Id)
+                if (user.GuildId != Guild.Id)
                 {
                     return Task.CompletedTask;
                 }
 
                 var bans = user.Guild.GetBansAsync().Result;
 
-                if (user.RoleIds.Any(x => x == role.Id))
+                if (user.RoleIds.Any(x => x == Role.Id))
                 {
                     if (bans.ToList().Exists(x => x.User.Id == user.Id))
                     {
@@ -75,7 +76,7 @@ namespace MKOTHDiscordBot.Handlers
                         .WithAuthor($"{user.GetDisplayName()}#{user.DiscriminatorValue}", user.GetAvatarUrl())
                         .WithDescription($"{user.Mention}, {message}");
 
-                    _ = responder.SendToChannelAsync(channel, string.Empty, embed.Build());
+                    _ = responder.SendToChannelAsync(Channel, string.Empty, embed.Build());
                 }
             }
             catch (Exception e)

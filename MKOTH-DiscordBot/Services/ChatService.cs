@@ -1,16 +1,16 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Cerlancism.ChatSystem;
-using MKOTHDiscordBot.Properties;
+
 using Discord;
 using Discord.Commands;
+
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
-using UwuTranslator = MKOTHDiscordBot.Utilities.UwuTranslator;
+using MKOTHDiscordBot.Properties;
 
 namespace MKOTHDiscordBot.Services
 {
@@ -19,12 +19,14 @@ namespace MKOTHDiscordBot.Services
         public readonly Chat ChatSystem;
 
         private readonly ResponseService responseService;
+        private readonly DiscordLogger discordLogger;
         private readonly ulong officialChat;
 
         public ChatService(IServiceProvider services, IOptions<AppSettings> appSettings)
         {
             responseService = services.GetService<ResponseService>();
-            
+            discordLogger = services.GetService<DiscordLogger>();
+
             officialChat = appSettings.Value.Settings.ProductionGuild.Official;
 
             ChatSystem = new Chat(appSettings.Value.ConnectionStrings.ChatHistory);
@@ -88,7 +90,7 @@ namespace MKOTHDiscordBot.Services
 
             if (context.IsPrivate && context.User.Id != ApplicationContext.BotOwner.Id)
             {
-                await responseService.SendToChannelAsync(ApplicationContext.MKOTHHQGuild.Log, "DM chat received:", new EmbedBuilder()
+                await responseService.SendToChannelAsync(discordLogger.LogChannel, "DM chat received:", new EmbedBuilder()
                     .WithAuthor(context.User)
                     .WithDescription(message)
                     .AddField("Response", reply)
