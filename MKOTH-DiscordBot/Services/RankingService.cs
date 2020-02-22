@@ -17,7 +17,7 @@ using RestSharp;
 
 namespace MKOTHDiscordBot.Services
 {
-    public class RankingService
+    public class RankingService : IRankingService
     {
         const double Elo_K_Factor = 40;
         private readonly string endPoint;
@@ -53,7 +53,7 @@ namespace MKOTHDiscordBot.Services
             {
                 clientReady = true;
                 _ = Refresh();
-            }) ;
+            });
         }
 
         public async Task Refresh()
@@ -63,10 +63,10 @@ namespace MKOTHDiscordBot.Services
                 return;
             }
             var guildUsers = await ProductionGuild.GetUsersAsync();
-            seriesPlayers = seriesService.AllPlayers.Select(x => new SeriesPlayer 
-            { 
-                Elo = 1200, 
-                Id = x.ToString(), 
+            seriesPlayers = seriesService.AllPlayers.Select(x => new SeriesPlayer
+            {
+                Elo = 1200,
+                Id = x.ToString(),
                 Name = guildUsers.FirstOrDefault(y => y.Id == x)?.GetDisplayName() ?? x.ToString()
             }).ToList();
 
@@ -87,10 +87,17 @@ namespace MKOTHDiscordBot.Services
                    .AddQueryParameter("admin", adminKey)
                    .AddQueryParameter("spreadSheet", collectionName)
                    .AddQueryParameter("operation", "all")
-                   .AddJsonBody(seriesPlayers.Select(x => new Player { Id = x.Id, Name = x.Name}).OrderBy(x => x.Name).ToArray());
+                   .AddJsonBody(seriesPlayers.Select(x => new Player { Id = x.Id, Name = x.Name }).OrderBy(x => x.Name).ToArray());
             var response = await restClient.PostAsync<dynamic>(request);
 
             Logger.Debug(response, "Player List Update");
         }
+    }
+
+    public interface IRankingService
+    {
+        IEnumerable<SeriesPlayer> SeriesPlayers { get; }
+
+        Task Refresh();
     }
 }

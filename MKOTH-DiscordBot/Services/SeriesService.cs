@@ -10,15 +10,22 @@ using Microsoft.Extensions.Options;
 using MKOTHDiscordBot.Models;
 using MKOTHDiscordBot.Properties;
 
+using LiteDB;
+
 using RestSharp;
 
 namespace MKOTHDiscordBot.Services
 {
     public class SeriesService : ISeriesService
     {
+        private readonly IServiceProvider services;
+
         private readonly string endPoint;
         private readonly string adminKey;
         //private readonly RankingService rankingService;
+
+        private readonly LiteDatabase localCacheDb;
+        private LiteCollection<Series> LocalSeriesCollection => localCacheDb.GetCollection<Series>(collectionName);
 
         private readonly RestClient restClient;
 
@@ -27,7 +34,7 @@ namespace MKOTHDiscordBot.Services
 
         private int? nextId = null;
 
-        public int NextId => nextId.HasValue ? (int)(nextId = nextId.Value + 1) : (seriesList.Count > 0 ? (int)(nextId = seriesList.Max(x => x.Id) + 1) : 0);
+        public int NextId => nextId.HasValue ? (int)(nextId = nextId.Value + 1) : (seriesList.Count > 0 ? (int)(nextId = seriesList.Max(x => x.Id) + 1) : 1);
         public IEnumerable<ulong> AllPlayers => seriesList.Select(x => ulong.Parse(x.WinnerId)).Concat(seriesList.Select(x => ulong.Parse(x.LoserId))).Distinct();
         public IEnumerable<Series> SeriesHistory => seriesList;
 
@@ -37,9 +44,12 @@ namespace MKOTHDiscordBot.Services
 
         public bool Ready { get; private set; } = false;
 
-        public SeriesService(IServiceProvider services, IOptions<AppSettings> appSettings, IOptions<Credentials> credentials)
+        public SeriesService(IServiceProvider theServices, IOptions<AppSettings> appSettings, IOptions<Credentials> credentials)
         {
+            services = theServices;
             //rankingService = services.GetService<RankingService>();
+
+            localCacheDb = new LiteDatabase(appSettings.Value.ConnectionStrings.ApplicationDb);
             endPoint = appSettings.Value.ConnectionStrings.AppsScript;
             adminKey = credentials.Value.AppsScriptAdminKey;
 
@@ -52,14 +62,23 @@ namespace MKOTHDiscordBot.Services
 
         public async Task RefreshAsync()
         {
+            // Load local cache first
+            seriesList = LocalSeriesCollection.FindAll().ToList();
+
+            // Pull from remote
             var request = new RestRequest()
                 //.AddQueryParameter("admin", adminKey)
                 .AddQueryParameter("spreadSheet", collectionName)
                 .AddQueryParameter("operation", "all");
             var response = await restClient.GetAsync<List<Series>>(request);
 
+            // Overwrite with remote
             seriesList = response;
 
+            // Replace local cache
+            localCacheDb.DropCollection(collectionName);
+            LocalSeriesCollection.InsertBulk(seriesList);
+      
             Ready = true;
             _ = Updated.Invoke();
 
@@ -112,12 +131,15 @@ namespace MKOTHDiscordBot.Services
             pendingList.Remove(series);
             seriesList.Add(series);
             await PostAsync();
+            await RefreshAsync();
         }
 
         public async Task AdminCreateAsync(Series series)
         {
             seriesList.Add(series);
-            await PostAsync();
+            LocalSeriesCollection.Insert(series);
+            _ = PostAsync();
+            await Task.CompletedTask;
         }
 
         public async Task RemoveAsync(int id)
@@ -149,7 +171,7 @@ namespace MKOTHDiscordBot.Services
             }
             else
             {
-                return series.LoserId == user.Id.ToString()|| user.GuildPermissions.Administrator;
+                return series.LoserId == user.Id.ToString() || user.GuildPermissions.Administrator;
             }
         }
 

@@ -94,6 +94,7 @@ namespace MKOTHDiscordBot
                 .AddTransient<IssueTracker>()
                 .AddSingleton<RankingService>()
                 .AddSingleton<SeriesService>()
+                .AddSingleton<TowerBanManager>()
                 .BuildServiceProvider();
 
             var credentials = services.GetScoppedSettings<Credentials>();
