@@ -197,5 +197,57 @@ namespace MKOTHDiscordBot.Modules
                 .WithDescription($"{user.Mention} is {(user.GuildPermissions.Administrator ? "" : "not ")} an admin.");
             await ReplyAsync(embed: embed.Build());
         }
+
+        [Command("User")]
+        [Summary("Checks the user's registration and server join date.")]
+        [RequireContext(ContextType.Guild)]
+        public async Task User(IGuildUser user = null)
+        {
+            user ??= Context.User as IGuildUser;
+            var isThisBot = user.Id == Context.Client.CurrentUser.Id;
+            if (!isThisBot)
+            {
+                user = await user.Guild.GetUserAsync(user.Id, CacheMode.AllowDownload);
+            }
+            var resgistrationDate = user.CreatedAt;
+            var joinedDate = user.JoinedAt.Value;
+            var difference = joinedDate - resgistrationDate;
+            var activity = !isThisBot ? user.Activity : Context.Client.Activity;
+
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithAuthor(user)
+                .WithDescription($"**Registered:** {resgistrationDate.ToString("R")}\n" +
+                $"**Joined:** {joinedDate.ToString("R")}\n" +
+                $"**Difference:** {difference.AsRoundedDuration()}");
+
+            if (activity != null)
+            {
+                var type = activity.Type;
+                var typeName = Enum.GetName(typeof(ActivityType), type)?.ToLower();
+                if (typeName != null)
+                {
+                    var name = activity.Name;
+                    if (activity is StreamingGame stream)
+                    {
+                        name = $"[{stream.Name}]({stream.Url})";
+                    }
+                    if (activity is RichGame game)
+                    {
+                        name = $"{game.Name} ({game.State} - {game.Details})";
+                        if (game.LargeAsset != null && game.SmallAsset != null)
+                        {
+                            embed.WithImageUrl(game.LargeAsset.GetImageUrl())
+                                .WithThumbnailUrl(game.SmallAsset.GetImageUrl())
+                                .WithFooter($"{game.SmallAsset.Text} | {game.LargeAsset.Text}");
+                        }
+                    }
+                    embed.Description += $"\n\nThe user is currently **{typeName}:** {name}";
+                }
+            }
+
+            await ReplyAsync(user == Context.User ? "Checking yourself." : string.Empty, embed: embed.Build());
+        }
+
     }
 }
