@@ -19,7 +19,6 @@ namespace MKOTHDiscordBot.Services
         public ITextChannel InitiateChannel { get; set; }
     }
 
-    [Flags]
     public enum Tower
     {
         Dart = 1,
@@ -126,7 +125,7 @@ namespace MKOTHDiscordBot.Services
         private void CompleteSession(TowerBanSession session)
         {
             session.InitiateChannel.SendMessageAsync($"The tower ban between {session.Users.Select(x => x.User.Mention).JoinLines(" and ")} will be " +
-                $"{session.Users.Select(x => x.Choice.Value).Distinct().Select(x => x.ToString("g")).JoinLines(",")}");
+                $"{session.Users.Select(x => x.Choice.Value).Distinct().Select(x => x.ToString("g")).JoinLines(", ")}");
 
             sessions.Remove(session);
         }
