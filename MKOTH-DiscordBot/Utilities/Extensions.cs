@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -119,6 +120,11 @@ namespace MKOTHDiscordBot
 
         public static string WrapAround(this string str, string start, string end = null)
             => $"{start}{str}{end ?? start}";
+
+        public static string PascalToSentence(this string str)
+        {
+            return Regex.Replace(str, "[a-z][A-Z]", m => m.Value[0] + " " + char.ToLower(m.Value[1]));
+        }
 
         #endregion
 

@@ -28,15 +28,20 @@ namespace MKOTHDiscordBot.Services
         private List<SeriesPlayer> seriesPlayers;
 
         private ulong productionGuildId;
+        private ulong rankingChannel;
         private readonly RestClient restClient;
 
         private IGuild ProductionGuild => client.GetGuild(productionGuildId);
+        private ITextChannel RankingChannel => client.GetChannel(rankingChannel) as ITextChannel;
 
         public IEnumerable<SeriesPlayer> SeriesPlayers => seriesPlayers;
 
         private const string collectionName = "_players";
 
         private bool clientReady = false;
+
+        public event Func<Task> Updated;
+
         public RankingService(IServiceProvider services, IOptions<AppSettings> appSettings, IOptions<Credentials> credentials)
         {
             endPoint = appSettings.Value.ConnectionStrings.AppsScript;
@@ -45,6 +50,7 @@ namespace MKOTHDiscordBot.Services
             client = services.GetService<DiscordSocketClient>();
             seriesService = services.GetService<SeriesService>();
             productionGuildId = appSettings.Value.Settings.ProductionGuild.Id;
+            rankingChannel = appSettings.Value.Settings.ProductionGuild.Ranking;
 
             restClient = new RestClient(endPoint);
 
@@ -83,21 +89,50 @@ namespace MKOTHDiscordBot.Services
 
             Logger.Debug("Refreshed", "Ranking");
 
-            var request = new RestRequest()
+            try
+            {
+                var request = new RestRequest()
                    .AddQueryParameter("admin", adminKey)
                    .AddQueryParameter("spreadSheet", collectionName)
                    .AddQueryParameter("operation", "all")
                    .AddJsonBody(seriesPlayers.Select(x => new Player { Id = x.Id, Name = x.Name }).OrderBy(x => x.Name).ToArray());
-            var response = await restClient.PostAsync<dynamic>(request);
+                var response = await restClient.PostAsync<dynamic>(request);
+                Logger.Debug(response, "Remote Player List Updated");
+            }
+            catch (Exception e)
+            {
+                Logger.Debug(e, "Post Error");
+            }
 
-            Logger.Debug(response, "Player List Update");
+            foreach (var item in await RankingChannel.GetMessagesAsync(100).FlattenAsync())
+            {
+                await RankingChannel.DeleteMessageAsync(item);
+            }
+
+            var playerRanking = seriesPlayers.Select((x, i) => new KeyValuePair<int, SeriesPlayer>(i + 1, x)).ToDictionary(x => x.Key, x => x.Value);
+            var chunksize = 50;
+            for (int i = 0; i < playerRanking.Count; i+= chunksize)
+            {
+                await RankingChannel.SendMessageAsync(embed: new EmbedBuilder()
+                    .WithColor(Color.Orange)
+                    .WithTitle("Leaderboard")
+                    .WithDescription(PrintRankingList(playerRanking.Skip(i).Take(chunksize)))
+                    .Build());
+            }
+
+            _ = Updated.Invoke();
+        }
+
+        public string PrintRankingList(IEnumerable<KeyValuePair<int, SeriesPlayer>> list)
+        {
+            return list.Select(x => $"`#{(x.Key).ToString("D2")}` `ELO: {x.Value.Elo.ToString("N2")}` <@!{x.Value.Id}>").JoinLines();
         }
     }
 
     public interface IRankingService
     {
         IEnumerable<SeriesPlayer> SeriesPlayers { get; }
-
+        event Func<Task> Updated;
         Task Refresh();
     }
 }

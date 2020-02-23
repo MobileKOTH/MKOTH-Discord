@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -9,6 +10,7 @@ using Discord.WebSocket;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using MKOTHDiscordBot.Models;
 using MKOTHDiscordBot.Properties;
 using MKOTHDiscordBot.Services;
 
@@ -23,6 +25,7 @@ namespace MKOTHDiscordBot.Modules
         private readonly SeriesService seriesService;
         private readonly RankingService rankingService;
         private readonly TowerBanManager towerBanManager;
+        private readonly RoleManager roleManager;
         private readonly ITextChannel logChannel;
 
         private readonly string prefix;
@@ -34,6 +37,7 @@ namespace MKOTHDiscordBot.Modules
             rankingService = services.GetService<RankingService>();
             submissionRateLimiter = services.GetService<SubmissionRateLimiter>();
             towerBanManager = services.GetService<TowerBanManager>();
+            roleManager = services.GetService<RoleManager>();
             logChannel = (ITextChannel)client.GetChannel(appSettings.Value.Settings.DevelopmentGuild.Test);
 
             prefix = services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
@@ -88,7 +92,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireUserPermission(GuildPermission.Administrator)]
         public async Task CreateSeries(IGuildUser winner, IGuildUser loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
         {
-            if (wins <= loss)
+            if (wins < loss)
             {
                 await ReplyAsync("Wins must greater than losses");
                 return;
@@ -100,6 +104,23 @@ namespace MKOTHDiscordBot.Modules
                 .WithDescription($"Id: {series.Id.ToString("D4")}\n Winner: <@!{series.WinnerId}>\n Loser: <@!{series.LoserId}>\n Score: {wins}-{loss} Draws: {draws}\n Invite Code: {inviteCode}")
                 .WithColor(Color.Orange);
             await ReplyAsync(embed: embed.Build());
+        }
+
+        [Command("DeleteSeries")]
+        [Alias("ds")]
+        [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.Administrator)]
+        public async Task DeleteSeries(int id)
+        {
+            try
+            {
+                await seriesService.RemoveAsync(id);
+                await ReplyAsync("Series deleted.");
+            }
+            catch (Exception e)
+            {
+                await ReplyAsync(e.Message);
+            }
         }
 
         [Command("SeriesHistory")]
@@ -117,10 +138,21 @@ namespace MKOTHDiscordBot.Modules
         [Alias("r", "rankings", "rank", "ranking", "lb")]
         public async Task Ranking()
         {
+            var playerRanking = rankingService.SeriesPlayers.Select((x, i) => new KeyValuePair<int, SeriesPlayer>(i + 1, x)).ToDictionary(x => x.Key, x => x.Value);
+            
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithTitle("Leaderboard")
-                .WithDescription(rankingService.SeriesPlayers.Select((x, i) => $"`#{(i + 1).ToString("D2")}` `ELO: {x.Elo.ToString("N2")}` <@!{x.Id}>").JoinLines());
+                .WithDescription(rankingService.PrintRankingList(playerRanking.Take(10)));
+
+            if (playerRanking.Values.Any(x => x.Id == Context.User.Id.ToString()))
+            {
+                var player = playerRanking.First(x => x.Value.Id == Context.User.Id.ToString());
+                if (player.Key > 3)
+                {
+                    embed.AddField("Your Position", rankingService.PrintRankingList(playerRanking.Skip(player.Key - 2).Take(3)));
+                }
+            }
             await ReplyAsync(embed: embed.Build());
         }
 

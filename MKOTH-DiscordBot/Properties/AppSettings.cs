@@ -45,6 +45,9 @@ namespace MKOTHDiscordBot.Properties
         public ulong MemberRole { get; set; }
         public ulong Official { get; set; }
         public ulong Leave { get; set; }
+        public ulong Series { get; set; }
+        public ulong Ranking { get; set; }
+
     }
 
 }

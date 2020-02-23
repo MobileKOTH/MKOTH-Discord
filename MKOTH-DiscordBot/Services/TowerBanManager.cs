@@ -25,21 +25,21 @@ namespace MKOTHDiscordBot.Services
         Farm,
         Ace,
         Ice,
-        Wiz,
-        Heli,
+        Wizard,
+        HeliPilot,
         Sub,
         Boat,
         Spike,
         Glue,
         Sniper,
         Mortar,
-        Boomer,
+        Boomerang,
         Ninja,
-        Engi,
+        Engineer,
         Village,
-        Dartling,
+        DartlingGun,
         Cobra,
-        Tack,
+        TackShooter,
         Bomb,
     }
 
@@ -48,7 +48,7 @@ namespace MKOTHDiscordBot.Services
         public const int MAX_SESSION_SECONDS = 60;
 
         private readonly List<TowerBanSession> sessions;
-        private Timer timer;
+        private readonly Timer timer;
 
         private readonly ResponseService responseService;
         public TowerBanManager(IServiceProvider services)
@@ -74,9 +74,8 @@ namespace MKOTHDiscordBot.Services
 
         private void ExpireSession(TowerBanSession session)
         {
-            for (int i = 0; i < session.Users.Length; i++)
+            foreach (var user in session.Users)
             {
-                var user = session.Users[i];
                 if (!user.Choice.HasValue)
                 {
                     session.InitiateChannel.SendMessageAsync($"{user.User.Mention} has failed to respond in time for a ban tower session.");

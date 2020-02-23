@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using MKOTHDiscordBot.Properties;
@@ -18,7 +19,8 @@ namespace MKOTHDiscordBot.Handlers
 
         private async Task RunTests()
         {
-            //await ApplicationContext.MKOTHHQGuild.Test.SendMessageAsync($"Appsettings ```json\n {services.GetScoppedSettings<AppSettings>().ToString()} ```");
+
+
 
             await Task.CompletedTask;
         }

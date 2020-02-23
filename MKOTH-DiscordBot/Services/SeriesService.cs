@@ -18,8 +18,6 @@ namespace MKOTHDiscordBot.Services
 {
     public class SeriesService : ISeriesService
     {
-        private readonly IServiceProvider services;
-
         private readonly string endPoint;
         private readonly string adminKey;
         //private readonly RankingService rankingService;
@@ -44,9 +42,8 @@ namespace MKOTHDiscordBot.Services
 
         public bool Ready { get; private set; } = false;
 
-        public SeriesService(IServiceProvider theServices, IOptions<AppSettings> appSettings, IOptions<Credentials> credentials)
+        public SeriesService(IOptions<AppSettings> appSettings, IOptions<Credentials> credentials)
         {
-            services = theServices;
             //rankingService = services.GetService<RankingService>();
 
             localCacheDb = new LiteDatabase(appSettings.Value.ConnectionStrings.ApplicationDb);
@@ -131,7 +128,6 @@ namespace MKOTHDiscordBot.Services
             pendingList.Remove(series);
             seriesList.Add(series);
             await PostAsync();
-            await RefreshAsync();
         }
 
         public async Task AdminCreateAsync(Series series)
@@ -144,10 +140,10 @@ namespace MKOTHDiscordBot.Services
 
         public async Task RemoveAsync(int id)
         {
-            var series = seriesList.Find(x => x.Id == id);
+            var series = seriesList.Single(x => x.Id == id);
             seriesList.Remove(series);
+            LocalSeriesCollection.Delete(id);
             await PostAsync();
-            await RefreshAsync();
         }
 
         public bool HasNewPlayer(Series series)
@@ -188,6 +184,8 @@ namespace MKOTHDiscordBot.Services
     public interface ISeriesService
     {
         int NextId { get; }
+
+        event Func<Task> Updated;
 
         void AddPending(Series series);
         Task AdminCreateAsync(Series series);
