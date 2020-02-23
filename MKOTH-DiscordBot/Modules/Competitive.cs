@@ -219,7 +219,11 @@ namespace MKOTHDiscordBot.Modules
             }
 
             var dmEmbed = ListTowers()
-                .AddField("Examples", $"`{prefix}{nameof(BanTower)} 1`\n`{prefix}{nameof(BanTower)} Dart`")
+                .AddField("Examples", 
+                $"`{prefix}{nameof(BanTower)} 1`\n" +
+                $"`{prefix}{nameof(BanTower)} Dart`\n" +
+                $"`{prefix}b 1`\n" +
+                $"`{prefix}b dart`")
                 .WithFooter($"You have {TowerBanManager.MAX_SESSION_SECONDS} seconds to make your choice.");
 
             try
