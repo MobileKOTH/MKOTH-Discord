@@ -32,12 +32,12 @@ namespace MKOTHDiscordBot
         public static DiscordSocketClient DiscordClient;
         public static IUser BotOwner;
 
-        public static class MKOTHHQGuild
-        {
-            public static SocketGuild Guild => DiscordClient.GetGuild(270838709287387136);
-            public static SocketTextChannel Test => Guild.TextChannels.Single(x => x.Id == 395982667876663306);
-            public static SocketTextChannel Log => Guild.TextChannels.Single(x => x.Id == 360352712619065345);
-        }
+        //public static class MKOTHHQGuild
+        //{
+        //    public static SocketGuild Guild => DiscordClient.GetGuild(270838709287387136);
+        //    public static SocketTextChannel Test => Guild.TextChannels.Single(x => x.Id == 395982667876663306);
+        //    public static SocketTextChannel Log => Guild.TextChannels.Single(x => x.Id == 360352712619065345);
+        //}
 
         /// <summary>
         /// Return correct .NET Core product name like ".NET Core 2.1.0" instead of ".NET Core 4.6.26515.07" returning by RuntimeInformation.FrameworkDescription

@@ -83,12 +83,19 @@ namespace MKOTHDiscordBot
                 .Configure<Credentials>(config.GetSection("credentials"))
                 .AddSingleton(client)
                 .AddSingleton(commands)
+                .AddSingleton<DiscordLogger>()
+                .AddSingleton<ErrorResolver>()
                 .AddSingleton<InteractiveService>()
                 .AddSingleton<ResponseService>()
-                .AddSingleton<RateLimiter>()
+                .AddSingleton<UsageRateLimiter>()
+                .AddSingleton<SubmissionRateLimiter>()
                 .AddSingleton<ActivityCycler>()
                 .AddTransient<ChatService>()
                 .AddTransient<IssueTracker>()
+                .AddSingleton<RankingService>()
+                .AddSingleton<SeriesService>()
+                .AddSingleton<TowerBanManager>()
+                .AddSingleton<RoleManager>()
                 .BuildServiceProvider();
 
             var credentials = services.GetScoppedSettings<Credentials>();

@@ -10,11 +10,13 @@ namespace MKOTHDiscordBot.Handlers
 
     public abstract class DiscordClientEventHandlerBase
     {
+        protected readonly IServiceProvider services;
         protected readonly DiscordSocketClient client;
 
-        public DiscordClientEventHandlerBase(DiscordSocketClient client)
+        public DiscordClientEventHandlerBase(IServiceProvider serviceProvider)
         {
-            this.client = client;
+            services = serviceProvider;
+            client = services.GetService<DiscordSocketClient>();
         }
 
         public static void ConfigureCommonHandlers(IServiceProvider services)

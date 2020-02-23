@@ -11,7 +11,7 @@ namespace MKOTHDiscordBot
     {
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
-            if (context.User.Id == ApplicationContext.BotOwner.Id)
+            if (context.User.Id == ApplicationContext.BotOwner.Id) // Or more in the future
             {
                 return Task.FromResult(PreconditionResult.FromSuccess());
             }

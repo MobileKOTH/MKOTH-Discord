@@ -1,30 +1,32 @@
-﻿using Discord;
-using Discord.Addons.Interactive;
-using Discord.Commands;
-using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using MKOTHDiscordBot.Utilities;
+
+using Discord;
+using Discord.Addons.Interactive;
+using Discord.Commands;
+using Discord.WebSocket;
+
 using MKOTHDiscordBot.Properties;
+using MKOTHDiscordBot.Utilities;
 
 namespace MKOTHDiscordBot.Modules
 {
-    [Summary("Provides guidance of using this bot.")]
+    [Summary("Provides the user guide for this bot.")]
     [Remarks("Module A")]
     public class Help : InteractiveBase
     {
-        private CommandService commands;
-        private IServiceProvider services;
-        private readonly string defaultCommandPrefix;
+        private readonly CommandService commands;
+        private readonly IServiceProvider services;
+        private readonly string prefix;
 
-        public Help(CommandService commands, IServiceProvider services)
+        public Help(CommandService commandsService, IServiceProvider serviceProvider)
         {
-            this.commands = commands;
-            this.services = services;
+            commands = commandsService;
+            services = serviceProvider;
             
-            defaultCommandPrefix = this.services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
+            prefix = services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
         }
 
         [Command("Help")]
@@ -32,13 +34,14 @@ namespace MKOTHDiscordBot.Modules
         [Summary("Displays the general help information.")]
         public async Task HelpCommand()
         {
+            var timeoutSeconds = 60;
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithTitle("❓ User Guide")
                 .WithDescription("Here is the list of command modules.\n" +
                 "A module is a catergory for a group of related commands.\n" +
-                $"Press the corresponding emote or enter `{defaultCommandPrefix}help <module>` to view the commands in a module.\n")
-                .WithFooter("Press the respective emote to expand the module list.");
+                $"Press the corresponding emote or enter `{prefix}help <module>` to view the commands in a module.\n")
+                .WithFooter($"Press the respective emote to expand the module list (expire in {timeoutSeconds} seconds).");
 
             var moduleEmoteOrders = commands.Modules
                 .OrderBy(x => x.Remarks ?? "Module Z")
@@ -47,13 +50,13 @@ namespace MKOTHDiscordBot.Modules
             embed.Fields = getOriginalFields();
 
             IUserMessage msg = default;
-            var reactionCallbacksData = new ReactionCallbackData(string.Empty, embed.Build(), false, false, TimeSpan.FromSeconds(10), c => onExpire());
+            var reactionCallbacksData = new ReactionCallbackData(string.Empty, embed.Build(), false, false, TimeSpan.FromSeconds(timeoutSeconds), c => onExpire());
 
             foreach (var item in moduleEmoteOrders)
             {
                 reactionCallbacksData = reactionCallbacksData.WithCallback(item.Key, (c, r) =>
                 {
-                    embed.Description = $"Enter `{defaultCommandPrefix}help {defaultCommandPrefix}<command>` to view the details of a command";
+                    embed.Description = $"Enter `{prefix}help {prefix}<command>` to view the details of a command";
                     embed.Fields = getOriginalFields();
                     embed.Fields.Single(x => x.Name.Contains(item.Value.Name)).Value = GetCommnadListFormatted(moduleEmoteOrders.Single(x => x.Key.Name == r.Emote.Name).Value);
                     modifyHelp(c, r.MessageId, embed.Build(), r);
@@ -113,7 +116,7 @@ namespace MKOTHDiscordBot.Modules
                 goto helpReplyProcedure;
             }
 
-            para = para.StartsWith(defaultCommandPrefix) ? para.Substring(defaultCommandPrefix.Length) : para;
+            para = para.StartsWith(prefix) ? para.Substring(prefix.Length) : para;
             var command = commands.Commands
                 .Where(x => x.Name.EqualsIgnoreCase(para) || x.Aliases.Any(y => y.EqualsIgnoreCase(para)))
                 .ToList();
@@ -134,7 +137,7 @@ namespace MKOTHDiscordBot.Modules
                     .WithDescription(commandDescription);
                 if (baseCommand.Aliases.Count > 0)
                 {
-                    var alias = baseCommand.Aliases.Select(x => $"{(defaultCommandPrefix + x).MarkdownCodeLine()}\t");
+                    var alias = baseCommand.Aliases.Select(x => $"{(prefix + x).MarkdownCodeLine()}\t");
                     embed.AddField("Alias", string.Join(" ", alias));
                 }
                 string restrictions = null;
@@ -149,7 +152,7 @@ namespace MKOTHDiscordBot.Modules
                     embed.AddField("Restrictions", restrictions);
                 }
 
-                var usages = command.Select(x => $"{defaultCommandPrefix}{x.Name.AddSpace() + x.GetCommandParametersInfo()}");
+                var usages = command.Select(x => $"{prefix}{x.Name.AddSpace() + x.GetCommandParametersInfo()}");
                 embed.AddField("Usage", string.Join("\n", usages).MarkdownCodeBlock("css"));
 
                 string example = "";
@@ -173,7 +176,7 @@ namespace MKOTHDiscordBot.Modules
         private string GetCommnadListFormatted(ModuleInfo module)
         {
             string commandList = string.Join("\n", module.Commands
-                   .Select(x => $"{defaultCommandPrefix}{x.Name.AddSpace() + x.GetCommandParametersInfo()}"));
+                   .Select(x => $"{prefix}{x.Name.AddSpace() + x.GetCommandParametersInfo()}"));
             return commandList.MarkdownCodeBlock("css");
         }
 
@@ -185,5 +188,66 @@ namespace MKOTHDiscordBot.Modules
                     .Single(x => x.Name == "BotInfo")
                     .ExecuteAsync(Context, new object[] { }, null, services);
         }
+
+        [Command("IsAdmin")]
+        public async Task IsAdmin(IGuildUser user = null)
+        {
+            user ??= Context.User as IGuildUser;
+            var embed = new EmbedBuilder()
+                .WithDescription($"{user.Mention} is {(user.GuildPermissions.Administrator ? "" : "not ")} an admin.");
+            await ReplyAsync(embed: embed.Build());
+        }
+
+        [Command("User")]
+        [Summary("Checks the user's registration and server join date.")]
+        [RequireContext(ContextType.Guild)]
+        public async Task User(IGuildUser user = null)
+        {
+            user ??= Context.User as IGuildUser;
+            var isThisBot = user.Id == Context.Client.CurrentUser.Id;
+            if (!isThisBot)
+            {
+                user = await user.Guild.GetUserAsync(user.Id, CacheMode.AllowDownload);
+            }
+            var resgistrationDate = user.CreatedAt;
+            var joinedDate = user.JoinedAt.Value;
+            var difference = joinedDate - resgistrationDate;
+            var activity = !isThisBot ? user.Activity : Context.Client.Activity;
+
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithAuthor(user)
+                .WithDescription($"**Registered:** {resgistrationDate.ToString("R")}\n" +
+                $"**Joined:** {joinedDate.ToString("R")}\n" +
+                $"**Difference:** {difference.AsRoundedDuration()}");
+
+            if (activity != null)
+            {
+                var type = activity.Type;
+                var typeName = Enum.GetName(typeof(ActivityType), type)?.ToLower();
+                if (typeName != null)
+                {
+                    var name = activity.Name;
+                    if (activity is StreamingGame stream)
+                    {
+                        name = $"[{stream.Name}]({stream.Url})";
+                    }
+                    if (activity is RichGame game)
+                    {
+                        name = $"{game.Name} ({game.State} - {game.Details})";
+                        if (game.LargeAsset != null && game.SmallAsset != null)
+                        {
+                            embed.WithImageUrl(game.LargeAsset.GetImageUrl())
+                                .WithThumbnailUrl(game.SmallAsset.GetImageUrl())
+                                .WithFooter($"{game.SmallAsset.Text} | {game.LargeAsset.Text}");
+                        }
+                    }
+                    embed.Description += $"\n\nThe user is currently **{typeName}:** {name}";
+                }
+            }
+
+            await ReplyAsync(user == Context.User ? "Checking yourself." : string.Empty, embed: embed.Build());
+        }
+
     }
 }

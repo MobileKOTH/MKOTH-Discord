@@ -149,9 +149,6 @@ namespace Cerlancism.ChatSystem
                 TimeUsedMs = stopWatch.Elapsed.TotalMilliseconds
             });
 
-            results = null;
-            analysis = null;
-
             return choosen;
         }
         //=> Funcify<string, string>(RemovePunctuationsAndLower)

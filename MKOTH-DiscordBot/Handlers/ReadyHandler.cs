@@ -1,44 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
+using MKOTHDiscordBot.Properties;
 using MKOTHDiscordBot.Services;
 
 namespace MKOTHDiscordBot.Handlers
 {
     public class ReadyHandler : DiscordClientEventHandlerBase
     {
+        private readonly ActivityCycler activityCycler;
+        private readonly DiscordLogger discordLogger;
+
         private async Task RunTests()
         {
-            //var testChannel = ApplicationContext.MKOTHHQGuild.Test;
-            //var outputText = string.Join(", ", Utilities.EmojiPresets.Numbers);
-
-            //var embed = new Discord.EmbedBuilder()
-            //    .WithTitle(outputText)
-            //    .WithDescription(outputText + $"```{outputText}``` `{outputText}`");
-
-            //var message = await testChannel.SendMessageAsync(embed: embed.Build());
-            //foreach (var item in Utilities.EmojiPresets.Numbers)
-            //{
-            //    _ = message.AddReactionAsync(item);
-            //}
 
             await Task.CompletedTask;
         }
 
-        public ReadyHandler(DiscordSocketClient client, ActivityCycler _) : base(client)
+        public ReadyHandler(IServiceProvider serviceProvider) : base(serviceProvider)
         {
             ApplicationContext.DiscordClient = client;
 
-            this.client.Ready += HandleReady;
+            discordLogger = services.GetService<DiscordLogger>();
+            activityCycler = services.GetService<ActivityCycler>();
+            client.Ready += HandleReady;
         }
 
         private Task HandleReady()
         {
             try
             {
+                _ = activityCycler.ChangeActivityAsync();
+
                 // Owner
                 _ = client.GetApplicationInfoAsync()
                     .ContinueWith(x =>
@@ -47,21 +46,30 @@ namespace MKOTHDiscordBot.Handlers
                         Console.WriteLine($"Owner Id: {ApplicationContext.BotOwner.Id}");
                     });
 
-                if (Program.FirstArgument == "Restarted")
+
+                switch (Program.FirstArgument)
                 {
-                    var restartChannel = client.GetChannel(ulong.Parse(Program.SecondArgument));
-                    if (restartChannel != null)
-                    {
-                        ((SocketTextChannel)restartChannel).SendMessageAsync("Bot has restarted");
-                    }
-                    else
-                    {
-                        ApplicationContext.MKOTHHQGuild.Log.SendMessageAsync("Bot has restarted");
-                    }
-                }
-                else if (Program.FirstArgument != null)
-                {
-                    ApplicationContext.MKOTHHQGuild.Log.SendMessageAsync("Something happened: " + Program.FirstArgument);
+                    case "Restarted":
+                        {
+                            var restartChannel = client.GetChannel(ulong.Parse(Program.SecondArgument)) as SocketTextChannel ?? discordLogger.LogChannel;
+                            restartChannel.SendMessageAsync("Bot has restarted");
+                            break;
+                        }
+                    case "Updated":
+                        {
+                            var restartChannel = client.GetChannel(ulong.Parse(Program.SecondArgument)) as SocketTextChannel ?? discordLogger.LogChannel;
+                            restartChannel.SendMessageAsync($"Bot updated: {File.ReadAllText("../updatelog.txt").SliceBack(1900).MarkdownCodeBlock("c")}");
+                            break;
+                        }
+                    default:
+                        {
+                            if (Program.FirstArgument == null)
+                            {
+                                break;
+                            }
+                            discordLogger.Log("Something happened: " + Program.FirstArgument);
+                            break;
+                        }
                 }
             }
             catch (Exception e)

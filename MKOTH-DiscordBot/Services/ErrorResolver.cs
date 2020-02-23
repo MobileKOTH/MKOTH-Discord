@@ -3,21 +3,32 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Discord;
+using Microsoft.Extensions.Options;
+using MKOTHDiscordBot.Properties;
+using Microsoft.Extensions.DependencyInjection;
+using Discord.WebSocket;
 
-namespace MKOTHDiscordBot
+namespace MKOTHDiscordBot.Services
 {
-    public static class ErrorResolver
+    public class ErrorResolver
     {
-        public static int CriticalErrors = 0;
-        public static int Threshold = 3;
+        public int CriticalErrors = 0;
+        public int Threshold = 3;
+        private readonly DiscordLogger logger;
 
-        public static async Task Handle(Exception error, bool countAsRestartableCritical = true)
+        public ErrorResolver(DiscordLogger discordLogger)
+        {
+            logger = discordLogger;
+        }
+
+        public async Task Handle(Exception error, bool countAsRestartableCritical = true)
         {
             try
             {
                 string stacktrace = error.StackTrace ?? "Null Stacktrace";
                 stacktrace = stacktrace.SliceFront(1800);
-                await ApplicationContext.MKOTHHQGuild.Log.SendMessageAsync(error.Message + stacktrace.MarkdownCodeBlock("yaml"));
+                await logger.LogAsync(error.Message + stacktrace.MarkdownCodeBlock("yaml"));
                 if (countAsRestartableCritical && ++CriticalErrors > Threshold)
                 {
                     throw new TooManyErrorsException();
@@ -26,7 +37,7 @@ namespace MKOTHDiscordBot
             catch (TooManyErrorsException e)
             {
                 await Handle(e, false);
-                ApplicationManager.RestartApplication(ApplicationContext.MKOTHHQGuild.Log.Id);
+                ApplicationManager.RestartApplication(logger.LogChannel.Id);
             }
             catch (Exception e)
             {

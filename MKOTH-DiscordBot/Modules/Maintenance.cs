@@ -4,30 +4,34 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Discord;
 using Discord.Commands;
+
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
-using MKOTHDiscordBot.Services;
+
 using MKOTHDiscordBot.Common;
 using MKOTHDiscordBot.Properties;
+using MKOTHDiscordBot.Services;
 
 namespace MKOTHDiscordBot.Modules
 {
     using static Utilities.SnowFlakeUtils;
 
-    [Summary("Contains the diagnostics and maintenance information of the bot.")]
+    [Summary("Run diagnostics and show technical information of the bot environment.")]
     [Remarks("Module Z")]
-    public class System : ModuleBase<SocketCommandContext>, IDisposable
+    public class Maintenance : ModuleBase<SocketCommandContext>, IDisposable
     {
+        private readonly ErrorResolver resolver;
         private readonly LazyDisposable<IssueTracker> lazyIssueTracker;
-        private readonly string defaultCommandPrefix;
+        private readonly string prefix;
         private static Process nodeJS = null;
 
-        public System(IServiceProvider services)
+        public Maintenance(IServiceProvider services, ErrorResolver errorResolver)
         {
+            resolver = errorResolver;
             lazyIssueTracker = new LazyDisposable<IssueTracker>(() => services.GetRequiredService<IssueTracker>());
-            defaultCommandPrefix = services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
+            prefix = services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
         }
 
         [Command("BotInfo", RunMode = RunMode.Async)]
@@ -55,7 +59,7 @@ namespace MKOTHDiscordBot.Modules
                     .WithIconUrl(ApplicationContext.BotOwner.GetAvatarUrl()))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Help")
-                    .WithValue($"{defaultCommandPrefix}help".MarkdownCodeBlock("yaml")))
+                    .WithValue($"{prefix}help".MarkdownCodeBlock("yaml")))
                 .AddField(new EmbedFieldBuilder()
                     .WithName("Library")
                     .WithValue($"Discord.Net v{ApplicationContext.DiscordVersion}".MarkdownCodeBlock("yaml"))
@@ -209,7 +213,7 @@ namespace MKOTHDiscordBot.Modules
                 }
                 catch (Exception e)
                 {
-                    _ = ErrorResolver.Handle(e);
+                    _ = resolver.Handle(e);
                 }
             }
             else
@@ -223,8 +227,6 @@ namespace MKOTHDiscordBot.Modules
         [RequireDeveloper]
         public async Task SetTest()
         {
-            EmbedBuilder embed = new EmbedBuilder();
-            IUserMessage msg;
             if (Program.TestMode) return;
             Handlers.MessageHandler.ReplyToTestServer = false;
             _ = await ReplyAsync("Disabled replying to test server");
@@ -240,7 +242,7 @@ namespace MKOTHDiscordBot.Modules
 
                 if (thresHoldValue > 3)
                 {
-                    ErrorResolver.Threshold = thresHoldValue;
+                    resolver.Threshold = thresHoldValue;
                     await ReplyAsync($"Restart threshold set to: `{thresHoldValue}`.");
                 }
                 else
@@ -250,7 +252,7 @@ namespace MKOTHDiscordBot.Modules
             }
             else
             {
-                await ReplyAsync($"Current Error Count: `{ErrorResolver.CriticalErrors}`\nRestart threshold: `{ErrorResolver.Threshold}`");
+                await ReplyAsync($"Current Error Count: `{resolver.CriticalErrors}`\nRestart threshold: `{resolver.Threshold}`");
             }
         }
 
@@ -285,69 +287,21 @@ namespace MKOTHDiscordBot.Modules
             _ = msg.ModifyAsync(x => x.Content = $"{collectionMessage}\n{beforeMessage}\n{afterMessage}");
         }
 
-        [Command("User")]
-        [Summary("Checks the user's registration and server join date.")]
-        public async Task User(IGuildUser user = null)
-        {
-            user = user ?? Context.User as IGuildUser;
-            var isThisBot = user.Id == Context.Client.CurrentUser.Id;
-            if (!isThisBot)
-            {
-                user = await user.Guild.GetUserAsync(user.Id, CacheMode.AllowDownload);
-            }
-            var resgistrationDate = user.CreatedAt;
-            var joinedDate = user.JoinedAt.Value;
-            var difference = joinedDate - resgistrationDate;
-            var activity = !isThisBot ? user.Activity : Context.Client.Activity;
-
-            var embed = new EmbedBuilder()
-                .WithColor(Color.Orange)
-                .WithAuthor(user)
-                .WithDescription($"**Registered:** {resgistrationDate.ToString("R")}\n" +
-                $"**Joined:** {joinedDate.ToString("R")}\n" +
-                $"**Difference:** {difference.AsRoundedDuration()}");
-
-            if (activity != null)
-            {
-                var type = $"{Enum.GetName(typeof(ActivityType), activity.Type).ToLower()}";
-                var name = activity.Name;
-                if (activity is StreamingGame stream)
-                {
-                    name = $"[{stream.Name}]({stream.Url})";
-                }
-                if (activity is RichGame game)
-                {
-                    name = $"{game.Name} ({game.State} - {game.Details})";
-                    if (game.LargeAsset != null && game.SmallAsset != null)
-                    {
-                        embed.WithImageUrl(game.LargeAsset.GetImageUrl())
-                            .WithThumbnailUrl(game.SmallAsset.GetImageUrl())
-                            .WithFooter($"{game.SmallAsset.Text} | {game.LargeAsset.Text}");
-                    }
-                }
-                embed.Description += $"\n\nThe user is currently **{type}:** {name}";
-            }
-
-            await ReplyAsync(user == Context.User ? "Checking yourself." : string.Empty, embed: embed.Build());
-        }
-
         [Command("CreateIssue")]
         [RequireDeveloper]
-        public async Task CreateIssue([Remainder] string data)
+        public async Task CreateIssue(string title, string content)
         {
             var tracker = lazyIssueTracker.Value;
-            var issue = JsonConvert.DeserializeObject<Issue>(data, new JsonSerializerSettings { MissingMemberHandling = MissingMemberHandling.Error });
-            tracker.CreateIssue(issue.Title, issue.Content);
+            tracker.CreateIssue(title, content);
             await Issues();
         }
 
         [Command("UpdateIssue")]
         [RequireDeveloper]
-        public async Task UpdateIssue(int id, [Remainder] string data)
+        public async Task UpdateIssue(int id, string title, string content)
         {
             var tracker = lazyIssueTracker.Value;
-            var issue = JsonConvert.DeserializeObject<Issue>(data, new JsonSerializerSettings { MissingMemberHandling = MissingMemberHandling.Error });
-            var success = tracker.UpdateIssue(id, issue.Title, issue.Content);
+            var success = tracker.UpdateIssue(id, title, content);
             if (success)
             {
                 await Issues();
@@ -436,7 +390,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireDeveloper]
         public async Task Python([Remainder] string input)
         {
-            await CommandPrompt("py", $"-c \"{input.Replace("\"", "\\\"")}\"");
+            await Run("py", $"-c \"{input.Replace("\"", "\\\"")}\"");
         }
 
         [Command("Javascript")]
@@ -445,21 +399,21 @@ namespace MKOTHDiscordBot.Modules
         [RequireDeveloper]
         public async Task JavaScript([Remainder] string input)
         {
-            await CommandPrompt("node", $"-e \"{input.Replace("\"", "\\\"")}\"");
+            await Run("node", $"-e \"{input.Replace("\"", "\\\"")}\"");
         }
 
         [Command("Run")]
         [Summary("Command line interface.")]
         [RequireDeveloper]
-        public async Task CommandPrompt(string command)
+        public async Task Run(string command)
         {
-            await CommandPrompt(command, null);
+            await Run(command, null);
         }
 
         [Command("Run")]
         [Summary("Command line interface.")]
         [RequireDeveloper]
-        public async Task CommandPrompt(string command, [Remainder] string input)
+        public async Task Run(string command, [Remainder] string input)
         {
             var process = new Process();
             process.StartInfo.CreateNoWindow = true;
@@ -506,6 +460,16 @@ namespace MKOTHDiscordBot.Modules
         public async Task ShutDown()
         {
             await ReplyAsync("Shutting Down...");
+            _ = Task.Run(() => ApplicationManager.ShutDownApplication());
+        }
+
+        [Command("Update")]
+        [Summary("Updates the bot.")]
+        [RequireDeveloper]
+        public async Task Update()
+        {
+            await ReplyAsync("Updating...");
+            Process.Start("../update.bat", Context.Channel.Id.ToString());
             _ = Task.Run(() => ApplicationManager.ShutDownApplication());
         }
 

@@ -1,34 +1,40 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+
 using Cerlancism.ChatSystem.Core;
-using MKOTHDiscordBot.Common;
-using MKOTHDiscordBot.Services;
+
 using Discord;
 using Discord.Commands;
 using Discord.Webhook;
-using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 
-using UwuTranslator = MKOTHDiscordBot.Utilities.UwuTranslator;
+using Microsoft.Extensions.DependencyInjection;
+
+using MKOTHDiscordBot.Common;
+using MKOTHDiscordBot.Properties;
+using MKOTHDiscordBot.Services;
+
+using RestSharp;
+
 using TrashChat = Cerlancism.ChatSystem.Chat;
+using UwuTranslator = MKOTHDiscordBot.Utilities.UwuTranslator;
 
 namespace MKOTHDiscordBot.Modules
 {
-    [Summary("Chat, reply and translation system.")]
+    [Summary("Utilities for chat, conversation reply and translation.")]
+    [Remarks("Module C")]
     public class Chat : ModuleBase<SocketCommandContext>, IDisposable
     {
-        private readonly LazyDisposable<Task<DiscordWebhookClient>> WebhookLoader;
-        private readonly LazyDisposable<ChatService> LazyChatService;
+        private readonly LazyDisposable<Task<DiscordWebhookClient>> webhookLoader;
+        private readonly LazyDisposable<ChatService> lazyChatService;
+        private readonly Lazy<string> lazyTranslationScriptId;
 
-        private ChatService ChatService => LazyChatService.Value;
+        private ChatService ChatService => lazyChatService.Value;
 
-        public Chat(IServiceProvider service)
+        public Chat(IServiceProvider services)
         {
-            WebhookLoader = new LazyDisposable<Task<DiscordWebhookClient>>(async () =>
+            webhookLoader = new LazyDisposable<Task<DiscordWebhookClient>>(async () =>
             {
                 var webhooks = await Context.Guild.GetWebhooksAsync();
                 var webhookInfo = webhooks?.FirstOrDefault(x => x.ChannelId == Context.Channel.Id)
@@ -36,10 +42,12 @@ namespace MKOTHDiscordBot.Modules
                 return new DiscordWebhookClient(webhookInfo);
             });
 
-            LazyChatService = new LazyDisposable<ChatService>(() =>
+            lazyChatService = new LazyDisposable<ChatService>(() =>
             {
-                return service.GetRequiredService<ChatService>();
+                return services.GetRequiredService<ChatService>();
             });
+
+            lazyTranslationScriptId = new Lazy<string>(() => services.GetScoppedSettings<Credentials>().TranslationScriptId);
         }
 
         [Command("Reply")]
@@ -64,7 +72,7 @@ namespace MKOTHDiscordBot.Modules
                 throw new Exception("Message not found.");
             }
 
-            var loadWebhook = WebhookLoader.Value;
+            var loadWebhook = webhookLoader.Value;
             var embedLink = message.Embeds.Count > 0 ? $"\n{Format.Bold("Embed Content")}\n{message.Embeds.First().Author}: {message.Embeds.First().Description}" : "";
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
@@ -86,7 +94,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireContext(ContextType.Guild)]
         public async Task Impersonate(IGuildUser user, [Remainder] string reply)
         {
-            var webhook = await WebhookLoader.Value;
+            var webhook = await webhookLoader.Value;
             _ = webhook.SendMessageAsync(reply, false, null, user.GetDisplayName(), user.GetAvatarUrl());
             _ = Context.Message.DeleteAsync();
         }
@@ -114,24 +122,21 @@ namespace MKOTHDiscordBot.Modules
 
         internal async Task TranslateInternal(string input, string from = "", string to = "en")
         {
-            var apiBase = "https://script.google.com/macros/s/AKfycbzgXXIUc8PGq0-h-aZkZ9gfGBnBLi-BPn3JJ9cjV5B7ZbLu2eY/exec";
-            var resource = "translate";
-            var uri = $"{apiBase}?resource={resource}&from={from}&to={to}&input={input}";
-            var request = WebRequest.Create(uri);
-            var response = request.GetResponse() as HttpWebResponse;
-            var json = string.Empty;
-            using (var sr = new StreamReader(response.GetResponseStream()))
-            {
-                json = sr.ReadToEnd();
-            }
+            var apiBase = $"https://script.google.com/macros/s/{lazyTranslationScriptId.Value}/exec";
+            var request = new RestRequest()
+                .AddQueryParameter("resource", "translate")
+                .AddQueryParameter("from", from)
+                .AddQueryParameter("to", to)
+                .AddQueryParameter("input", input);
+
             try
             {
-                var result = JsonConvert.DeserializeObject<dynamic>(json);
-                await ReplyAsync(result.response.Value);
+                var response = await new RestClient(apiBase).GetAsync<dynamic>(request);
+                await ReplyAsync(response["response"]);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                await ReplyAsync("Bad Arguments.");
+                await ReplyAsync($"{e.Message}");
             }
         }
 
@@ -170,9 +175,6 @@ namespace MKOTHDiscordBot.Modules
             embed.Title = "Trigger, rephrase and reply pool";
             embed.Description = "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`";
             await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"{purgedMessage.SliceBack(100)}\"", false, embed.Build());
-            analysis = null;
-            results = null;
-            takeResults = null;
         }
 
         [Command("TrashMessage", RunMode = RunMode.Async)]
@@ -251,13 +253,13 @@ namespace MKOTHDiscordBot.Modules
             }
             var skipped = input.Take(skip).ToArray();
             var switcher = true;
-            var rest = input.Skip(skip).Select((x, i) => 
+            var rest = input.Skip(skip).Select((x, i) =>
             {
                 if (!char.IsLetter(x))
                 {
                     return x;
                 }
-                
+
                 char outputChar;
 
                 if (switcher)
@@ -300,8 +302,8 @@ namespace MKOTHDiscordBot.Modules
 
         public void Dispose()
         {
-            LazyChatService.Dispose();
-            WebhookLoader.Dispose();
+            lazyChatService.Dispose();
+            webhookLoader.Dispose();
         }
     }
 }
