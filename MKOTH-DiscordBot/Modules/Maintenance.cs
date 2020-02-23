@@ -395,7 +395,7 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Javascript")]
         [Alias("js")]
-        [Summary("Eval JavasSript snippet.")]
+        [Summary("Eval JavasScript snippet.")]
         [RequireDeveloper]
         public async Task JavaScript([Remainder] string input)
         {
@@ -434,14 +434,6 @@ namespace MKOTHDiscordBot.Modules
             process.WaitForExit();
 
             await ReplyAsync(output.SliceBack(1900).MarkdownCodeBlock());
-        }
-
-        [Command("Nuke")]
-        [RequireDeveloper]
-        public async Task Nuke()
-        {
-            await ReplyAsync("Nuclear Launch Detected...");
-            await ReplyAsync("https://www.motherjones.com/wp-content/uploads/2017/10/blog_nuclear_blast.jpg?resize=990,555");
         }
 
         [Command("Restart")]
