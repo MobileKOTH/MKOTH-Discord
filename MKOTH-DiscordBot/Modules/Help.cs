@@ -249,5 +249,13 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync(user == Context.User ? "Checking yourself." : string.Empty, embed: embed.Build());
         }
 
+        [Command("Ban")]
+        [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [Summary("In Development: Future moderation tools.")]
+        public async Task Ban(IGuildUser user)
+        {
+            await ReplyAsync($"Test Ban on {user.Username}");
+        }
     }
 }

@@ -52,7 +52,8 @@ namespace MKOTHDiscordBot.Modules
             }
 
             await ReplyAsync("Self series submission is not available yet.\n" +
-                $"Please send a submission manually at {(Context.Guild.Channels.First(x => x.Name == "series-submit") as ITextChannel).Mention} for an admin to process it.");
+                $"Please send a submission manually at " +
+                $"{(Context.Guild.Channels.First(x => x.Name == "series-submit") as ITextChannel).Mention} for an admin to process it.");
         }
 
         //[Command("reaction")]
@@ -172,7 +173,7 @@ namespace MKOTHDiscordBot.Modules
         }
 
         [Command("BanTower")]
-        [RequireContext(ContextType.DM)]
+        [Alias("b", "bt", "ban")]
         public async Task BanTower(Tower tower)
         {
             if (!Context.IsPrivate)
@@ -195,6 +196,7 @@ namespace MKOTHDiscordBot.Modules
         }
 
         [Command("BanTower")]
+        [Alias("b", "bt")]
         [RequireContext(ContextType.Guild)]
         public async Task BanTower(IUser user)
         {
@@ -219,15 +221,23 @@ namespace MKOTHDiscordBot.Modules
             var dmEmbed = ListTowers()
                 .AddField("Examples", $"`{prefix}{nameof(BanTower)} 1`\n`{prefix}{nameof(BanTower)} Dart`")
                 .WithFooter($"You have {TowerBanManager.MAX_SESSION_SECONDS} seconds to make your choice.");
-            var dmStarter = await Context.User.SendMessageAsync(embed: dmEmbed.Build());
-            var dmOther = await user.SendMessageAsync(embed: dmEmbed.Build());
-            var embed = new EmbedBuilder()
-                .WithColor(Color.Orange)
-                .WithDescription($"A tower ban session has created with {user.Mention}. " +
-                $"Please select a tower to ban in our DM within {TowerBanManager.MAX_SESSION_SECONDS} seconds.\n\n" +
-                $"{Context.User.Mention}: You can click [here](https://discordapp.com/channels/@me/{dmStarter.Channel.Id}) to switch to our dm.\n" +
-                $"{user.Mention}: You can click [here](https://discordapp.com/channels/@me/{dmOther.Channel.Id}) to switch to our dm.");
-            await ReplyAsync(embed: embed.Build());
+
+            try
+            {
+                var dmStarter = await Context.User.SendMessageAsync(embed: dmEmbed.Build());
+                var dmOther = await user.SendMessageAsync(embed: dmEmbed.Build());
+                var embed = new EmbedBuilder()
+                    .WithColor(Color.Orange)
+                    .WithDescription($"A tower ban session has created with {user.Mention}. " +
+                    $"Please select a tower to ban in our DM within {TowerBanManager.MAX_SESSION_SECONDS} seconds.\n\n" +
+                    $"{Context.User.Mention}: You can click [here](https://discordapp.com/channels/@me/{dmStarter.Channel.Id}) to switch to our dm.\n" +
+                    $"{user.Mention}: You can click [here](https://discordapp.com/channels/@me/{dmOther.Channel.Id}) to switch to our dm.");
+                await ReplyAsync(embed: embed.Build());
+            }
+            catch (Exception e)
+            {
+                await ReplyAsync($"{e.Message}.\nThis command cannot work for one who has direct message disabled.");
+            }
         }
     }
 }
