@@ -51,7 +51,8 @@ namespace MKOTHDiscordBot.Modules
                 return;
             }
 
-            await ReplyAsync("Test Submit");
+            await ReplyAsync("Self series submission is not available yet.\n" +
+                $"Please send a submission manually at {(Context.Guild.Channels.First(x => x.Name == "series-submit") as ITextChannel).Mention} for an admin to process it.");
         }
 
         //[Command("reaction")]

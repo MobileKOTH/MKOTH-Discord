@@ -20,8 +20,6 @@ namespace MKOTHDiscordBot.Handlers
         private async Task RunTests()
         {
 
-
-
             await Task.CompletedTask;
         }
 

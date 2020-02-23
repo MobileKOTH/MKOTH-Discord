@@ -104,20 +104,23 @@ namespace MKOTHDiscordBot.Services
                 Logger.Debug(e, "Post Error");
             }
 
-            foreach (var item in await RankingChannel.GetMessagesAsync(100).FlattenAsync())
+            if (!Program.TestMode)
             {
-                await RankingChannel.DeleteMessageAsync(item);
-            }
+                foreach (var item in await RankingChannel.GetMessagesAsync(100).FlattenAsync())
+                {
+                    await RankingChannel.DeleteMessageAsync(item);
+                }
 
-            var playerRanking = seriesPlayers.Select((x, i) => new KeyValuePair<int, SeriesPlayer>(i + 1, x)).ToDictionary(x => x.Key, x => x.Value);
-            var chunksize = 50;
-            for (int i = 0; i < playerRanking.Count; i+= chunksize)
-            {
-                await RankingChannel.SendMessageAsync(embed: new EmbedBuilder()
-                    .WithColor(Color.Orange)
-                    .WithTitle("Leaderboard")
-                    .WithDescription(PrintRankingList(playerRanking.Skip(i).Take(chunksize)))
-                    .Build());
+                var playerRanking = seriesPlayers.Select((x, i) => new KeyValuePair<int, SeriesPlayer>(i + 1, x)).ToDictionary(x => x.Key, x => x.Value);
+                var chunksize = 50;
+                for (int i = 0; i < playerRanking.Count; i += chunksize)
+                {
+                    await RankingChannel.SendMessageAsync(embed: new EmbedBuilder()
+                        .WithColor(Color.Orange)
+                        .WithTitle("Leaderboard")
+                        .WithDescription(PrintRankingList(playerRanking.Skip(i).Take(chunksize)))
+                        .Build());
+                }
             }
 
             _ = Updated.Invoke();
