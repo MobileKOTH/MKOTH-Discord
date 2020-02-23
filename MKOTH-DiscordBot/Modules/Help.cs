@@ -199,6 +199,7 @@ namespace MKOTHDiscordBot.Modules
         }
 
         [Command("User")]
+        [Alias("alt")]
         [Summary("Checks the user's registration and server join date.")]
         [RequireContext(ContextType.Guild)]
         public async Task User(IGuildUser user = null)
