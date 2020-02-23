@@ -26,7 +26,7 @@ namespace MKOTHDiscordBot.Services
         Ace,
         Ice,
         Wizard,
-        HeliPilot,
+        Heli,
         Sub,
         Boat,
         Spike,
@@ -37,9 +37,9 @@ namespace MKOTHDiscordBot.Services
         Ninja,
         Engineer,
         Village,
-        DartlingGun,
+        Dartling,
         Cobra,
-        TackShooter,
+        Tack,
         Bomb,
     }
 

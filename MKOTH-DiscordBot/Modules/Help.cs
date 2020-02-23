@@ -199,6 +199,7 @@ namespace MKOTHDiscordBot.Modules
         }
 
         [Command("User")]
+        [Alias("alt")]
         [Summary("Checks the user's registration and server join date.")]
         [RequireContext(ContextType.Guild)]
         public async Task User(IGuildUser user = null)
@@ -249,5 +250,13 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync(user == Context.User ? "Checking yourself." : string.Empty, embed: embed.Build());
         }
 
+        [Command("Ban")]
+        [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [Summary("In Development: Future moderation tools.")]
+        public async Task Ban(IGuildUser user)
+        {
+            await ReplyAsync($"Test Ban on {user.Username}");
+        }
     }
 }
