@@ -104,26 +104,38 @@ namespace MKOTHDiscordBot.Services
                 Logger.Debug(e, "Post Error");
             }
 
-            if (!Program.TestMode)
-            {
-                foreach (var item in await RankingChannel.GetMessagesAsync(100).FlattenAsync())
-                {
-                    await RankingChannel.DeleteMessageAsync(item);
-                }
-
-                var playerRanking = seriesPlayers.Select((x, i) => new KeyValuePair<int, SeriesPlayer>(i + 1, x)).ToDictionary(x => x.Key, x => x.Value);
-                var chunksize = 50;
-                for (int i = 0; i < playerRanking.Count; i += chunksize)
-                {
-                    await RankingChannel.SendMessageAsync(embed: new EmbedBuilder()
-                        .WithColor(Color.Orange)
-                        .WithTitle("Leaderboard")
-                        .WithDescription(PrintRankingList(playerRanking.Skip(i).Take(chunksize)))
-                        .Build());
-                }
-            }
+            await UpdateFullLeaderBoard();
 
             _ = Updated.Invoke();
+        }
+
+        public async Task UpdateFullLeaderBoard()
+        {
+            var messages = (await RankingChannel.GetMessagesAsync(100).FlattenAsync()).Where(x => x.Author.Id == client.CurrentUser.Id);
+
+            var playerRanking = seriesPlayers.Select((x, i) => new KeyValuePair<int, SeriesPlayer>(i + 1, x)).ToDictionary(x => x.Key, x => x.Value);
+            var chunksize = 50;
+            for (int i = 0, m = 0; i < playerRanking.Count; i += chunksize, m++)
+            {
+                var embed = new EmbedBuilder()
+                    .WithColor(Color.Orange)
+                    .WithTitle("Leaderboard")
+                    .WithDescription(PrintRankingList(playerRanking.Skip(i).Take(chunksize)))
+                    .WithFooter("Updated At")
+                    .WithTimestamp(DateTime.Now)
+                    .Build();
+
+                var targetMessage = messages.ElementAtOrDefault(m) as IUserMessage;
+
+                if (targetMessage != default)
+                {
+                    await targetMessage.ModifyAsync(x => x.Embed = embed);
+                }
+                else
+                {
+                    await RankingChannel.SendMessageAsync(embed: embed);
+                }
+            }
         }
 
         public string PrintRankingList(IEnumerable<KeyValuePair<int, SeriesPlayer>> list)
