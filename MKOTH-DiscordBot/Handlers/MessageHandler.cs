@@ -131,10 +131,8 @@ namespace MKOTHDiscordBot.Handlers
 
             if (!message.Author.IsBot && !message.HasMentionPrefix(client.CurrentUser, ref argPos))
             {
-                using (var chatService = services.GetRequiredService<ChatService>())
-                {
-                    await chatService.AddSync(context);
-                }
+                using var chatService = services.GetRequiredService<ChatService>();
+                await chatService.AddSync(context);
             }
 
             if (!(message.HasStringPrefix(defaultCommandPrefix, ref argPos) || message.HasMentionPrefix(client.CurrentUser, ref argPos)))
@@ -183,7 +181,7 @@ namespace MKOTHDiscordBot.Handlers
             {
                 if (result.Error == CommandError.UnknownCommand)
                 {// Chat reply.
-                    chatReply(message.Content.Remove(0, argPos));
+                    // chatReply(message.Content.Remove(0, argPos));
                 }
             }
 

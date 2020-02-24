@@ -27,19 +27,19 @@ namespace MKOTHDiscordBot.Properties
     public class Settings
     {
         public string DefaultCommandPrefix { get; set; }
-        public Developmentguild DevelopmentGuild { get; set; }
-        public Productionguild ProductionGuild { get; set; }
+        public DevelopmentGuild DevelopmentGuild { get; set; }
+        public ProductionGuild ProductionGuild { get; set; }
     }
 
 
-    public class Developmentguild
+    public class DevelopmentGuild
     {
         public ulong Id { get; set; }
         public ulong Test { get; set; }
         public ulong Log { get; set; }
     }
 
-    public class Productionguild
+    public class ProductionGuild
     {
         public ulong Id { get; set; }
         public ulong MemberRole { get; set; }
@@ -47,7 +47,6 @@ namespace MKOTHDiscordBot.Properties
         public ulong Leave { get; set; }
         public ulong Series { get; set; }
         public ulong Ranking { get; set; }
-
     }
 
 }

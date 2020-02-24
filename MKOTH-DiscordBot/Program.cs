@@ -52,7 +52,8 @@ namespace MKOTHDiscordBot
 
             var commands = new CommandService(new CommandServiceConfig
             {
-                LogLevel = LogSeverity.Debug
+                LogLevel = LogSeverity.Debug,
+                IgnoreExtraArgs = true
             });
 
             client.Log += (msg) =>

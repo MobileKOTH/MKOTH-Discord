@@ -20,6 +20,7 @@ namespace MKOTHDiscordBot.Services
     public class RankingService : IRankingService
     {
         const double Elo_K_Factor = 40;
+
         private readonly string endPoint;
         private readonly string adminKey;
 
@@ -62,33 +63,32 @@ namespace MKOTHDiscordBot.Services
             });
         }
 
-        public async Task Refresh()
+        public SeriesPlayer CreatePlayer(ulong id, string name)
         {
-            if (!(seriesService.Ready && clientReady))
-            {
-                return;
-            }
-            var guildUsers = await ProductionGuild.GetUsersAsync();
-            seriesPlayers = seriesService.AllPlayers.Select(x => new SeriesPlayer
+            return new SeriesPlayer
             {
                 Elo = 1200,
-                Id = x.ToString(),
-                Name = guildUsers.FirstOrDefault(y => y.Id == x)?.GetDisplayName() ?? x.ToString()
-            }).ToList();
+                Id = id.ToString(),
+                Name = name
+            };
+        }
 
-            foreach (var series in seriesService.SeriesHistory)
+        public async Task AddSeriesAsync(Series series)
+        {
+            foreach (var item in new ulong[] { ulong.Parse(series.WinnerId), ulong.Parse(series.LoserId)})
             {
-                var winner = seriesPlayers.Find(x => x.Id.ToString() == series.WinnerId);
-                var loser = seriesPlayers.Find(x => x.Id.ToString() == series.LoserId);
-                var (eloLeft, eloRight) = EloCalculator.Calculate(Elo_K_Factor, winner.Elo, loser.Elo, series.Wins, series.Losses, series.Draws);
-                winner.Elo = eloLeft;
-                loser.Elo = eloRight;
+                if (!SeriesPlayers.Any(x => x.Id == item.ToString()))
+                {
+                    seriesPlayers.Add(CreatePlayer(item, TryGetPlayerName(await ProductionGuild.GetUsersAsync(), item)));
+                }
             }
-
+            ProcessSeries(series);
             seriesPlayers = seriesPlayers.OrderByDescending(x => x.Elo).ToList();
+            await UpdateFullLeaderBoard();
+        }
 
-            Logger.Debug("Refreshed", "Ranking");
-
+        public async Task PostAsync()
+        {
             try
             {
                 var request = new RestRequest()
@@ -101,10 +101,31 @@ namespace MKOTHDiscordBot.Services
             }
             catch (Exception e)
             {
-                Logger.Debug(e, "Post Error");
+                Logger.Debug(e.Message, "Player list post error");
+            }
+        }
+
+        public async Task Refresh()
+        {
+            if (!(seriesService.Ready && clientReady))
+            {
+                return;
+            }
+            var guildUsers = await ProductionGuild.GetUsersAsync();
+            seriesPlayers = seriesService.AllPlayers
+                .Select(x => CreatePlayer(x, TryGetPlayerName(guildUsers, x)))
+                .ToList();
+
+            foreach (var series in seriesService.SeriesHistory)
+            {
+                ProcessSeries(series);
             }
 
-            await UpdateFullLeaderBoard();
+            seriesPlayers = seriesPlayers.OrderByDescending(x => x.Elo).ToList();
+
+            Logger.Debug("Refreshed", "Ranking");
+
+            await Task.WhenAll(PostAsync(), UpdateFullLeaderBoard());
 
             _ = Updated.Invoke();
         }
@@ -141,6 +162,21 @@ namespace MKOTHDiscordBot.Services
         public string PrintRankingList(IEnumerable<KeyValuePair<int, SeriesPlayer>> list)
         {
             return list.Select(x => $"`#{(x.Key).ToString("D2")}` `ELO: {x.Value.Elo.ToString("N2")}` <@!{x.Value.Id}>").JoinLines();
+        }
+
+        private void ProcessSeries(Series series)
+        {
+            var winner = seriesPlayers.Find(x => x.Id.ToString() == series.WinnerId);
+            var loser = seriesPlayers.Find(x => x.Id.ToString() == series.LoserId);
+            var (eloLeft, eloRight) = EloCalculator.Calculate(Elo_K_Factor, winner.Elo, loser.Elo, series.Wins, series.Losses, series.Draws);
+            winner.Elo = eloLeft;
+            loser.Elo = eloRight;
+        }
+
+        // Users might leave the guild hence longer able to get their name, will fallback to their id.
+        private string TryGetPlayerName(IReadOnlyCollection<IGuildUser> users, ulong id)
+        {
+            return users.FirstOrDefault(y => y.Id == id)?.GetDisplayName() ?? id.ToString();
         }
     }
 

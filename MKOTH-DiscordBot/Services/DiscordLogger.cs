@@ -13,7 +13,7 @@ namespace MKOTHDiscordBot.Services
     public class DiscordLogger
     {
         private readonly DiscordSocketClient client;
-        private readonly Developmentguild devGuild;
+        private readonly DevelopmentGuild devGuild;
 
         public SocketGuild DevGuild => client.GetGuild(devGuild.Id);
         public SocketTextChannel LogChannel => DevGuild.GetTextChannel(devGuild.Log);
