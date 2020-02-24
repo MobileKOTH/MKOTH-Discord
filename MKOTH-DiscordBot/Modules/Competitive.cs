@@ -10,9 +10,11 @@ using Discord.WebSocket;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+
 using MKOTHDiscordBot.Models;
 using MKOTHDiscordBot.Properties;
 using MKOTHDiscordBot.Services;
+using MKOTHDiscordBot.Utilities;
 
 namespace MKOTHDiscordBot.Modules
 {
@@ -227,6 +229,23 @@ namespace MKOTHDiscordBot.Modules
             await InlineReactionReplyAsync(new ReactionCallbackData(string.Empty, embed: challengeEmbed.Build(), true, true, TimeSpan.FromSeconds(30))
                 .WithCallback(new Emoji("✅"), async (c, e) => await BanTowerSession(user))
                 .WithCallback(new Emoji("❌"), async (c, e) => await ReplyAsync("You may begin your series.")));
+        }
+
+        [Command("Elo")]
+        [Summary("Basic Elo calculator with default K factor of 40.")]
+        public async Task Elo(double a = 1200, double b = 1200, int wins = 0, int losses = 0, int draws = 0, double kFactor = 40)
+        {
+            var (eloLeft, eloRight) = EloCalculator.Calculate(kFactor, a, b, wins, losses, draws);
+            var diffLeft = eloLeft - a;
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithTitle("Elo calculator")
+                .WithDescription($"`A = {a}` `B = {b}` `wins = {wins}` `losses = {losses}` `draws = {draws}` `K factor = {kFactor}`")
+                .AddField("Elo A", $"`{a.ToString("N2")} -> {eloLeft.ToString("N2")}`", true)
+                .AddField("Elo B", $"`{b.ToString("N2")} -> {eloRight.ToString("N2")}`", true)
+                .AddField("Difference", $"`{(diffLeft <= 0 ? "" : "+")}{diffLeft.ToString("N2")}`");
+
+            await ReplyAsync(embed: embed.Build());
         }
 
         private async Task BanTowerSession(IGuildUser user)
