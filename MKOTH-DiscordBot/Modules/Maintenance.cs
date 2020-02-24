@@ -135,13 +135,6 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("DiscordStats", RunMode = RunMode.Async)]
         [Alias("ds")]
-        public async Task DiscordStats(ITextChannel channel = null)
-        {
-            await DiscordStats(channel, 100);
-        }
-
-        [Command("DiscordStats", RunMode = RunMode.Async)]
-        [Alias("ds")]
         [RequireDeveloper]
         public async Task DiscordStats(ITextChannel channel = null, int limit = 100)
         {
@@ -405,15 +398,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("Run")]
         [Summary("Command line interface.")]
         [RequireDeveloper]
-        public async Task Run(string command)
-        {
-            await Run(command, null);
-        }
-
-        [Command("Run")]
-        [Summary("Command line interface.")]
-        [RequireDeveloper]
-        public async Task Run(string command, [Remainder] string input)
+        public async Task Run(string command, [Remainder] string input = null)
         {
             var process = new Process();
             process.StartInfo.CreateNoWindow = true;

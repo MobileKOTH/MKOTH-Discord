@@ -29,9 +29,6 @@ namespace MKOTHDiscordBot.Modules
             prefix = services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
         }
 
-        [Command("Help")]
-        [Alias("H", "Manual", "Guide")]
-        [Summary("Displays the general help information.")]
         public async Task HelpCommand()
         {
             var timeoutSeconds = 60;
@@ -95,8 +92,13 @@ namespace MKOTHDiscordBot.Modules
         [Command("Help")]
         [Alias("H", "Info")]
         [Summary("Use with an input `<para>`(module or command name) to find the details and usage about a module or a command.")]
-        public async Task HelpCommand([Remainder]string para)
+        public async Task HelpCommand([Remainder]string para = null)
         {
+            if (para == null)
+            {
+                await HelpCommand();
+                return;
+            }
             para = para.ToLower();
             var embed = new EmbedBuilder().WithColor(Color.Orange);
 
