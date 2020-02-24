@@ -117,14 +117,14 @@ namespace MKOTHDiscordBot.Handlers
             }
             else
             {
-                if (context.IsPrivate && !message.HasStringPrefix(defaultCommandPrefix, ref argPos) && message.HasMentionPrefix(client.CurrentUser, ref argPos))
+                if (context.IsPrivate && !message.HasStringPrefix(defaultCommandPrefix, ref argPos) && message.MentionedUsers.Any(x => x.Id == client.CurrentUser.Id))
                 {
                     if (audit())
                     {
                         return;
                     }
 
-                    chatReply(message.Content.Remove(0, argPos));
+                    chatReply(message.Content.Replace(client.CurrentUser.Id.ToString(), ""));
                     return;
                 }
             }
@@ -133,6 +133,16 @@ namespace MKOTHDiscordBot.Handlers
             {
                 using var chatService = services.GetRequiredService<ChatService>();
                 await chatService.AddSync(context);
+            }
+
+            if (!message.HasMentionPrefix(client.CurrentUser, ref argPos) && message.MentionedUsers.Any(x => x.Id == client.CurrentUser.Id))
+            {
+                if (audit())
+                {
+                    return;
+                }
+                chatReply(message.Content.Replace(client.CurrentUser.Id.ToString(), ""));
+                return;
             }
 
             if (!(message.HasStringPrefix(defaultCommandPrefix, ref argPos) || message.HasMentionPrefix(client.CurrentUser, ref argPos)))
@@ -144,6 +154,7 @@ namespace MKOTHDiscordBot.Handlers
             {
                 return;
             }
+
             // Command handling
             var result = await commands.ExecuteAsync(context, argPos, services);
             if (context.IsPrivate && message.Author.Id != ApplicationContext.BotOwner.Id)
@@ -180,8 +191,12 @@ namespace MKOTHDiscordBot.Handlers
             else
             {
                 if (result.Error == CommandError.UnknownCommand)
-                {// Chat reply.
-                    // chatReply(message.Content.Remove(0, argPos));
+                {
+                    if (message.HasMentionPrefix(client.CurrentUser, ref argPos))
+                    {
+                        chatReply(message.Content.Remove(0, argPos));
+                        return;
+                    }
                 }
             }
 

@@ -254,11 +254,11 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Ban")]
         [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
         [Summary("In Development: Future moderation tools.")]
         public async Task Ban(IGuildUser user)
         {
-            await ReplyAsync($"Test Ban on {user.Username}");
+            await ReplyAsync("This command is reserved for future chat moderation uses.\n" +
+                $"Do you mean `{prefix}Challenge` to challenge someone and start a ban tower session?");
         }
     }
 }

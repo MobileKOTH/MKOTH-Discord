@@ -173,12 +173,24 @@ namespace MKOTHDiscordBot.Modules
         }
 
         [Command("BanTower")]
+        public async Task BanTower(IGuildUser user)
+        {
+            if (!Context.IsPrivate)
+            {
+                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series as well as start a ban tower session " +
+                    "\nYou can only select a tower to ban in our DM.");
+            }
+            return;
+        }
+
+        [Command("BanTower")]
         [Alias("b", "bt", "ban")]
         public async Task BanTower(Tower tower)
         {
             if (!Context.IsPrivate)
             {
-                await ReplyAsync("You can only select a tower to ban in our DM");
+                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series as well as start a ban tower session "+ 
+                    "\nYou can only select a tower to ban in our DM.");
                 return;
             }
 
@@ -195,23 +207,30 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync("Ban Tower Choice: " + tower.ToString("g"), embed: embed.Build());
         }
 
-        [Command("BanTower")]
-        [Alias("b", "bt")]
+        [Command("Challenge")]
+        [Alias("ch")]
         [RequireContext(ContextType.Guild)]
-        public async Task BanTower(IUser user)
+        public async Task Challenge(IGuildUser user)
         {
-            //if (user.Status == UserStatus.Offline)
-            //{
-            //    await ReplyAsync("User is offline");
-            //    return;
-            //}
-
             if (user == Context.User)
             {
                 await ReplyAsync("You cannot choose yourself.");
                 return;
             }
 
+            var challengeEmbed = new EmbedBuilder()
+                .WithAuthor(Context.User)
+                .WithTitle("Series Challenge")
+                .WithDescription("You are challenging " + user.Mention + "on a series.\n" +
+                "Do you want to decide to have some towers banned?");
+
+            await InlineReactionReplyAsync(new ReactionCallbackData(string.Empty, embed: challengeEmbed.Build(), true, true, TimeSpan.FromSeconds(30))
+                .WithCallback(new Emoji("✅"), async (c, e) => await BanTowerSession(user))
+                .WithCallback(new Emoji("❌"), async (c, e) => await ReplyAsync("You may begin your series.")));
+        }
+
+        private async Task BanTowerSession(IGuildUser user)
+        {
             if (!towerBanManager.StartSession(Context.User, user, Context.Channel as ITextChannel))
             {
                 await ReplyAsync("Failed to start ban tower session. Perhaps someone is already in a session, please wait for them to finish.");
@@ -219,7 +238,7 @@ namespace MKOTHDiscordBot.Modules
             }
 
             var dmEmbed = ListTowers()
-                .AddField("Examples", 
+                .AddField("Examples",
                 $"`{prefix}{nameof(BanTower)} 1`\n" +
                 $"`{prefix}{nameof(BanTower)} Dart`\n" +
                 $"`{prefix}b 1`\n" +
