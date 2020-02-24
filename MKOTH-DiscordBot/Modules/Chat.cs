@@ -50,6 +50,13 @@ namespace MKOTHDiscordBot.Modules
             lazyTranslationScriptId = new Lazy<string>(() => services.GetScoppedSettings<Credentials>().TranslationScriptId);
         }
 
+        [Command("RawMessage")]
+        public async Task RawMessage(ITextChannel channel, ulong messageId)
+        {
+            var msg = await channel.GetMessageAsync(messageId);
+            await ReplyAsync(msg.Content.SliceBack(2000 - 7).Replace("`", "\\`").MarkdownCodeBlock());
+        }
+
         [Command("Reply")]
         [RequireBotPermission(GuildPermission.ManageWebhooks)]
         [RequireBotPermission(GuildPermission.ManageMessages)]
