@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Discord;
@@ -102,7 +103,16 @@ namespace MKOTHDiscordBot.Modules
                 return;
             }
 
-            var series = seriesService.MakeSeries(winner.Id, loser.Id, wins, loss, draws, inviteCode);
+            if (inviteCode != "NA")
+            {
+                if (!isValidReplayId(inviteCode.ToUpper()))
+                {
+                    await ReplyAsync("Invalid invite code.");
+                    return;
+                }
+            }
+
+            var series = seriesService.MakeSeries(winner.Id, loser.Id, wins, loss, draws, inviteCode.ToUpper());
             await seriesService.AdminCreateAsync(series);
             var embed = new EmbedBuilder()
                 .WithDescription($"Id: {series.Id.ToString("D4")}\n Winner: <@!{series.WinnerId}>\n Loser: <@!{series.LoserId}>\n Score: {wins}-{loss} Draws: {draws}\n Invite Code: {inviteCode}")
@@ -139,7 +149,7 @@ namespace MKOTHDiscordBot.Modules
         }
 
         [Command("Leaderboard")]
-        [Alias("r", "rankings", "rank", "ranking", "lb")]
+        [Alias("rankings", "rank", "ranking", "lb")]
         public async Task Ranking()
         {
             var playerRanking = rankingService.SeriesPlayers.Select((x, i) => new KeyValuePair<int, SeriesPlayer>(i + 1, x)).ToDictionary(x => x.Key, x => x.Value);
@@ -220,15 +230,70 @@ namespace MKOTHDiscordBot.Modules
                 return;
             }
 
+            if (user.RoleIds.Any(x => x == 347300513110294528))
+            {
+                await ReplyAsync("You cannot challenge a VIP in this server");
+                return;
+            }
+
             var challengeEmbed = new EmbedBuilder()
                 .WithAuthor(Context.User)
                 .WithTitle("Series Challenge")
-                .WithDescription("You are challenging " + user.Mention + "on a series.\n" +
-                "Do you want to decide to have some towers banned?");
+                .WithDescription("You are challenging " + user.Mention + " on a series.\n" +
+                "Do you both agree to vote for towers to ban?")
+                .WithFooter($"Both of you have {TowerBanManager.MAX_SESSION_SECONDS} seconds to decide.");
 
-            await InlineReactionReplyAsync(new ReactionCallbackData(string.Empty, embed: challengeEmbed.Build(), true, true, TimeSpan.FromSeconds(30))
-                .WithCallback(new Emoji("✅"), async (c, e) => await BanTowerSession(user))
-                .WithCallback(new Emoji("❌"), async (c, e) => await ReplyAsync("You may begin your series.")));
+            bool leftAgree = false, rightAgree = false, denied = false;
+            int voteCount = 0;
+
+            var msg = await InlineReactionReplyAsync(new ReactionCallbackData(string.Empty, 
+                embed: challengeEmbed.Build(), 
+                false, // Expires after use
+                true,  // Single use per user
+                TimeSpan.FromSeconds(TowerBanManager.MAX_SESSION_SECONDS), 
+                async timeOut =>
+                {
+                    if (voteCount == 2 || denied)
+                    {
+                        return;
+                    }
+                    await ReplyAsync(embed: new EmbedBuilder()
+                        .WithDescription($"{Context.User.Mention} {user.Mention} Challenge session has timed out.").Build());
+                }).WithCallback(new Emoji("✅"), async (c, e) =>
+                {
+                    if (e.UserId == Context.User.Id || e.UserId == user.Id)
+                    {
+                        if (e.UserId == Context.User.Id)
+                        {
+                            leftAgree = true;
+                        }
+                        if (e.UserId == user.Id)
+                        {
+                            rightAgree = true;
+                        }
+                        voteCount++;
+                    }
+                    if (leftAgree && rightAgree)
+                    {
+                        await BanTowerSession(user);
+                    }
+                })
+                .WithCallback(new Emoji("❌"), async (c, e) =>
+                {
+                    if (e.UserId == Context.User.Id || e.UserId == user.Id)
+                    {
+                        voteCount++;
+                        if (denied)
+                        {
+                            return;
+                        }
+                        await ReplyAsync(embed: new EmbedBuilder()
+                          .WithDescription($"{Context.User.Mention} {user.Mention} One of you disagreed to have towers banned. " +
+                          $"You may begin your series without tower bans.")
+                          .Build());
+                        denied = true;
+                    }
+                }), false);
         }
 
         [Command("Elo")]
@@ -280,6 +345,45 @@ namespace MKOTHDiscordBot.Modules
             {
                 await ReplyAsync($"{e.Message}.\nThis command cannot work for one who has direct message disabled.");
             }
+        }
+
+        private bool isValidReplayId(string id)
+        {
+            return Regex.IsMatch(id, "^[A-Z]{7}$");
+        }
+
+        [Command("Replay")]
+        [Alias("r")]
+        public async Task ReplayLink(string inviteCode)
+        {
+            inviteCode = inviteCode.ToUpper();
+            if (!isValidReplayId(inviteCode))
+            {
+                await ReplyAsync("Invalid invite code.");
+                return;
+            }
+            await ReplyAsync("https://battles.tv/watch/" + inviteCode);
+        }
+
+        [Command("Replay")]
+        [Alias("r")]
+        public async Task ReplayLink(int seriesId)
+        {
+            var series = seriesService.SeriesHistory.FirstOrDefault(x => x.Id == seriesId);
+
+            if (series == default)
+            {
+                await ReplyAsync("Series not found.");
+                return;
+            }
+
+            if (series.ReplayId == "NA")
+            {
+                await ReplyAsync("Series does not contain a replay");
+                return;
+            }
+
+            await ReplyAsync("https://battles.tv/watch/" + series.ReplayId);
         }
     }
 }
