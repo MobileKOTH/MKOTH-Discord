@@ -72,9 +72,9 @@ namespace MKOTHDiscordBot
                 error.StackTrace.MarkdownCodeBlock("diff"), LogType.Error);
         }
 
-        public static void Debug(object obj, string description)
+        public static void Debug(object obj, string description = "[DEBUG]")
         {
-            string type = obj.GetType().ToString();
+            string type = $"<{obj.GetType().ToString()}>";
             try
             {
                 string json = JsonConvert.SerializeObject(obj, Formatting.Indented, new JsonSerializerSettings

@@ -76,6 +76,7 @@ namespace MKOTHDiscordBot.Services
                 else if (member.RoleIds.Any(x => x == MemberRole.Id))
                 {
                     await member.RemoveRoleAsync(MemberRole);
+                    await member.RemoveRolesAsync(TierRoles.Select(x => x.Value));
                 }
             }
 
