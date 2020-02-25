@@ -161,7 +161,7 @@ namespace MKOTHDiscordBot.Modules
         [Alias("rankings", "rank", "ranking", "lb")]
         public async Task Ranking()
         {
-            var playerRanking = rankingService.FullRanking.ToDictionary(x=> x.Key, x=> x.Value);
+            var playerRanking = rankingService.SeriesPlayers.Select((x, i) => new KeyValuePair<int, SeriesPlayer>(i + 1, x)).ToDictionary(x => x.Key, x => x.Value);
             //var playerRanking = rankingService.FullRanking.ToList();
 
             var embed = new EmbedBuilder()
