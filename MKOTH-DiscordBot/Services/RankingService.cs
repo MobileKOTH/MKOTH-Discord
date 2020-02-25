@@ -20,6 +20,7 @@ namespace MKOTHDiscordBot.Services
     public class RankingService : IRankingService
     {
         const double Elo_K_Factor = 40;
+        const int Rank_Show_Games = 5;
 
         private readonly string endPoint;
         private readonly string adminKey;
@@ -62,6 +63,47 @@ namespace MKOTHDiscordBot.Services
                 _ = Refresh();
             });
         }
+
+        public IEnumerable<KeyValuePair<int, SeriesPlayer>> FullRanking
+        {
+            get
+            {
+                var playCountGroup = seriesPlayers.GroupBy(x =>
+                {
+                    var c = 0;
+                    foreach (var y in seriesService.SeriesHistory)
+                    {
+                        if (y.WinnerId == x.Id || y.LoserId == x.Id)
+                        {
+                            if ((c += y.Wins + y.Losses) >= Rank_Show_Games)
+                            {
+                                return c;
+                            }
+                        }
+                    }
+                    return c;
+                });
+                int rank = 1;
+                foreach (var rankGroup in playCountGroup.OrderBy(x => x.Key))
+                {
+                    if (rankGroup.Key >= 5)
+                    {
+                        foreach (var player in rankGroup)
+                        {
+                            yield return new KeyValuePair<int, SeriesPlayer>(rank++, player);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var player in rankGroup)
+                        {
+                            yield return new KeyValuePair<int, SeriesPlayer>(-(5 - rankGroup.Key), player);
+                        }
+                    }
+                }
+            }
+        }
+
 
         public SeriesPlayer CreatePlayer(ulong id, string name)
         {
@@ -128,6 +170,8 @@ namespace MKOTHDiscordBot.Services
             await Task.WhenAll(PostAsync(), UpdateFullLeaderBoard());
 
             _ = Updated.Invoke();
+
+            Logger.Debug(FullRanking.ToList(), "Full Ranking");
         }
 
         public async Task UpdateFullLeaderBoard()
@@ -138,6 +182,9 @@ namespace MKOTHDiscordBot.Services
             var chunksize = 50;
             for (int i = 0, m = 0; i < playerRanking.Count; i += chunksize, m++)
             {
+                var fixMsg = "Due a apparent discord caching bug, " +
+                    "if the list contains invalid players and they are still present in the server, " +
+                    "to fix this: move to another channel and scroll through the entire discord user list at the right and return to this channel.";
                 var embed = new EmbedBuilder()
                     .WithColor(Color.Orange)
                     .WithTitle("Leaderboard")
@@ -150,18 +197,26 @@ namespace MKOTHDiscordBot.Services
 
                 if (targetMessage != default)
                 {
-                    await targetMessage.ModifyAsync(x => x.Embed = embed);
+                    await targetMessage.ModifyAsync(x => {
+                        x.Content = i == 0 ? fixMsg : string.Empty;
+                        x.Embed = embed;
+                    });;
                 }
                 else
                 {
-                    await RankingChannel.SendMessageAsync(embed: embed);
+                    await RankingChannel.SendMessageAsync(text: i == 0 ? fixMsg : string.Empty, embed: embed);
                 }
             }
         }
 
+        public string getPlayerMention(string id)
+        {
+            return client.GetUser(ulong.Parse(id))?.Mention ?? $"<@{id}>";
+        }
+
         public string PrintRankingList(IEnumerable<KeyValuePair<int, SeriesPlayer>> list)
         {
-            return list.Select(x => $"`#{(x.Key).ToString("D2")}` `ELO: {x.Value.Elo.ToString("N2")}` <@!{x.Value.Id}>").JoinLines();
+            return list.Select(x => $"`#{x.Key.ToString("D2")}` `ELO: {x.Value.Elo.ToString("N2")}` {getPlayerMention(x.Value.Id)}").JoinLines();
         }
 
         private void ProcessSeries(Series series)

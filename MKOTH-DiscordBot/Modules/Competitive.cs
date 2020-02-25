@@ -118,7 +118,11 @@ namespace MKOTHDiscordBot.Modules
             var series = seriesService.MakeSeries(winner.Id, loser.Id, wins, loss, draws, inviteCode.ToUpper());
             await seriesService.AdminCreateAsync(series);
             var embed = new EmbedBuilder()
-                .WithDescription($"Id: {series.Id.ToString("D4")}\n Winner: <@!{series.WinnerId}>\n Loser: <@!{series.LoserId}>\n Score: {wins}-{loss} Draws: {draws}\n Invite Code: {inviteCode}")
+                .WithDescription($"Id: {series.Id.ToString("D4")}\n" +
+                $"Winner: {rankingService.getPlayerMention(series.WinnerId)}\n" +
+                $"Loser: {rankingService.getPlayerMention(series.LoserId)}\n" +
+                $"Score: {wins}-{loss} Draws: {draws}\n" +
+                $"Invite Code: {inviteCode}")
                 .WithColor(Color.Orange);
             await ReplyAsync(embed: embed.Build());
         }
@@ -242,8 +246,8 @@ namespace MKOTHDiscordBot.Modules
             }
 
             var lastDaySeries = seriesService.SeriesHistory.Reverse().TakeWhile(x => (DateTime.Now - x.Date).TotalHours < 12);
-            var players = new[] { user.Id, Context.User.Id };
-            var conflictSeries = lastDaySeries.FirstOrDefault(x => players.Contains(ulong.Parse(x.WinnerId)) && players.Contains(ulong.Parse(x.LoserId)));
+            var playerIds = new[] { user.Id.ToString(), Context.User.Id.ToString()};
+            var conflictSeries = lastDaySeries.FirstOrDefault(x => playerIds.Contains(x.WinnerId) && playerIds.Contains(x.LoserId));
             if (conflictSeries != default)
             {
                 await ReplyAsync($"You already played this person less than a day ago, " +
