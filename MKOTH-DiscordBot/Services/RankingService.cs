@@ -84,7 +84,7 @@ namespace MKOTHDiscordBot.Services
                     return c;
                 });
                 int rank = 1;
-                foreach (var rankGroup in playCountGroup.OrderBy(x => x.Key))
+                foreach (var rankGroup in playCountGroup.OrderByDescending(x => x.Key))
                 {
                     if (rankGroup.Key >= 5)
                     {
@@ -170,8 +170,6 @@ namespace MKOTHDiscordBot.Services
             await Task.WhenAll(PostAsync(), UpdateFullLeaderBoard());
 
             _ = Updated.Invoke();
-
-            Logger.Debug(FullRanking.ToList(), "Full Ranking");
         }
 
         public async Task UpdateFullLeaderBoard()
@@ -179,10 +177,11 @@ namespace MKOTHDiscordBot.Services
             var messages = (await RankingChannel.GetMessagesAsync(100).FlattenAsync()).Where(x => x.Author.Id == client.CurrentUser.Id);
 
             var playerRanking = seriesPlayers.Select((x, i) => new KeyValuePair<int, SeriesPlayer>(i + 1, x)).ToDictionary(x => x.Key, x => x.Value);
+            // var playerRanking = FullRanking.ToList();
             var chunksize = 50;
             for (int i = 0, m = 0; i < playerRanking.Count; i += chunksize, m++)
             {
-                var fixMsg = "Due a apparent discord caching bug, " +
+                var fixMsg = "Due an apparent discord caching bug, " +
                     "if the list contains invalid players and they are still present in the server, " +
                     "to fix this: move to another channel and scroll through the entire discord user list at the right and return to this channel.";
                 var embed = new EmbedBuilder()
@@ -216,7 +215,9 @@ namespace MKOTHDiscordBot.Services
 
         public string PrintRankingList(IEnumerable<KeyValuePair<int, SeriesPlayer>> list)
         {
-            return list.Select(x => $"`#{x.Key.ToString("D2")}` `ELO: {x.Value.Elo.ToString("N2")}` {getPlayerMention(x.Value.Id)}").JoinLines();
+            return list.Select(x => x.Key > 0 
+            ? $"`#{x.Key.ToString("D2")}` `ELO: {x.Value.Elo.ToString("N2")}` {getPlayerMention(x.Value.Id)}"
+            : $"`Unranked {-x.Key}` `ELO: {x.Value.Elo.ToString("N2")}` {getPlayerMention(x.Value.Id)}").JoinLines();
         }
 
         private void ProcessSeries(Series series)
