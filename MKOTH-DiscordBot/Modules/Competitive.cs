@@ -46,188 +46,19 @@ namespace MKOTHDiscordBot.Modules
             prefix = services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
         }
 
-/*
-        [Command("Reaction")]
-        public async Task Test_ReactionReply()
-        {
-            var msg = await logChannel.SendMessageAsync("test");
-            await msg.AddReactionAsync(new Emoji("👍"));
-            await msg.AddReactionAsync(new Emoji("👎"));
-            var callback = new InlineReactionCallback(Interactive, Context, new ReactionCallbackData("text", null, false, true)
-                .WithCallback(new Emoji("👍"), (c, r) => c.Channel.SendMessageAsync($"{r.User.Value.Mention} replied with 👍"))
-                .WithCallback(new Emoji("👎"), (c, r) => c.Channel.SendMessageAsync($"{r.User.Value.Mention} replied with 👎")));
-            Interactive.AddReactionCallback(msg, callback);
-        } 
-*/
-
-        [Command("Submit")]
-        [RequireContext(ContextType.Guild)]
-        public async Task Submit()
-        {
-            if (submissionRateLimiter.Audit(Context))
-            {
-                return;
-            }
-
-            await ReplyAsync("Self series submission is not available yet.\n" +
-                $"Please send a submission manually at " +
-                $"{(Context.Guild.Channels.First(x => x.Name == "series-submit") as ITextChannel).Mention} for an admin to process it.");
-        }
-
-        [Command("Refresh")]
-        [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.Administrator)]
-        public async Task Refresh()
-        {
-            await ReplyAsync("Pulling from remote spreadsheet...");
-            await seriesService.RefreshAsync();
-            await ReplyAsync("Refresh complete.");
-        }
-
-        [Command("CreateSeries")]
-        [Alias("cs")]
-        [Summary("Administrator command to create a series, bypassing all restrictions.")]
-        [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.Administrator)]
-        public async Task CreateSeries(IGuildUser winner, IGuildUser loser, byte wins, byte loss, string inviteCode = "NA")
-        {
-            await CreateSeries(winner, loser, wins, loss, 0, inviteCode);
-        }
-
-        [Command("CreateSeries")]
-        [Alias("cs")]
-        [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.Administrator)]
-        public async Task CreateSeries(IGuildUser winner, IGuildUser loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
-        {
-            if (wins < loss)
-            {
-                await ReplyAsync("Wins must greater than losses");
-                return;
-            }
-
-            if (inviteCode != "NA")
-            {
-                if (!isValidReplayId(inviteCode.ToUpper()))
+        /*
+                [Command("Reaction")]
+                public async Task Test_ReactionReply()
                 {
-                    await ReplyAsync("Invalid invite code.");
-                    return;
-                }
-            }
-
-            var series = seriesService.MakeSeries(winner.Id, loser.Id, wins, loss, draws, inviteCode.ToUpper());
-            await seriesService.AdminCreateAsync(series);
-            var embed = new EmbedBuilder()
-                .WithDescription($"Id: {series.Id.ToString("D4")}\n" +
-                $"Winner: {rankingService.getPlayerMention(series.WinnerId)}\n" +
-                $"Loser: {rankingService.getPlayerMention(series.LoserId)}\n" +
-                $"Score: {wins}-{loss} Draws: {draws}\n" +
-                $"Invite Code: {inviteCode}")
-                .WithColor(Color.Orange);
-            await ReplyAsync(embed: embed.Build());
-        }
-
-        [Command("DeleteSeries")]
-        [Alias("ds")]
-        [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.Administrator)]
-        public async Task DeleteSeries(int id)
-        {
-            try
-            {
-                await seriesService.RemoveAsync(id);
-                await ReplyAsync("Series deleted.");
-            }
-            catch (Exception e)
-            {
-                await ReplyAsync(e.Message);
-            }
-        }
-
-        [Command("SeriesHistory")]
-        [Alias("sh")]
-        public async Task Serieshistory()
-        {
-            var limit = 30;
-            var embed = new EmbedBuilder()
-                .WithColor(Color.Orange)
-                .WithTitle("Series History")
-                .WithDescription(seriesService.LastSeriesHistoryLines(limit).JoinLines())
-                .WithFooter($"Displaying up to last {limit} series.");
-            await ReplyAsync(embed: embed.Build());
-        }
-
-        [Command("Leaderboard")]
-        [Alias("rankings", "rank", "ranking", "lb")]
-        public async Task Ranking()
-        {
-            var playerRanking = rankingService.SeriesPlayers.Select((x, i) => new KeyValuePair<int, SeriesPlayer>(i + 1, x)).ToDictionary(x => x.Key, x => x.Value);
-            //var playerRanking = rankingService.FullRanking.ToList();
-
-            var embed = new EmbedBuilder()
-                .WithColor(Color.Orange)
-                .WithTitle("Leaderboard")
-                .WithDescription(rankingService.PrintRankingList(playerRanking.Take(10)));
-
-            if (playerRanking.Values.Any(x => x.Id == Context.User.Id.ToString()))
-            {
-                var player = playerRanking.First(x => x.Value.Id == Context.User.Id.ToString());
-                if (player.Key > 10)
-                {
-                    embed.AddField("Your Position", rankingService.PrintRankingList(playerRanking.Skip(player.Key - 2).Take(3)));
-                }
-            }
-            await ReplyAsync(embed: embed.Build());
-        }
-
-        private EmbedBuilder ListTowers()
-        {
-            return new EmbedBuilder()
-                .WithColor(Color.Orange)
-                .WithTitle("Bannable Towers")
-                .WithDescription(towerBanManager.ListTowners());
-        }
-
-        [Command("BannableTowers")]
-        public async Task BannableTowers()
-        {
-            await ReplyAsync(embed: ListTowers().Build());
-        }
-
-        [Command("BanTower")]
-        public async Task BanTower(IGuildUser user)
-        {
-            if (!Context.IsPrivate)
-            {
-                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series and to start a ban tower session." +
-                    "\nYou can only select a tower to ban in our DM.");
-            }
-            return;
-        }
-
-        [Command("BanTower")]
-        [Alias("b", "bt", "ban")]
-        public async Task BanTower(Tower tower)
-        {
-            if (!Context.IsPrivate)
-            {
-                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series and to start a ban tower session." + 
-                    "\nYou can only select a tower to ban in our DM.");
-                return;
-            }
-
-            var session = towerBanManager.ProcessChoice(Context.User, tower);
-
-            if (session == null)
-            {
-                await ReplyAsync("The ban tower session has ended or you are not in a session to select a tower to ban.");
-                return;
-            }
-            var embed = new EmbedBuilder()
-                .WithColor(Color.Orange)
-                .WithDescription($"Click [here](https://discordapp.com/channels/{session.InitiateChannel.GuildId}/{session.InitiateChannel.Id}) to return to the channel.");
-            await ReplyAsync("Ban Tower Choice: " + tower.ToString("g"), embed: embed.Build());
-        }
+                    var msg = await logChannel.SendMessageAsync("test");
+                    await msg.AddReactionAsync(new Emoji("👍"));
+                    await msg.AddReactionAsync(new Emoji("👎"));
+                    var callback = new InlineReactionCallback(Interactive, Context, new ReactionCallbackData("text", null, false, true)
+                        .WithCallback(new Emoji("👍"), (c, r) => c.Channel.SendMessageAsync($"{r.User.Value.Mention} replied with 👍"))
+                        .WithCallback(new Emoji("👎"), (c, r) => c.Channel.SendMessageAsync($"{r.User.Value.Mention} replied with 👎")));
+                    Interactive.AddReactionCallback(msg, callback);
+                } 
+        */
 
         [Command("Challenge")]
         [Alias("ch")]
@@ -247,7 +78,7 @@ namespace MKOTHDiscordBot.Modules
             }
 
             var lastDaySeries = seriesService.SeriesHistory.Reverse().TakeWhile(x => (DateTime.Now - x.Date).TotalHours < 12);
-            var playerIds = new[] { user.Id.ToString(), Context.User.Id.ToString()};
+            var playerIds = new[] { user.Id.ToString(), Context.User.Id.ToString() };
             var conflictSeries = lastDaySeries.FirstOrDefault(x => playerIds.Contains(x.WinnerId) && playerIds.Contains(x.LoserId));
             if (conflictSeries != default)
             {
@@ -334,23 +165,6 @@ namespace MKOTHDiscordBot.Modules
             await InlineReactionReplyAsync(reactionCallBackData, false);
         }
 
-        [Command("Elo")]
-        [Summary("Basic Elo calculator with default K factor of 40.")]
-        public async Task Elo(double a = 1200, double b = 1200, byte wins = 0, byte losses = 0, byte draws = 0, double kFactor = 40)
-        {
-            var (eloLeft, eloRight) = EloCalculator.Calculate(kFactor, a, b, wins, losses, draws);
-            var diffLeft = eloLeft - a;
-            var embed = new EmbedBuilder()
-                .WithColor(Color.Orange)
-                .WithTitle("Elo calculator")
-                .WithDescription($"`A = {a}` `B = {b}` `wins = {wins}` `losses = {losses}` `draws = {draws}` `K factor = {kFactor}`")
-                .AddField("Elo A", $"`{a.ToString("N2")} -> {eloLeft.ToString("N2")}`", true)
-                .AddField("Elo B", $"`{b.ToString("N2")} -> {eloRight.ToString("N2")}`", true)
-                .AddField("Difference", $"`{(diffLeft <= 0 ? "" : "+")}{diffLeft.ToString("N2")}`");
-
-            await ReplyAsync(embed: embed.Build());
-        }
-
         private async Task BanTowerSession(IGuildUser user)
         {
             if (!towerBanManager.StartSession(Context.User, user, Context.Channel as ITextChannel))
@@ -383,6 +197,106 @@ namespace MKOTHDiscordBot.Modules
             {
                 await ReplyAsync($"{e.Message}.\nThis command cannot work for one who has direct message disabled.");
             }
+        }
+
+        [Command("Submit")]
+        [RequireContext(ContextType.Guild)]
+        public async Task Submit()
+        {
+            if (submissionRateLimiter.Audit(Context))
+            {
+                return;
+            }
+
+            await ReplyAsync("Self series submission is not available yet.\n" +
+                $"Please send a submission manually at " +
+                $"{(Context.Guild.Channels.First(x => x.Name == "series-submit") as ITextChannel).Mention} for an admin to process it.");
+        }
+
+        [Command("Leaderboard")]
+        [Alias("rankings", "rank", "ranking", "lb")]
+        public async Task Ranking()
+        {
+            var playerRanking = rankingService.SeriesPlayers.Select((x, i) => new KeyValuePair<int, SeriesPlayer>(i + 1, x)).ToDictionary(x => x.Key, x => x.Value);
+            //var playerRanking = rankingService.FullRanking.ToList();
+
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithTitle("Leaderboard")
+                .WithDescription(rankingService.PrintRankingList(playerRanking.Take(10)));
+
+            if (playerRanking.Values.Any(x => x.Id == Context.User.Id.ToString()))
+            {
+                var player = playerRanking.First(x => x.Value.Id == Context.User.Id.ToString());
+                if (player.Key > 10)
+                {
+                    embed.AddField("Your Position", rankingService.PrintRankingList(playerRanking.Skip(player.Key - 2).Take(3)));
+                }
+            }
+            await ReplyAsync(embed: embed.Build());
+        }
+
+        [Command("SeriesHistory")]
+        [Alias("sh")]
+        public async Task Serieshistory()
+        {
+            var limit = 25;
+            var lines = seriesService.LastSeriesHistoryLines(limit).JoinLines();
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithTitle("Series History")
+                .WithDescription(lines)
+                .WithFooter($"Displaying up to last {limit} series.");
+            await ReplyAsync(embed: embed.Build());
+        }
+
+        private EmbedBuilder ListTowers()
+        {
+            return new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithTitle("Bannable Towers")
+                .WithDescription(towerBanManager.ListTowners());
+        }
+
+        [Command("BannableTowers")]
+        public async Task BannableTowers()
+        {
+            await ReplyAsync(embed: ListTowers().Build());
+        }
+
+        [Command("BanTower")]
+        public async Task BanTower(IGuildUser user)
+        {
+            if (!Context.IsPrivate)
+            {
+                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series and to start a ban tower session." +
+                    "\nYou can only select a tower to ban in our DM.");
+            }
+            return;
+        }
+
+        [Command("BanTower")]
+        [Alias("b", "bt", "ban")]
+        public async Task BanTower(Tower tower)
+        {
+            if (!Context.IsPrivate)
+            {
+                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series and to start a ban tower session." + 
+                    "\nYou can only select a tower to ban in our DM.");
+                return;
+            }
+
+            var session = towerBanManager.ProcessChoice(Context.User, tower);
+
+            if (session == null)
+            {
+                await ReplyAsync("The ban tower session has ended or you are not in a session to select a tower to ban.");
+                return;
+            }
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithDescription($"Click [here](https://discordapp.com/channels/{session.InitiateChannel.GuildId}/{session.InitiateChannel.Id}) to return to the channel.");
+            await ReplyAsync("Ban Tower Choice: " + tower.ToString("g"), embed: embed.Build());
         }
 
         private bool isValidReplayId(string id)
@@ -422,6 +336,93 @@ namespace MKOTHDiscordBot.Modules
             }
 
             await ReplyAsync("https://battles.tv/watch/" + series.ReplayId);
+        }
+
+        [Command("Elo")]
+        [Summary("Basic Elo calculator with default K factor of 40.")]
+        public async Task Elo(double a = 1200, double b = 1200, byte wins = 0, byte losses = 0, byte draws = 0, double kFactor = 40)
+        {
+            var (eloLeft, eloRight) = EloCalculator.Calculate(kFactor, a, b, wins, losses, draws);
+            var diffLeft = eloLeft - a;
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithTitle("Elo calculator")
+                .WithDescription($"`A = {a}` `B = {b}` `wins = {wins}` `losses = {losses}` `draws = {draws}` `K factor = {kFactor}`")
+                .AddField("Elo A", $"`{a.ToString("N2")} -> {eloLeft.ToString("N2")}`", true)
+                .AddField("Elo B", $"`{b.ToString("N2")} -> {eloRight.ToString("N2")}`", true)
+                .AddField("Difference", $"`{(diffLeft <= 0 ? "" : "+")}{diffLeft.ToString("N2")}`");
+
+            await ReplyAsync(embed: embed.Build());
+        }
+
+        [Command("Refresh")]
+        [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.Administrator)]
+        public async Task Refresh()
+        {
+            await ReplyAsync("Pulling from remote spreadsheet...");
+            await seriesService.RefreshAsync();
+            await ReplyAsync("Refresh complete.");
+        }
+
+        [Command("CreateSeries")]
+        [Alias("cs")]
+        [Summary("Administrator command to create a series, bypassing all restrictions.")]
+        [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.Administrator)]
+        public async Task CreateSeries(IGuildUser winner, IGuildUser loser, byte wins, byte loss, string inviteCode = "NA")
+        {
+            await CreateSeries(winner, loser, wins, loss, 0, inviteCode);
+        }
+
+        [Command("CreateSeries")]
+        [Alias("cs")]
+        [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.Administrator)]
+        public async Task CreateSeries(IGuildUser winner, IGuildUser loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
+        {
+            if (wins < loss)
+            {
+                await ReplyAsync("Wins must greater than losses");
+                return;
+            }
+
+            if (inviteCode != "NA")
+            {
+                if (!isValidReplayId(inviteCode.ToUpper()))
+                {
+                    await ReplyAsync("Invalid invite code.");
+                    return;
+                }
+            }
+
+            var series = seriesService.MakeSeries(winner.Id, loser.Id, wins, loss, draws, inviteCode.ToUpper());
+            await seriesService.AdminCreateAsync(series);
+            var embed = new EmbedBuilder()
+                .WithDescription($"Id: {series.Id.ToString("D4")}\n" +
+                $"Winner: {rankingService.getPlayerMention(series.WinnerId)}\n" +
+                $"Loser: {rankingService.getPlayerMention(series.LoserId)}\n" +
+                $"Score: {wins}-{loss} Draws: {draws}\n" +
+                $"Invite Code: {inviteCode}")
+                .WithColor(Color.Orange);
+            await ReplyAsync(embed: embed.Build());
+        }
+
+        [Command("DeleteSeries")]
+        [Alias("ds")]
+        [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.Administrator)]
+        public async Task DeleteSeries(int id)
+        {
+            try
+            {
+                await seriesService.RemoveAsync(id);
+                await ReplyAsync("Series deleted.");
+            }
+            catch (Exception e)
+            {
+                await ReplyAsync(e.Message);
+            }
         }
     }
 }

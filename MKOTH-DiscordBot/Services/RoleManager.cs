@@ -28,11 +28,11 @@ namespace MKOTHDiscordBot.Services
 
         private Lazy<Dictionary<string, IRole>> lazyTierRoles;
 
-        private IRole King => TierRoles.GetValueOrDefault("King");
-        private IRole Nobles => TierRoles.GetValueOrDefault("Nobles");
-        private IRole Squires => TierRoles.GetValueOrDefault("Squires");
-        private IRole Vassal => TierRoles.GetValueOrDefault("Vassal");
-        private IRole Peasant => TierRoles.GetValueOrDefault("Peasant");
+        private IRole King => TierRoles["King"];
+        private IRole Nobles => TierRoles["Nobles"];
+        private IRole Squires => TierRoles["Squires"];
+        private IRole Vassal => TierRoles["Vassal"];
+        private IRole Peasant => TierRoles["Peasant"];
 
         public RoleManager(IServiceProvider serivces, IOptions<AppSettings> appSettings)
         {
@@ -71,7 +71,14 @@ namespace MKOTHDiscordBot.Services
                     {
                         await member.AddRoleAsync(MemberRole);
                     }
-                    await UpdateTierRole(member, player.Elo, rankingService.SeriesPlayers.First().Id == player.Id);
+                    try
+                    {
+                        await UpdateTierRole(member, player.Elo);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError(e);
+                    }
                 }
                 else if (member.RoleIds.Any(x => x == MemberRole.Id))
                 {
@@ -93,78 +100,30 @@ namespace MKOTHDiscordBot.Services
             }
 
             await user.AddRoleAsync(MemberRole);
-            await UpdateTierRole(user, player.Elo, rankingService.SeriesPlayers.First().Id == player.Id);
+            await UpdateTierRole(user, player.Elo);
         }
 
-        public async Task UpdateTierRole(IGuildUser user, double elo, bool isFirstPosition)
+        public IRole GetTierRole(double elo) => elo switch
         {
-            // Noble and King
-            if (elo >= 1400)
+            double x when x >= 1400 => (rankingService.SeriesPlayers.First().Elo == x && rankingService.SeriesPlayers.Count(y => y.Elo >= 1400) > 2) ? King : Nobles,
+            double x when x >= 1300 => Squires,
+            double x when x >= 1250 => Vassal,
+            _ => Peasant
+        };
+
+        public async Task UpdateTierRole(IGuildUser user, double elo)
+        {
+            var role = GetTierRole(elo);
+            
+            if (TierRoles.Select(x => x.Value.Id).Where(x => x != role.Id).Intersect(user.RoleIds).Any())
             {
-                if (!user.RoleIds.Contains(Nobles.Id))
-                {
-                    await user.AddRoleAsync(Nobles);
-                }
-                if (user.RoleIds.Contains(Squires.Id))
-                {
-                    await user.RemoveRoleAsync(Squires);
-                }
-                if (isFirstPosition)
-                {
-                    // The king is a special title awarded to the top ranking player on the condition that there are at least 2 noblemen present on the rankings.
-                    if (!user.RoleIds.Contains(King.Id) && rankingService.SeriesPlayers.Count(x => x.Elo >= 1400) > 2)
-                    {
-                        await user.AddRoleAsync(King);
-                    }
-                }
-                else if (user.RoleIds.Contains(King.Id))
-                {
-                    await user.RemoveRoleAsync(King);
-                }
+                Logger.Debug("Remove role for " + user.Username, $"[{role.Name}]");
+                await user.RemoveRolesAsync(TierRoles.Values);
             }
-            // Squires
-            else if (elo >= 1300)
+            if (!user.RoleIds.Contains(role.Id))
             {
-                if (user.RoleIds.Contains(Nobles.Id))
-                {
-                    await user.RemoveRoleAsync(Nobles);
-                }
-                if (!user.RoleIds.Contains(Squires.Id))
-                {
-                    await user.AddRoleAsync(Squires);
-                }
-                if (user.RoleIds.Contains(Vassal.Id))
-                {
-                    await user.RemoveRoleAsync(Vassal);
-                }
-            }
-            // Vassals
-            else if (elo >= 1250)
-            {
-                if (user.RoleIds.Contains(Squires.Id))
-                {
-                    await user.RemoveRoleAsync(Squires);
-                }
-                if (!user.RoleIds.Contains(Vassal.Id))
-                {
-                    await user.AddRoleAsync(Vassal);
-                }
-                if (user.RoleIds.Contains(Peasant.Id))
-                {
-                    await user.RemoveRoleAsync(Peasant);
-                }
-            }
-            // Peasants
-            else
-            {
-                if (user.RoleIds.Contains(Vassal.Id))
-                {
-                    await user.RemoveRoleAsync(Vassal);
-                }
-                if (!user.RoleIds.Contains(Peasant.Id))
-                {
-                    await user.AddRoleAsync(Peasant);
-                }
+                Logger.Debug("Add role for " + user.Username, $"[{role.Name}]");
+                await user.AddRoleAsync(role);
             }
         }
     }
