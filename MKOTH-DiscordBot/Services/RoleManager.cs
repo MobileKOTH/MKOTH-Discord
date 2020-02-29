@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Discord;
+using Discord.WebSocket;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+
 using MKOTHDiscordBot.Properties;
-using Discord.WebSocket;
-using MKOTHDiscordBot.Models;
 
 namespace MKOTHDiscordBot.Services
 {
@@ -103,17 +104,18 @@ namespace MKOTHDiscordBot.Services
             await UpdateTierRole(user, player.Elo);
         }
 
-        public IRole GetTierRole(double elo) => elo switch
+        public IRole TierRole(Tiers tier) => tier switch
         {
-            double x when x >= 1400 => (rankingService.SeriesPlayers.First().Elo == x && rankingService.SeriesPlayers.Count(y => y.Elo >= 1400) > 2) ? King : Nobles,
-            double x when x >= 1300 => Squires,
-            double x when x >= 1250 => Vassal,
-            _ => Peasant
+            Tiers.King => King,
+            Tiers.Nobles => Nobles,
+            Tiers.Squires => Squires,
+            Tiers.Vassals => Vassal,
+            _ => Peasant,
         };
 
         public async Task UpdateTierRole(IGuildUser user, double elo)
         {
-            var role = GetTierRole(elo);
+            var role = TierRole(rankingService.PlayerTier(elo));
             
             if (TierRoles.Select(x => x.Value.Id).Where(x => x != role.Id).Intersect(user.RoleIds).Any())
             {

@@ -113,10 +113,10 @@ namespace MKOTHDiscordBot
         }
 
         public static string MarkdownCodeBlock(this string str, string lang = null)
-            => $"```{(lang == null ? "" : lang)}\n{str}\n```";
+            => Format.Code(str, lang ?? "");
 
         public static string MarkdownCodeLine(this string str) 
-            => $"`{str}`";
+            => Format.Code(str);
 
         public static string WrapAround(this string str, string start, string end = null)
             => $"{start}{str}{end ?? start}";

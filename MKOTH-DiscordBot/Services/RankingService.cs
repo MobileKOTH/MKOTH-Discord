@@ -17,6 +17,14 @@ using RestSharp;
 
 namespace MKOTHDiscordBot.Services
 {
+    public enum Tiers
+    {
+        King,
+        Nobles = 1400,
+        Squires = 1300,
+        Vassals = 1250,
+        Peasants
+    }
     public class RankingService : IRankingService
     {
         const double Elo_K_Factor = 40;
@@ -64,46 +72,13 @@ namespace MKOTHDiscordBot.Services
             });
         }
 
-        public IEnumerable<KeyValuePair<int, SeriesPlayer>> FullRanking
+        public Tiers PlayerTier(double elo) => elo switch
         {
-            get
-            {
-                var playCountGroup = seriesPlayers.GroupBy(x =>
-                {
-                    var c = 0;
-                    foreach (var y in seriesService.SeriesHistory)
-                    {
-                        if (y.WinnerId == x.Id || y.LoserId == x.Id)
-                        {
-                            if ((c += y.Wins + y.Losses) >= Rank_Show_Games)
-                            {
-                                return c;
-                            }
-                        }
-                    }
-                    return c;
-                });
-                int rank = 1;
-                foreach (var rankGroup in playCountGroup.OrderByDescending(x => x.Key))
-                {
-                    if (rankGroup.Key >= 5)
-                    {
-                        foreach (var player in rankGroup)
-                        {
-                            yield return new KeyValuePair<int, SeriesPlayer>(rank++, player);
-                        }
-                    }
-                    else
-                    {
-                        foreach (var player in rankGroup)
-                        {
-                            yield return new KeyValuePair<int, SeriesPlayer>(-(5 - rankGroup.Key), player);
-                        }
-                    }
-                }
-            }
-        }
-
+            double x when x >= (int)Tiers.Nobles => (SeriesPlayers.First().Elo == x && SeriesPlayers.Count(y => y.Elo >= 1400) > 2) ? Tiers.King : Tiers.Nobles,
+            double x when x >= (int)Tiers.Squires => Tiers.Squires,
+            double x when x >= (int)Tiers.Vassals => Tiers.Vassals,
+            _ => Tiers.Peasants
+        };
 
         public SeriesPlayer CreatePlayer(ulong id, string name)
         {
@@ -172,39 +147,55 @@ namespace MKOTHDiscordBot.Services
             _ = Updated.Invoke();
         }
 
+        private async Task<IUserMessage> GetOrCreateRankingMessage(Queue<IMessage> messageQueue)
+        {
+            if (messageQueue.Count > 0)
+            {
+                return await Task.FromResult(messageQueue.Dequeue() as IUserMessage);
+            }
+            else
+            {
+                return await RankingChannel.SendMessageAsync("Reserved");
+            }
+        }
+
         public async Task UpdateFullLeaderBoard()
         {
-            var messages = (await RankingChannel.GetMessagesAsync(100).FlattenAsync()).Where(x => x.Author.Id == client.CurrentUser.Id);
+            var messages = new Queue<IMessage>((await RankingChannel.GetMessagesAsync(100).FlattenAsync())
+                .Where(x => x.Author.Id == client.CurrentUser.Id).Reverse());
+
+            var headerTime = await GetOrCreateRankingMessage(messages);
+
+            var headerEmbed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithDescription("Formatting maybe incorrect in mobile.")
+                .WithFooter("Updated At")
+                .WithTimestamp(DateTime.Now);
+
+            await headerTime.ModifyAsync(x =>
+            {
+                x.Content = Format.Bold("Leaderboard");
+                x.Embed = headerEmbed.Build();
+            });
+
+            var titleHeaders = await GetOrCreateRankingMessage(messages);
+
+            await titleHeaders.ModifyAsync(x => x.Content = $"`#00` | `{"Elo".PadRight(8, ' ')}` | `Pts` | `Name`");
 
             var playerRanking = seriesPlayers.Select((x, i) => new KeyValuePair<int, SeriesPlayer>(i + 1, x)).ToDictionary(x => x.Key, x => x.Value);
-            // var playerRanking = FullRanking.ToList();
+
+            var tiers = playerRanking.GroupBy(x => PlayerTier(x.Value.Elo));
+
+            var lines = tiers.Select(x => $"{Format.Underline(Format.Bold(x.Key.ToString("G").PadRight(66, ' ')))}\n" + PrintRankingList(x) + "\n").JoinLines().Split("\n");
+
             var chunksize = 50;
-            for (int i = 0, m = 0; i < playerRanking.Count; i += chunksize, m++)
+            for (int i = 0, m = 0; i < lines.Length; i += chunksize, m++)
             {
-                var fixMsg = "Due an apparent discord caching bug, " +
-                    "if the list contains invalid players and they are still present in the server, " +
-                    "to fix this: move to another channel and scroll through the entire discord user list at the right and return to this channel.";
-                var embed = new EmbedBuilder()
-                    .WithColor(Color.Orange)
-                    .WithTitle("Leaderboard")
-                    .WithDescription(PrintRankingList(playerRanking.Skip(i).Take(chunksize)))
-                    .WithFooter("Updated At")
-                    .WithTimestamp(DateTime.Now)
-                    .Build();
+                var targetMessage = await GetOrCreateRankingMessage(messages);
 
-                var targetMessage = messages.ElementAtOrDefault(m) as IUserMessage;
-
-                if (targetMessage != default)
-                {
-                    await targetMessage.ModifyAsync(x => {
-                        x.Content = i == 0 ? fixMsg : string.Empty;
-                        x.Embed = embed;
-                    });;
-                }
-                else
-                {
-                    await RankingChannel.SendMessageAsync(text: i == 0 ? fixMsg : string.Empty, embed: embed);
-                }
+                await targetMessage.ModifyAsync(x => {
+                    x.Content = lines.Skip(i).Take(chunksize).JoinLines();
+                }); ;
             }
         }
 
@@ -215,9 +206,7 @@ namespace MKOTHDiscordBot.Services
 
         public string PrintRankingList(IEnumerable<KeyValuePair<int, SeriesPlayer>> list)
         {
-            return list.Select(x => x.Key > 0 
-            ? $"`#{x.Key.ToString("D2")}` `ELO: {x.Value.Elo.ToString("N2")}` {getPlayerMention(x.Value.Id)}"
-            : $"`Unranked {-x.Key}` `ELO: {x.Value.Elo.ToString("N2")}` {getPlayerMention(x.Value.Id)}").JoinLines();
+            return list.Select(x => $"`#{x.Key.ToString("D2")}` | `{x.Value.Elo.ToString("N2").PadLeft(8, ' ')}` | `{(0).ToString().PadLeft(3, ' ')}` | {getPlayerMention(x.Value.Id)}").JoinLines();
         }
 
         private void ProcessSeries(Series series)
@@ -241,5 +230,6 @@ namespace MKOTHDiscordBot.Services
         IEnumerable<SeriesPlayer> SeriesPlayers { get; }
         event Func<Task> Updated;
         Task Refresh();
+        Tiers PlayerTier(double elo);
     }
 }
