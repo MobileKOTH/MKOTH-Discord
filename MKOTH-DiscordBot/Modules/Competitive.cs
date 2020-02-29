@@ -90,9 +90,9 @@ namespace MKOTHDiscordBot.Modules
             var challengeEmbed = new EmbedBuilder()
                 .WithAuthor(Context.User)
                 .WithTitle("Series Challenge")
-                .WithDescription("You are challenging " + user.Mention + " on a series.\n" +
-                "Do you both agree to vote for towers to ban?\n" +
-                "✅ Agree ❌ Disagree 🚶 Reject Challenge")
+                .WithDescription(Context.User.Mention + " is challenging " + user.Mention + " on a series.\n" +
+                "Please decide if to vote for towers to ban. Both have to respond. Only one has to agree.\n" +
+                "🚫 Ban Towers ❌ No Ban Towers 🚶 Reject Challenge")
                 .WithFooter($"Both of you have {TowerBanManager.MAX_SESSION_SECONDS} seconds to decide.");
 
             bool leftAgree = false, rightAgree = false, denied = false;
@@ -110,57 +110,54 @@ namespace MKOTHDiscordBot.Modules
                         return;
                     }
                     await ReplyAsync(embed: new EmbedBuilder()
-                        .WithDescription($"{Context.User.Mention} {user.Mention} Challenge session has timed out.").Build());
-                }).WithCallback(new Emoji("✅"), async (c, e) =>
+                        .WithDescription($"{Context.User.Mention} {user.Mention} Challenge session has timed out.")
+                        .Build());
+                }).WithCallback(new Emoji("🚫"), async (c, e) =>
                 {
-                    if (e.UserId == Context.User.Id || e.UserId == user.Id)
+                    if (!(e.UserId == Context.User.Id || e.UserId == user.Id) || denied)
                     {
-                        if (e.UserId == Context.User.Id)
-                        {
-                            leftAgree = true;
-                        }
-                        if (e.UserId == user.Id)
-                        {
-                            rightAgree = true;
-                        }
-                        voteCount++;
+                        return;
                     }
-                    if (leftAgree && rightAgree)
-                    {
-                        await BanTowerSession(user);
-                    }
+                    leftAgree = e.UserId == Context.User.Id;
+                    rightAgree = e.UserId == user.Id;
+                    voteCount++;
+                    await handleVote();
                 })
                 .WithCallback(new Emoji("❌"), async (c, e) =>
                 {
-                    if (e.UserId == Context.User.Id || e.UserId == user.Id)
+                    if (!(e.UserId == Context.User.Id || e.UserId == user.Id) || denied)
                     {
-                        voteCount++;
-                        if (denied)
-                        {
-                            return;
-                        }
-                        await ReplyAsync(embed: new EmbedBuilder()
-                          .WithDescription($"{Context.User.Mention} {user.Mention} One of you disagreed to have towers banned. " +
-                          $"You may begin your series without tower bans.")
-                          .Build());
-                        denied = true;
+                        return;
                     }
+                    voteCount++;
+                    await handleVote();
                 })
                 .WithCallback(new Emoji("🚶"), async (c, e) =>
                 {
+                    if (!(e.UserId == Context.User.Id || e.UserId == user.Id) || denied)
+                    {
+                        return;
+                    }
                     if (e.UserId == Context.User.Id || e.UserId == user.Id)
                     {
                         voteCount++;
-                        if (denied)
-                        {
-                            return;
-                        }
+                        denied = true;
                         await ReplyAsync(embed: new EmbedBuilder()
                           .WithDescription($"{e.User.Value.Mention} has rejected the challenge")
                           .Build());
-                        denied = true;
                     }
                 });
+
+            async Task handleVote()
+            {
+                if ((leftAgree || rightAgree) && (voteCount == 2))
+                {
+                    await ReplyAsync(embed: new EmbedBuilder()
+                      .WithDescription($"{Context.User.Mention} {user.Mention} One or both of you have agreed to have towers banned. ")
+                      .Build());
+                    await BanTowerSession(user);
+                }
+            }
 
             await InlineReactionReplyAsync(reactionCallBackData, false);
         }

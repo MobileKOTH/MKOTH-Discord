@@ -116,11 +116,14 @@ namespace MKOTHDiscordBot.Services
         public async Task UpdateTierRole(IGuildUser user, double elo)
         {
             var role = TierRole(rankingService.PlayerTier(elo));
-            
-            if (TierRoles.Select(x => x.Value.Id).Where(x => x != role.Id).Intersect(user.RoleIds).Any())
+
+            var badTiers = TierRoles.Select(x => x.Value.Id).Where(x => x != role.Id);
+            var intersects = badTiers.Intersect(user.RoleIds);
+
+            if (intersects.Any())
             {
-                Logger.Debug("Remove role for " + user.Username, $"[{role.Name}]");
-                await user.RemoveRolesAsync(TierRoles.Values);
+                Logger.Debug("Remove role for " + user.Username, $"[{intersects.Select(x => TierRoles.Values.First(y => y.Id == x).Name).JoinLines(", ")}]");
+                await user.RemoveRolesAsync(TierRoles.Values.Where(x => intersects.Any(y => x.Id == y)));
             }
             if (!user.RoleIds.Contains(role.Id))
             {
