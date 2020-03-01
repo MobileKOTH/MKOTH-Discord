@@ -7,5 +7,6 @@ namespace MKOTHDiscordBot.Models
     public class SeriesPlayer : Player
     {
         public double Elo { get; set; }
+        public int Points { get; set; }
     }
 }

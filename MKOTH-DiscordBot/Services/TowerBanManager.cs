@@ -78,7 +78,7 @@ namespace MKOTHDiscordBot.Services
             {
                 if (!user.Choice.HasValue)
                 {
-                    session.InitiateChannel.SendMessageAsync($"{user.User.Mention} has failed to respond in time for a ban tower session.");
+                    session.InitiateChannel.SendMessageAsync($"{user.User.Mention} has failed to respond in time for a tower banning session.");
                 }
             }
             sessions.Remove(session);
@@ -123,8 +123,8 @@ namespace MKOTHDiscordBot.Services
 
         private void CompleteSession(TowerBanSession session)
         {
-            session.InitiateChannel.SendMessageAsync($"The tower ban between {session.Users.Select(x => x.User.Mention).JoinLines(" and ")} will be " +
-                $"{session.Users.Select(x => x.Choice.Value).Distinct().Select(x => x.ToString("g")).JoinLines(", ")}");
+            session.InitiateChannel.SendMessageAsync($"The banned tower(s) between {session.Users.Select(x => x.User.Mention).JoinLines(" and ")} will be " +
+                $"{session.Users.Select(x => x.Choice.Value).Distinct().Select(x => x.ToString("g")).JoinLines(" and ")}");
 
             sessions.Remove(session);
         }

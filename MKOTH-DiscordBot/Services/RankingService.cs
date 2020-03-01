@@ -42,7 +42,7 @@ namespace MKOTHDiscordBot.Services
         private readonly RestClient restClient;
 
         private IGuild ProductionGuild => client.GetGuild(productionGuildId);
-        private ITextChannel RankingChannel => client.GetChannel(rankingChannel) as ITextChannel;
+        public ITextChannel RankingChannel => client.GetChannel(rankingChannel) as ITextChannel;
 
         public IEnumerable<SeriesPlayer> SeriesPlayers => seriesPlayers;
 
@@ -80,13 +80,23 @@ namespace MKOTHDiscordBot.Services
             _ => Tiers.Peasants
         };
 
+        public string TierIcon(Tiers tier) => tier switch
+        {
+            Tiers.King => "👑",
+            Tiers.Nobles => "💰",
+            Tiers.Squires => "⚔",
+            Tiers.Vassals => "⚒",
+            _ => "🛠",
+        };
+
         public SeriesPlayer CreatePlayer(ulong id, string name)
         {
             return new SeriesPlayer
             {
                 Elo = 1200,
                 Id = id.ToString(),
-                Name = name
+                Name = name,
+                Points = 0
             };
         }
 
@@ -188,14 +198,15 @@ namespace MKOTHDiscordBot.Services
 
             var lines = tiers.Select(x => $"{Format.Underline(Format.Bold(x.Key.ToString("G").PadRight(66, ' ')))}\n" + PrintRankingList(x) + "\n").JoinLines().Split("\n");
 
-            var chunksize = 50;
+            var chunksize = 30;
             for (int i = 0, m = 0; i < lines.Length; i += chunksize, m++)
             {
                 var targetMessage = await GetOrCreateRankingMessage(messages);
 
-                await targetMessage.ModifyAsync(x => {
+                await targetMessage.ModifyAsync(x =>
+                {
                     x.Content = lines.Skip(i).Take(chunksize).JoinLines();
-                }); ;
+                });
             }
         }
 
@@ -206,13 +217,36 @@ namespace MKOTHDiscordBot.Services
 
         public string PrintRankingList(IEnumerable<KeyValuePair<int, SeriesPlayer>> list)
         {
-            return list.Select(x => $"`#{x.Key.ToString("D2")}` | `{x.Value.Elo.ToString("N2").PadLeft(8, ' ')}` | `{(0).ToString().PadLeft(3, ' ')}` | {getPlayerMention(x.Value.Id)}").JoinLines();
+            return list.Select(x => $"`#{x.Key.ToString("D2")}` | " +
+            $"`{x.Value.Elo.ToString("N2").PadLeft(8, ' ')}` | " +
+            $"`{x.Value.Points.ToString().PadLeft(3, ' ')}` | " +
+            $"{TierIcon(PlayerTier(x.Value.Elo))} {getPlayerMention(x.Value.Id)}").JoinLines();
         }
 
         private void ProcessSeries(Series series)
         {
             var winner = seriesPlayers.Find(x => x.Id.ToString() == series.WinnerId);
             var loser = seriesPlayers.Find(x => x.Id.ToString() == series.LoserId);
+
+            if (winner.Elo < loser.Elo)
+            {
+                winner.Points += 5;
+            }
+            else
+            {
+                winner.Points += 1;
+            }
+
+            if (winner.Elo > 1300 && (winner.Elo - loser.Elo) >= 300)
+            {
+                loser.Points -= 5;
+            }
+
+            if (loser.Points < 0)
+            {
+                throw new Exception($"{loser.Name} Negative Elo at Series ${series.Id}");
+            }
+
             var (eloLeft, eloRight) = EloCalculator.Calculate(Elo_K_Factor, winner.Elo, loser.Elo, series.Wins, series.Losses, series.Draws);
             winner.Elo = eloLeft;
             loser.Elo = eloRight;

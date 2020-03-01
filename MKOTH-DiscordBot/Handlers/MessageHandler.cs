@@ -62,6 +62,11 @@ namespace MKOTHDiscordBot.Handlers
                 return;
             }
 
+            if (socketMessage.Author.IsBot || socketMessage.Author.IsWebhook)
+            {
+                return;
+            }
+
             if (!(socketMessage is SocketUserMessage message))
             {
                 return;

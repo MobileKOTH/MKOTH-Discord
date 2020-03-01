@@ -258,7 +258,7 @@ namespace MKOTHDiscordBot.Modules
         public async Task Ban(IGuildUser user)
         {
             await ReplyAsync("This command is reserved for future chat moderation uses.\n" +
-                $"Do you mean `{prefix}Challenge` to challenge someone and start a ban tower session?");
+                $"Do you mean `{prefix}Challenge` to challenge someone and start a tower banning session?");
         }
     }
 }

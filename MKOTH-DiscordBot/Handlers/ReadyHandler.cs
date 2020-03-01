@@ -19,6 +19,10 @@ namespace MKOTHDiscordBot.Handlers
 
         private async Task RunTests()
         {
+            //var msg = "<:ban:683258477421920342>";
+
+            //var chn = client.GetChannel(395982667876663306) as IMessageChannel;
+            //await chn.SendMessageAsync(msg);
             await Task.CompletedTask;
         }
 

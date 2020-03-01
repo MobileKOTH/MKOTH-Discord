@@ -71,6 +71,12 @@ namespace MKOTHDiscordBot.Modules
                 return;
             }
 
+            if (user.IsBot)
+            {
+                await ReplyAsync("You can only challenge a human.");
+                return;
+            }
+
             if (user.RoleIds.Any(x => x == 347300513110294528))
             {
                 await ReplyAsync("You cannot challenge a VIP in this server");
@@ -87,13 +93,30 @@ namespace MKOTHDiscordBot.Modules
                 return;
             }
 
+            var player1 = rankingService.SeriesPlayers.FirstOrDefault(x => x.Id == Context.User.Id.ToString());
+            var player2 = rankingService.SeriesPlayers.FirstOrDefault(x => x.Id == user.Id.ToString());
+            var lower = (player1?.Elo ?? 1200) < (player2?.Elo ?? 1200) ? player1 : player2;
+
+            if (((player1?.Elo ?? 1200) > 1300 || (player2?.Elo ?? 1200) > 1300) && Math.Abs((player1?.Elo ?? 1200) - (player2?.Elo ?? 1200)) >= 300)
+            {
+                if ((lower?.Points ?? 0) < 5)
+                {
+                    await ReplyAsync("If a player's elo is more than 1300 and the Elo difference of the players is more than 300, the lower Elo player needs to have at least 5 points earned to challenge.");
+                    return;
+                }
+            }
+
+            var banEmote = await rankingService.RankingChannel.Guild.GetEmoteAsync(683258477421920342);
+
             var challengeEmbed = new EmbedBuilder()
                 .WithAuthor(Context.User)
                 .WithTitle("Series Challenge")
                 .WithDescription(Context.User.Mention + " is challenging " + user.Mention + " on a series.\n" +
-                "Please decide if to vote for towers to ban. Both have to respond. Only one has to agree.\n" +
-                "🚫 Ban Towers ❌ No Ban Towers 🚶 Reject Challenge")
+                "Please decide if to ban towers. Both must respond, but only one has to agree to ban towers.\n" +
+                "<:ban:683258477421920342> Ban Towers ⭕ No Ban Towers 🚶 Reject Challenge")
                 .WithFooter($"Both of you have {TowerBanManager.MAX_SESSION_SECONDS} seconds to decide.");
+
+            
 
             bool leftAgree = false, rightAgree = false, denied = false;
             int voteCount = 0;
@@ -112,7 +135,7 @@ namespace MKOTHDiscordBot.Modules
                     await ReplyAsync(embed: new EmbedBuilder()
                         .WithDescription($"{Context.User.Mention} {user.Mention} Challenge session has timed out.")
                         .Build());
-                }).WithCallback(new Emoji("🚫"), async (c, e) =>
+                }).WithCallback(banEmote, async (c, e) =>
                 {
                     if (!(e.UserId == Context.User.Id || e.UserId == user.Id) || denied)
                     {
@@ -123,7 +146,7 @@ namespace MKOTHDiscordBot.Modules
                     voteCount++;
                     await handleVote();
                 })
-                .WithCallback(new Emoji("❌"), async (c, e) =>
+                .WithCallback(new Emoji("⭕"), async (c, e) =>
                 {
                     if (!(e.UserId == Context.User.Id || e.UserId == user.Id) || denied)
                     {
@@ -150,12 +173,22 @@ namespace MKOTHDiscordBot.Modules
 
             async Task handleVote()
             {
-                if ((leftAgree || rightAgree) && (voteCount == 2))
+                if (voteCount != 2)
+                {
+                    return;
+                }
+                if (leftAgree || rightAgree)
                 {
                     await ReplyAsync(embed: new EmbedBuilder()
                       .WithDescription($"{Context.User.Mention} {user.Mention} One or both of you have agreed to have towers banned. ")
                       .Build());
                     await BanTowerSession(user);
+                }
+                else
+                {
+                    await ReplyAsync(embed: new EmbedBuilder()
+                      .WithDescription($"{Context.User.Mention} {user.Mention} Both of you have disagreed to have towers banned. You may begin your series with no tower banned.")
+                      .Build());
                 }
             }
 
@@ -166,7 +199,7 @@ namespace MKOTHDiscordBot.Modules
         {
             if (!towerBanManager.StartSession(Context.User, user, Context.Channel as ITextChannel))
             {
-                await ReplyAsync("Failed to start ban tower session. Perhaps someone is already in a session, please wait for them to finish.");
+                await ReplyAsync("Failed to start a tower banning session. Perhaps someone is already in a session, please wait for them to finish.");
                 return;
             }
 
@@ -184,7 +217,7 @@ namespace MKOTHDiscordBot.Modules
                 var dmOther = await user.SendMessageAsync(embed: dmEmbed.Build());
                 var embed = new EmbedBuilder()
                     .WithColor(Color.Orange)
-                    .WithDescription($"A tower ban session has created with {user.Mention}. " +
+                    .WithDescription($"A tower ban session has created betweem {Context.User.Mention} and {user.Mention}. " +
                     $"Please select a tower to ban in our DM within {TowerBanManager.MAX_SESSION_SECONDS} seconds.\n\n" +
                     $"{Context.User.Mention}: You can click [here](https://discordapp.com/channels/@me/{dmStarter.Channel.Id}) to switch to our dm.\n" +
                     $"{user.Mention}: You can click [here](https://discordapp.com/channels/@me/{dmOther.Channel.Id}) to switch to our dm.");
@@ -230,7 +263,7 @@ namespace MKOTHDiscordBot.Modules
                     embed.AddField("Your Position", rankingService.PrintRankingList(playerRanking.Skip(player.Key - 2).Take(3)));
                 }
             }
-            await ReplyAsync(embed: embed.Build());
+            await ReplyAsync(message: "Full list at " + rankingService.RankingChannel.Mention,embed: embed.Build());
         }
 
         [Command("SeriesHistory")]
@@ -266,7 +299,7 @@ namespace MKOTHDiscordBot.Modules
         {
             if (!Context.IsPrivate)
             {
-                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series and to start a ban tower session." +
+                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series and to start a tower banning session." +
                     "\nYou can only select a tower to ban in our DM.");
             }
             return;
@@ -278,7 +311,7 @@ namespace MKOTHDiscordBot.Modules
         {
             if (!Context.IsPrivate)
             {
-                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series and to start a ban tower session." + 
+                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series and to start a tower banning session." + 
                     "\nYou can only select a tower to ban in our DM.");
                 return;
             }
@@ -287,13 +320,13 @@ namespace MKOTHDiscordBot.Modules
 
             if (session == null)
             {
-                await ReplyAsync("The ban tower session has ended or you are not in a session to select a tower to ban.");
+                await ReplyAsync("The tower banning session has ended or you are not in a session to select a tower to ban.");
                 return;
             }
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithDescription($"Click [here](https://discordapp.com/channels/{session.InitiateChannel.GuildId}/{session.InitiateChannel.Id}) to return to the channel.");
-            await ReplyAsync("Ban Tower Choice: " + tower.ToString("g"), embed: embed.Build());
+            await ReplyAsync("Banned Tower Choice: " + tower.ToString("g"), embed: embed.Build());
         }
 
         private bool isValidReplayId(string id)
