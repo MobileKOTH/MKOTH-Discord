@@ -54,7 +54,7 @@ namespace MKOTHDiscordBot.Modules
         public async Task RawMessage(ITextChannel channel, ulong messageId)
         {
             var msg = await channel.GetMessageAsync(messageId);
-            await ReplyAsync(msg.Content.SliceBack(2000 - 7).MarkdownCodeBlock());
+            await ReplyAsync(Format.Sanitize(msg.Content.SliceBack(2000 - 7)).MarkdownCodeBlock());
         }
 
         [Command("Reply")]
@@ -63,7 +63,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireContext(ContextType.Guild)]
         public async Task Reply(ulong messageId, [Remainder] string reply)
         {
-            await ReplyAs(Context.User as IGuildUser, messageId, reply);
+            await ReplyAs(Context.User as IGuildUser, messageId, reply.Replace("@", "`@`"));
         }
 
         [Command("ImpersonateReply")]
@@ -91,7 +91,7 @@ namespace MKOTHDiscordBot.Modules
                 .WithFooter($"#{message.Channel.Name}");
 
             var webHook = await loadWebhook;
-            _ = webHook.SendMessageAsync(reply, false, new Embed[] { embed.Build() }, user.GetDisplayName(), user.GetAvatarUrl());
+            _ = webHook.SendMessageAsync(reply.Replace("@", "`@`"), false, new Embed[] { embed.Build() }, user.GetDisplayName(), user.GetAvatarUrl());
             _ = Context.Message.DeleteAsync();
         }
 
@@ -102,7 +102,7 @@ namespace MKOTHDiscordBot.Modules
         public async Task Impersonate(IGuildUser user, [Remainder] string reply)
         {
             var webhook = await webhookLoader.Value;
-            _ = webhook.SendMessageAsync(reply, false, null, user.GetDisplayName(), user.GetAvatarUrl());
+            _ = webhook.SendMessageAsync(reply.Replace("@", "`@`"), false, null, user.GetDisplayName(), user.GetAvatarUrl());
             _ = Context.Message.DeleteAsync();
         }
 
@@ -139,7 +139,7 @@ namespace MKOTHDiscordBot.Modules
             try
             {
                 var response = await new RestClient(apiBase).GetAsync<dynamic>(request);
-                await ReplyAsync(response["response"]);
+                await ReplyAsync((response["response"] as string).Replace("@", "`@`"));
             }
             catch (Exception e)
             {
@@ -283,7 +283,7 @@ namespace MKOTHDiscordBot.Modules
                 return outputChar;
             }).ToArray();
             var output = new string(skipped) + new string(rest);
-            await ReplyAsync(output);
+            await ReplyAsync(output.Replace("@", "`@`"));
         }
 
         [Command("SentenceCase", RunMode = RunMode.Async)]
@@ -297,14 +297,14 @@ namespace MKOTHDiscordBot.Modules
             var r = new Regex(@"(^[a-z])|[?!.:;]\s+(.)", RegexOptions.ExplicitCapture);
             // MatchEvaluator delegate defines replacement of setence starts to uppercase
             var result = r.Replace(lowerCase, s => s.Value.ToUpper());
-            await ReplyAsync(result);
+            await ReplyAsync(result.Replace("@", "`@`"));
         }
 
         [Command("uwu")]
         public async Task Uwu([Remainder] string input)
         {
             var output = UwuTranslator.Translate(input);
-            await ReplyAsync(output);
+            await ReplyAsync(output.Replace("@", "`@`"));
         }
 
         public void Dispose()

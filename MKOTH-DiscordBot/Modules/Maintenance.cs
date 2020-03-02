@@ -178,6 +178,7 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Logs")]
         [Summary("Dumps the latest general system logs.")]
+        [RequireDeveloper]
         public async Task Logs(int count = 20)
         {
             var blocks = File.ReadAllText(Directories.GeneralLogsFile).Split(new string[1] { "\r\n\r\n" }, StringSplitOptions.None)

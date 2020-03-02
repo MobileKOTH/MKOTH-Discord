@@ -218,8 +218,8 @@ namespace MKOTHDiscordBot.Services
         public string PrintRankingList(IEnumerable<KeyValuePair<int, SeriesPlayer>> list)
         {
             return list.Select(x => $"`#{x.Key.ToString("D2")}` | " +
-            $"`{x.Value.Elo.ToString("N2").PadLeft(8, ' ')}` | " +
-            $"`{x.Value.Points.ToString().PadLeft(3, ' ')}` | " +
+            $"`{x.Value.Elo.ToString("N2").PadLeft(8, '0')}` | " +
+            $"`{x.Value.Points.ToString().PadLeft(3, '0')}` | " +
             $"{TierIcon(PlayerTier(x.Value.Elo))} {getPlayerMention(x.Value.Id)}").JoinLines();
         }
 

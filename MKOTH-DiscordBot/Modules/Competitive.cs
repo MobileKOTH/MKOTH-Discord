@@ -385,6 +385,15 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync(embed: embed.Build());
         }
 
+        [Command("Elo")]
+        [Summary("Basic Elo calculator with default K factor of 40.")]
+        public async Task Elo(IGuildUser a, IGuildUser b, byte wins = 0, byte losses = 0, byte draws = 0, double kFactor = 40)
+        {
+            var playerA = rankingService.SeriesPlayers.FirstOrDefault(x => x.Id == a.Id.ToString())?.Elo ?? 1200;
+            var playerB = rankingService.SeriesPlayers.FirstOrDefault(x => x.Id == b.Id.ToString())?.Elo ?? 1200;
+            await Elo(playerA, playerB, wins = 0, losses = 0, draws = 0, kFactor = 40);
+        }
+
         [Command("Refresh")]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.Administrator)]
@@ -397,7 +406,7 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("CreateSeries")]
         [Alias("cs")]
-        [Summary("Administrator command to create a series, bypassing all restrictions.")]
+        [Summary("Administrator command to create a series, bypassing most restrictions.")]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.Administrator)]
         public async Task CreateSeries(IGuildUser winner, IGuildUser loser, byte wins, byte loss, string inviteCode = "NA")
@@ -407,9 +416,30 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("CreateSeries")]
         [Alias("cs")]
+        [Summary("Administrator command to create a series, bypassing most restrictions.")]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.Administrator)]
         public async Task CreateSeries(IGuildUser winner, IGuildUser loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
+        {
+            await CreateSeries(winner.Id, loser.Id, wins, loss, draws, inviteCode);
+        }
+
+        [Command("CreateSeriesForced")]
+        [Alias("csf")]
+        [Summary("Administrator command to create a series, even for non existant players.")]
+        [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.Administrator)]
+        public async Task CreateSeries(ulong winner, ulong loser, byte wins, byte loss, string inviteCode = "NA")
+        {
+            await CreateSeries(winner, loser, wins, loss, 0, inviteCode);
+        }
+
+        [Command("CreateSeriesForced")]
+        [Alias("csf")]
+        [Summary("Administrator command to create a series, even for non existant players.")]
+        [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.Administrator)]
+        public async Task CreateSeries(ulong winner, ulong loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
         {
             if (wins < loss)
             {
@@ -426,7 +456,7 @@ namespace MKOTHDiscordBot.Modules
                 }
             }
 
-            var series = seriesService.MakeSeries(winner.Id, loser.Id, wins, loss, draws, inviteCode.ToUpper());
+            var series = seriesService.MakeSeries(winner, loser, wins, loss, draws, inviteCode.ToUpper());
             await seriesService.AdminCreateAsync(series);
             var embed = new EmbedBuilder()
                 .WithDescription($"Id: {series.Id.ToString("D4")}\n" +
