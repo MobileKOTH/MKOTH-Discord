@@ -27,7 +27,7 @@ namespace MKOTHDiscordBot.Services
     }
     public class RankingService : IRankingService
     {
-        public const double Elo_K_Factor = 40;
+        public const double Elo_K_Factor = 75;
         public const int Rank_Show_Games = 5;
 
         private readonly string endPoint;

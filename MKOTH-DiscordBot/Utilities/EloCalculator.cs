@@ -8,7 +8,7 @@ namespace MKOTHDiscordBot.Utilities
     {
         public static (double eloLeft, double eloRight) Calculate(double KFactor, double eloLeft, double eloRight, int winsLeft, int winsRight, int draws = 0)
         {
-            return CalculateV1(KFactor, eloLeft, eloRight, winsLeft, winsRight, draws);
+            return CalculateV2(KFactor, eloLeft, eloRight, winsLeft, winsRight, draws);
         }
         internal static (double eloLeft, double eloRight) CalculateV1(double KFactor, double eloLeft, double eloRight, int winsLeft, int winsRight, int draws = 0)
         {
