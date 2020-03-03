@@ -27,8 +27,8 @@ namespace MKOTHDiscordBot.Services
     }
     public class RankingService : IRankingService
     {
-        const double Elo_K_Factor = 40;
-        const int Rank_Show_Games = 5;
+        public const double Elo_K_Factor = 40;
+        public const int Rank_Show_Games = 5;
 
         private readonly string endPoint;
         private readonly string adminKey;
@@ -244,7 +244,7 @@ namespace MKOTHDiscordBot.Services
 
             if (loser.Points < 0)
             {
-                throw new Exception($"{loser.Name} Negative Elo at Series ${series.Id}");
+                Logger.Log($"{loser.Name} Negative Elo at Series {series.Id}", LogType.Error);
             }
 
             var (eloLeft, eloRight) = EloCalculator.Calculate(Elo_K_Factor, winner.Elo, loser.Elo, series.Wins, series.Losses, series.Draws);
