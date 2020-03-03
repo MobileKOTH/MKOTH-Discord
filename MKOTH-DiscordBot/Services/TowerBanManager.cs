@@ -84,9 +84,14 @@ namespace MKOTHDiscordBot.Services
             sessions.Remove(session);
         }
 
+        public bool IsInSession(params IUser[] users)
+        {
+            return sessions.Any(x => x.Users.Select(y => y.User.Id).Intersect(users.Select(y => y.Id)).Any());
+        }
+
         public bool StartSession(IUser userA, IUser userB, ITextChannel textChannel)
         {
-            if (sessions.Any(x => x.Users.Any(u => u.User.Id == userA.Id || u.User.Id == userB.Id)))
+            if (IsInSession(userA, userB))
             {
                 return false;
             }
@@ -124,7 +129,7 @@ namespace MKOTHDiscordBot.Services
         private void CompleteSession(TowerBanSession session)
         {
             session.InitiateChannel.SendMessageAsync($"The banned tower(s) between {session.Users.Select(x => x.User.Mention).JoinLines(" and ")} will be " +
-                $"{session.Users.Select(x => x.Choice.Value).Distinct().Select(x => x.ToString("g")).JoinLines(" and ")}");
+                $"{session.Users.Select(x => x.Choice.Value).Distinct().Select(x => x.ToString("f")).JoinLines(" and ")}");
 
             sessions.Remove(session);
         }

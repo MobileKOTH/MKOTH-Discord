@@ -63,6 +63,8 @@ namespace MKOTHDiscordBot.Modules
         [Command("Challenge")]
         [Alias("ch")]
         [RequireContext(ContextType.Guild)]
+        [Summary("Challenge a user on a series, decide if to have towers banned. Only one has to agree to have towers banned.\n" +
+            "Please also refer to the [series rules and ranking system](http://mobilekoth.github.io/system).")]
         public async Task Challenge(IGuildUser user)
         {
             if (user == Context.User)
@@ -95,9 +97,11 @@ namespace MKOTHDiscordBot.Modules
 
             var player1 = rankingService.SeriesPlayers.FirstOrDefault(x => x.Id == Context.User.Id.ToString());
             var player2 = rankingService.SeriesPlayers.FirstOrDefault(x => x.Id == user.Id.ToString());
-            var lower = (player1?.Elo ?? 1200) < (player2?.Elo ?? 1200) ? player1 : player2;
+            var player1Elo = player1?.Elo ?? 1200;
+            var player2Elo = player2?.Elo ?? 1200;
+            var lower = player1Elo < player2Elo ? player1 : player2;
 
-            if (((player1?.Elo ?? 1200) > 1300 || (player2?.Elo ?? 1200) > 1300) && Math.Abs((player1?.Elo ?? 1200) - (player2?.Elo ?? 1200)) >= 300)
+            if ((player1Elo > 1300 || player2Elo > 1300) && Math.Abs(player1Elo - player2Elo) >= 300)
             {
                 if ((lower?.Points ?? 0) < 5)
                 {
@@ -115,8 +119,6 @@ namespace MKOTHDiscordBot.Modules
                 "Please decide if to ban towers. Both must respond, but only one has to agree to ban towers.\n" +
                 "<:ban:683258477421920342> Ban Towers ⭕ No Ban Towers 🚶 Reject Challenge")
                 .WithFooter($"Both of you have {TowerBanManager.MAX_SESSION_SECONDS} seconds to decide.");
-
-            
 
             bool leftAgree = false, rightAgree = false, denied = false;
             int voteCount = 0;
@@ -217,7 +219,7 @@ namespace MKOTHDiscordBot.Modules
                 var dmOther = await user.SendMessageAsync(embed: dmEmbed.Build());
                 var embed = new EmbedBuilder()
                     .WithColor(Color.Orange)
-                    .WithDescription($"A tower ban session has created betweem {Context.User.Mention} and {user.Mention}. " +
+                    .WithDescription($"A tower ban session has created between {Context.User.Mention} and {user.Mention}. " +
                     $"Please select a tower to ban in our DM within {TowerBanManager.MAX_SESSION_SECONDS} seconds.\n\n" +
                     $"{Context.User.Mention}: You can click [here](https://discordapp.com/channels/@me/{dmStarter.Channel.Id}) to switch to our dm.\n" +
                     $"{user.Mention}: You can click [here](https://discordapp.com/channels/@me/{dmOther.Channel.Id}) to switch to our dm.");
@@ -245,8 +247,9 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Leaderboard")]
         [Alias("rankings", "rank", "ranking", "lb")]
-        public async Task Ranking()
+        public async Task Ranking(IUser user = null)
         {
+            user ??= Context.User as IUser;
             var playerRanking = rankingService.SeriesPlayers.Select((x, i) => new KeyValuePair<int, SeriesPlayer>(i + 1, x)).ToDictionary(x => x.Key, x => x.Value);
             //var playerRanking = rankingService.FullRanking.ToList();
 
@@ -255,12 +258,12 @@ namespace MKOTHDiscordBot.Modules
                 .WithTitle("Leaderboard")
                 .WithDescription(rankingService.PrintRankingList(playerRanking.Take(10)));
 
-            if (playerRanking.Values.Any(x => x.Id == Context.User.Id.ToString()))
+            if (playerRanking.Values.Any(x => x.Id == user.Id.ToString()))
             {
-                var player = playerRanking.First(x => x.Value.Id == Context.User.Id.ToString());
+                var player = playerRanking.First(x => x.Value.Id == user.Id.ToString());
                 if (player.Key > 10)
                 {
-                    embed.AddField("Your Position", rankingService.PrintRankingList(playerRanking.Skip(player.Key - 2).Take(3)));
+                    embed.AddField("User Position", rankingService.PrintRankingList(playerRanking.Skip(player.Key - 2).Take(3)));
                 }
             }
             await ReplyAsync(message: "Full list at " + rankingService.RankingChannel.Mention,embed: embed.Build());
@@ -307,6 +310,7 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("BanTower")]
         [Alias("b", "bt", "ban")]
+        [Summary("Please enter the number or the exact name of the tower given.")]
         public async Task BanTower(Tower tower)
         {
             if (!Context.IsPrivate)
@@ -387,11 +391,18 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Elo")]
         [Summary("Basic Elo calculator with default K factor of 40.")]
-        public async Task Elo(IGuildUser a, IGuildUser b, byte wins = 0, byte losses = 0, byte draws = 0, double kFactor = 40)
+        public async Task Elo(IUser otherUser, byte wins = 0, byte losses = 0, byte draws = 0, double kFactor = 40)
         {
-            var playerA = rankingService.SeriesPlayers.FirstOrDefault(x => x.Id == a.Id.ToString())?.Elo ?? 1200;
-            var playerB = rankingService.SeriesPlayers.FirstOrDefault(x => x.Id == b.Id.ToString())?.Elo ?? 1200;
-            await Elo(playerA, playerB, wins = 0, losses = 0, draws = 0, kFactor = 40);
+            await Elo(Context.User, otherUser, wins, losses, draws, kFactor);
+        }
+
+        [Command("Elo")]
+        [Summary("Basic Elo calculator with default K factor of 40.")]
+        public async Task Elo(IUser userA, IUser userB, byte wins = 0, byte losses = 0, byte draws = 0, double kFactor = 40)
+        {
+            var playerA = rankingService.SeriesPlayers.FirstOrDefault(x => x.Id == userA.Id.ToString())?.Elo ?? 1200;
+            var playerB = rankingService.SeriesPlayers.FirstOrDefault(x => x.Id == userB.Id.ToString())?.Elo ?? 1200;
+            await Elo(playerA, playerB, wins, losses, draws, kFactor);
         }
 
         [Command("Refresh")]

@@ -1,14 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+
 using Cerlancism.ChatSystem;
+
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+
 using MKOTHDiscordBot.Properties;
 using MKOTHDiscordBot.Services;
 
@@ -24,15 +26,20 @@ namespace MKOTHDiscordBot.Handlers
         private readonly ResponseService responseService;
         private readonly string defaultCommandPrefix;
 
+        private readonly Lazy<TowerBanManager> lazyTowerBanManager;
+        private TowerBanManager TowerBanManager => lazyTowerBanManager.Value;
+
         private ulong testChannelId;
         private ulong currentUserId;
 
-        public MessageHandler(IServiceProvider serviceProvider, IOptions<AppSettings> appSettings) : base(serviceProvider)
+        public MessageHandler(IServiceProvider theServices, IOptions<AppSettings> appSettings) : base(theServices)
         {
             commands = services.GetService<CommandService>();
             rateLimiter = services.GetService<UsageRateLimiter>();
-            discordLogger = serviceProvider.GetService<DiscordLogger>();
+            discordLogger = services.GetService<DiscordLogger>();
             responseService = services.GetService<ResponseService>();
+
+            lazyTowerBanManager = new Lazy<TowerBanManager>(() => services.GetService<TowerBanManager>());
 
             testChannelId = appSettings.Value.Settings.DevelopmentGuild.Test;
 
@@ -56,12 +63,6 @@ namespace MKOTHDiscordBot.Handlers
 
         private async Task HandleMessageAsync(SocketMessage socketMessage)
         {
-            // No handle to null or own message.
-            if (socketMessage.Author.Id == currentUserId)
-            {
-                return;
-            }
-
             if (socketMessage.Author.IsBot || socketMessage.Author.IsWebhook)
             {
                 return;
@@ -114,6 +115,26 @@ namespace MKOTHDiscordBot.Handlers
             {
                 if (audit())
                 {
+                    return;
+                }
+
+                if (TowerBanManager.IsInSession(context.User))
+                {
+                    if (Enum.TryParse(context.Message.Content, true, out Tower tower))
+                    {
+                        _ = commands.Commands
+                            .Single(x => x.Name == "BanTower" && x.Parameters.Any(x => x.Type == typeof(Tower)))
+                            .ExecuteAsync(context, new object[1] { tower }, null, services);
+
+                        await responseService.SendToChannelAsync(discordLogger.LogChannel, "DM ban tower received:", new EmbedBuilder()
+                            .WithAuthor(message.Author)
+                            .WithDescription(message.Content)
+                            .Build());
+                        return;
+                    }
+
+                    await context.Channel.SendMessageAsync("Please enter the number or the exact name of the tower given above.");
+
                     return;
                 }
 
