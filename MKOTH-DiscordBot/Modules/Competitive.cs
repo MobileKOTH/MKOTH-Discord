@@ -280,13 +280,12 @@ namespace MKOTHDiscordBot.Modules
                 .Take(limit)
                 .Reverse();
             var lines = seriesService
-                .PrintSeriesHistoryLines(targetSet)
-                .JoinLines();
+                .PrintSeriesHistoryLines(targetSet);
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithTitle("Series History")
-                .WithDescription(lines)
-                .WithFooter($"Displaying up to last {limit} series.");
+                .WithDescription(lines.JoinLines())
+                .WithFooter($"Displaying up to last {lines.Count()} series.");
             await ReplyAsync(embed: embed.Build());
         }
 
@@ -379,9 +378,26 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync("https://battles.tv/watch/" + series.ReplayId);
         }
 
+        [Command("EloV2")]
+        [Summary("A experiemental Elo calculator with default K factor of 75.")]
+        public async Task EloV2(double a = 1200, double b = 1200, int wins = 0, int losses = 0, int  draws = 0, double kFactor = 75)
+        {
+            var (eloLeft, eloRight) = EloCalculator.CalculateV2(kFactor, a, b, wins, losses, draws);
+            var diffLeft = eloLeft - a;
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithTitle("Elo calculator")
+                .WithDescription($"`A = {a}` `B = {b}` `wins = {wins}` `losses = {losses}` `draws = {draws}` `K factor = {kFactor}`")
+                .AddField("Elo A", $"`{a.ToString("N2")} -> {eloLeft.ToString("N2")}`", true)
+                .AddField("Elo B", $"`{b.ToString("N2")} -> {eloRight.ToString("N2")}`", true)
+                .AddField("Difference", $"`{(diffLeft <= 0 ? "" : "+")}{diffLeft.ToString("N2")}`");
+
+            await ReplyAsync(embed: embed.Build());
+        }
+
         [Command("Elo")]
         [Summary("Basic Elo calculator with default K factor of 40.")]
-        public async Task Elo(double a = 1200, double b = 1200, byte wins = 0, byte losses = 0, byte draws = 0, double kFactor = 40)
+        public async Task Elo(double a = 1200, double b = 1200, byte wins = 0, byte losses = 0, byte draws = 0, double kFactor = RankingService.Elo_K_Factor)
         {
             var (eloLeft, eloRight) = EloCalculator.Calculate(kFactor, a, b, wins, losses, draws);
             var diffLeft = eloLeft - a;
@@ -477,13 +493,19 @@ namespace MKOTHDiscordBot.Modules
             var series = seriesService.MakeSeries(winner, loser, wins, loss, draws, inviteCode.ToUpper());
             await seriesService.AdminCreateAsync(series);
             var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
                 .WithDescription($"Id: {series.Id.ToString("D4")}\n" +
                 $"Winner: {rankingService.getPlayerMention(series.WinnerId)}\n" +
                 $"Loser: {rankingService.getPlayerMention(series.LoserId)}\n" +
                 $"Score: {wins}-{loss} Draws: {draws}\n" +
-                $"Invite Code: {inviteCode}" + 
-                $"Approved By: {Context.User.Mention}")
-                .WithColor(Color.Orange);
+                $"Invite Code: {inviteCode}\n" +
+                $"Approved By: {Context.User.Mention}");
+
+            var embedAuthor = Context.Guild.GetUser(winner);
+            if (embedAuthor != default)
+            {
+                embed = embed.WithAuthor(embedAuthor);
+            }
             await ReplyAsync(embed: embed.Build());
         }
 
