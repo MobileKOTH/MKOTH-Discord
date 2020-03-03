@@ -271,10 +271,17 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("SeriesHistory")]
         [Alias("sh")]
-        public async Task Serieshistory()
+        public async Task Serieshistory(IUser user = null)
         {
             var limit = 25;
-            var lines = seriesService.LastSeriesHistoryLines(limit).JoinLines();
+            var targetSet = (user == null ? seriesService.SeriesHistory : seriesService.SeriesHistory
+                .Where(x => x.WinnerId == user.Id.ToString() || x.LoserId == user.Id.ToString()))
+                .Reverse()
+                .Take(limit)
+                .Reverse();
+            var lines = seriesService
+                .PrintSeriesHistoryLines(targetSet)
+                .JoinLines();
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithTitle("Series History")
@@ -419,7 +426,7 @@ namespace MKOTHDiscordBot.Modules
         [Alias("cs")]
         [Summary("Administrator command to create a series, bypassing most restrictions.")]
         [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.Administrator)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
         public async Task CreateSeries(IGuildUser winner, IGuildUser loser, byte wins, byte loss, string inviteCode = "NA")
         {
             await CreateSeries(winner, loser, wins, loss, 0, inviteCode);
@@ -429,7 +436,7 @@ namespace MKOTHDiscordBot.Modules
         [Alias("cs")]
         [Summary("Administrator command to create a series, bypassing most restrictions.")]
         [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.Administrator)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
         public async Task CreateSeries(IGuildUser winner, IGuildUser loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
         {
             await CreateSeries(winner.Id, loser.Id, wins, loss, draws, inviteCode);
@@ -439,7 +446,7 @@ namespace MKOTHDiscordBot.Modules
         [Alias("csf")]
         [Summary("Administrator command to create a series, even for non existant players.")]
         [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.Administrator)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
         public async Task CreateSeries(ulong winner, ulong loser, byte wins, byte loss, string inviteCode = "NA")
         {
             await CreateSeries(winner, loser, wins, loss, 0, inviteCode);
@@ -449,7 +456,7 @@ namespace MKOTHDiscordBot.Modules
         [Alias("csf")]
         [Summary("Administrator command to create a series, even for non existant players.")]
         [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.Administrator)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
         public async Task CreateSeries(ulong winner, ulong loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
         {
             if (wins < loss)
@@ -474,7 +481,8 @@ namespace MKOTHDiscordBot.Modules
                 $"Winner: {rankingService.getPlayerMention(series.WinnerId)}\n" +
                 $"Loser: {rankingService.getPlayerMention(series.LoserId)}\n" +
                 $"Score: {wins}-{loss} Draws: {draws}\n" +
-                $"Invite Code: {inviteCode}")
+                $"Invite Code: {inviteCode}" + 
+                $"Approved By: {Context.User.Mention}")
                 .WithColor(Color.Orange);
             await ReplyAsync(embed: embed.Build());
         }

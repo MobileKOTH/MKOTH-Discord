@@ -20,12 +20,12 @@ namespace MKOTHDiscordBot.Services
     {
         private readonly string endPoint;
         private readonly string adminKey;
-        //private readonly RankingService rankingService;
+
+        private readonly RestClient restClient;
 
         private readonly LiteDatabase localCacheDb;
         private LiteCollection<Series> LocalSeriesCollection => localCacheDb.GetCollection<Series>(collectionName);
 
-        private readonly RestClient restClient;
 
         private List<Series> seriesList;
         private List<Series> pendingList;
@@ -171,10 +171,10 @@ namespace MKOTHDiscordBot.Services
             }
         }
 
-        public IEnumerable<string> LastSeriesHistoryLines(int count)
+        public IEnumerable<string> PrintSeriesHistoryLines(IEnumerable<Series> seriesSet)
         {
             var currentDate = DateTime.Now;
-            foreach (var series in seriesList.AsEnumerable().Reverse().Take(count).Reverse())
+            foreach (var series in seriesSet)
             {
                 yield return $"`#{series.Id.ToString("D4")}` {(currentDate - series.Date).AsRoundedDuration()} ago <@!{series.WinnerId}> <@!{series.LoserId}> {series.Wins} {series.Losses}";
             }
