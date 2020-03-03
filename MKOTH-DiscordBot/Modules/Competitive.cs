@@ -261,10 +261,13 @@ namespace MKOTHDiscordBot.Modules
             if (playerRanking.Values.Any(x => x.Id == user.Id.ToString()))
             {
                 var player = playerRanking.First(x => x.Value.Id == user.Id.ToString());
-                if (player.Key > 10)
-                {
-                    embed.AddField("User Position", rankingService.PrintRankingList(playerRanking.Skip(player.Key - 2).Take(3)));
-                }
+                var playerRankoutput = $"{Format.Bold("Position")}\n{rankingService.PrintRankingList(playerRanking.Skip(player.Key - 2).Take(3))}";
+                var playerStatsOutput = string.Join('\n', playerRankoutput);
+                embed.AddField("Player Statistics", playerStatsOutput);
+            }
+            else
+            {
+                embed.AddField("Player Statistics", "The player has played no series played.");
             }
             await ReplyAsync(message: "Full list at " + rankingService.RankingChannel.Mention,embed: embed.Build());
         }
