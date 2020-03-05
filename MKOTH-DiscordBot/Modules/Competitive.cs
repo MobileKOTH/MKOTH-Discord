@@ -200,7 +200,7 @@ namespace MKOTHDiscordBot.Modules
 
         private async Task BanTowerSession(IGuildUser user)
         {
-            if (!towerBanManager.StartSession(Context.User, user, Context.Channel as ITextChannel))
+            if (!towerBanManager.StartSession(Context.User, user, Context.Channel as ITextChannel, out TowerBanSession session))
             {
                 await ReplyAsync("Failed to start a tower banning session. Perhaps someone is already in a session, please wait for them to finish.");
                 return;
@@ -228,6 +228,7 @@ namespace MKOTHDiscordBot.Modules
             }
             catch (Exception e)
             {
+                towerBanManager.CancelSession(session);
                 await ReplyAsync($"{e.Message}.\nThis command cannot work for one who has direct message disabled.");
             }
         }
@@ -252,13 +253,12 @@ namespace MKOTHDiscordBot.Modules
         {
             user ??= Context.User as IUser;
             var playerRanking = rankingService.SeriesPlayers.Select((x, i) => new KeyValuePair<int, SeriesPlayer>(i + 1, x)).ToDictionary(x => x.Key, x => x.Value);
-            //var playerRanking = rankingService.FullRanking.ToList();
 
             var embed = new EmbedBuilder()
                 .WithAuthor(user)
                 .WithColor(Color.Orange)
                 .WithTitle("Leaderboard")
-                .WithDescription(rankingService.PrintRankingList(playerRanking.Take(10)));
+                .WithDescription(rankingService.PrintRankingList(playerRanking.Take(10)).JoinLines());
 
             if (playerRanking.Values.Any(x => x.Id == user.Id.ToString()))
             {
@@ -269,16 +269,17 @@ namespace MKOTHDiscordBot.Modules
                 var seriesHistory = seriesService.SeriesHistory.Where(x => x.WinnerId == playerId || x.LoserId == playerId);
                 var gamesPlayed = seriesHistory.Sum(x => x.Wins + x.Losses);
                 var seriesHistoryLast3 = seriesHistory.Reverse().Take(3).Reverse();
-
+                var totalWins = getWins(seriesHistory, playerId);
 
                 var playerRankoutput = $"{Format.Bold("Position")}\n{rankingService.PrintRankingList(playerRanking.Skip(player.Key - 2).Take(3))}";
-                var gamesPlayedOutput = $"{gamesPlayed} Games played";
+                var gamesPlayedOutput = $"`{gamesPlayed}` Games played";
+                var winLossOutput = $"`{totalWins}-{gamesPlayed - totalWins.ToInt32(default)}` Win loss";
                 var winRateOverall = getWins(seriesHistory, playerId).ToDouble(default) / gamesPlayed;
                 var winRateOverallOutput = $"`{winRateOverall.ToString("P2")}` Overall win rate";
                 var winRateLast3 = getWins(seriesHistoryLast3, playerId).ToDouble(default) / seriesHistoryLast3.Sum(x => x.Wins + x.Losses);
                 var winRateLast3Output = $"`{winRateLast3.ToString("P2")}` Last 3 series win rate";
                 var seriesHistoryOutput = $"{Format.Bold("Recent Series")}\n{seriesService.PrintSeriesHistoryLines(seriesHistoryLast3).JoinLines()}";
-                var playerStatsOutput = string.Join('\n', gamesPlayedOutput, winRateOverallOutput, winRateLast3Output, playerRankoutput, seriesHistoryOutput);
+                var playerStatsOutput = string.Join('\n', gamesPlayedOutput, winLossOutput, winRateOverallOutput, winRateLast3Output, playerRankoutput, seriesHistoryOutput);
                 embed.AddField("Player Statistics", playerStatsOutput);
             }
             else
@@ -303,7 +304,7 @@ namespace MKOTHDiscordBot.Modules
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithTitle("Series History")
-                .WithDescription(lines.JoinLines())
+                .WithDescription($"`{targetSet.Sum(x => x.Wins + x.Losses)}` Games played\n\n" + lines.JoinLines())
                 .WithFooter($"Displaying up to last {lines.Count()} series.");
             await ReplyAsync(embed: embed.Build());
         }
@@ -441,93 +442,86 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync("Refresh complete.");
         }
 
-        [Group]
+        [Command("CreateSeries")]
+        [Alias("cs")]
+        [Summary("Administrator command to create a series, bypassing most restrictions.")]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.ManageMessages)]
-        class CreateSeries: InteractiveBase
+        [Cooldown(3600000, 10, "CreateSeries")]
+        public async Task CreateSeries(IGuildUser winner, IGuildUser loser, byte wins, byte loss, string inviteCode = "NA")
         {
-            private readonly SeriesService seriesService;
-            private readonly RankingService rankingService;
+            await CreateSeries(winner, loser, wins, loss, 0, inviteCode);
+        }
 
-            public CreateSeries(IServiceProvider services, IOptions<AppSettings> appSettings)
+        [Command("CreateSeries")]
+        [Alias("cs")]
+        [Summary("Administrator command to create a series, bypassing most restrictions.")]
+        [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [Cooldown(3600000, 10, "CreateSeries")]
+        public async Task CreateSeries(IGuildUser winner, IGuildUser loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
+        {
+            await CreateSeries(winner.Id, loser.Id, wins, loss, draws, inviteCode);
+        }
+
+        [Command("CreateSeriesForced")]
+        [Alias("csf")]
+        [Summary("Administrator command to create a series, even for non existant players.")]
+        [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [Cooldown(3600000, 10, "CreateSeries")]
+        public async Task CreateSeries(ulong winner, ulong loser, byte wins, byte loss, string inviteCode = "NA")
+        {
+            await CreateSeries(winner, loser, wins, loss, 0, inviteCode);
+        }
+
+        [Command("CreateSeriesForced")]
+        [Alias("csf")]
+        [Summary("Administrator command to create a series, even for non existant players.")]
+        [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [Cooldown(3600000, 10, "CreateSeries")]
+        public async Task CreateSeries(ulong winner, ulong loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
+        {
+            if (wins < loss)
             {
-                seriesService = services.GetService<SeriesService>();
-                rankingService = services.GetService<RankingService>();
+                await ReplyAsync("Wins must greater than losses");
+                return;
             }
 
-            private bool IsValidReplayId(string id)
+            if (inviteCode != "NA")
             {
-                return Regex.IsMatch(id, "^[A-Z]{7}$");
-            }
-
-            [Command("CreateSeries")]
-            [Alias("cs")]
-            [Summary("Administrator command to create a series, bypassing most restrictions.")]
-            public async Task CreateSeriesCommand(IGuildUser winner, IGuildUser loser, byte wins, byte loss, string inviteCode = "NA")
-            {
-                await CreateSeriesCommand(winner, loser, wins, loss, 0, inviteCode);
-            }
-
-            [Command("CreateSeries")]
-            [Alias("cs")]
-            [Summary("Administrator command to create a series, bypassing most restrictions.")]
-            public async Task CreateSeriesCommand(IGuildUser winner, IGuildUser loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
-            {
-                await CreateSeriesCommand(winner.Id, loser.Id, wins, loss, draws, inviteCode);
-            }
-
-            [Command("CreateSeries")]
-            [Alias("cs")]
-            [Summary("Administrator command to create a series, bypassing most restrictions.")]
-            public async Task CreateSeriesCommand(ulong winner, ulong loser, byte wins, byte loss, string inviteCode = "NA")
-            {
-                await CreateSeriesCommand(winner, loser, wins, loss, 0, inviteCode);
-            }
-
-            [Command("CreateSeriesForce")]
-            [Alias("csf")]
-            [Summary("Administrator command to create a series, bypassing most restrictions.")]
-            public async Task CreateSeriesCommand(ulong winner, ulong loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
-            {
-                if (wins < loss)
+                if (!IsValidReplayId(inviteCode.ToUpper()))
                 {
-                    await ReplyAsync("Wins must greater than losses");
+                    await ReplyAsync("Invalid invite code.");
                     return;
                 }
-
-                if (inviteCode != "NA")
-                {
-                    if (!IsValidReplayId(inviteCode.ToUpper()))
-                    {
-                        await ReplyAsync("Invalid invite code.");
-                        return;
-                    }
-                }
-
-                var series = seriesService.MakeSeries(winner, loser, wins, loss, draws, inviteCode.ToUpper());
-                await seriesService.AdminCreateAsync(series);
-                var embed = new EmbedBuilder()
-                    .WithColor(Color.Orange)
-                    .WithDescription($"Id: {series.Id.ToString("D4")}\n" +
-                    $"Winner: {rankingService.getPlayerMention(series.WinnerId)}\n" +
-                    $"Loser: {rankingService.getPlayerMention(series.LoserId)}\n" +
-                    $"Score: {wins}-{loss} Draws: {draws}\n" +
-                    $"Invite Code: {inviteCode}\n" +
-                    $"Approved By: {Context.User.Mention}");
-
-                var embedAuthor = Context.Guild.GetUser(winner);
-                if (embedAuthor != default)
-                {
-                    embed = embed.WithAuthor(embedAuthor);
-                }
-                await ReplyAsync(embed: embed.Build());
             }
+
+            var series = seriesService.MakeSeries(winner, loser, wins, loss, draws, inviteCode.ToUpper());
+            await seriesService.AdminCreateAsync(series);
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithDescription($"Id: {series.Id.ToString("D4")}\n" +
+                $"Winner: {rankingService.getPlayerMention(series.WinnerId)}\n" +
+                $"Loser: {rankingService.getPlayerMention(series.LoserId)}\n" +
+                $"Score: {wins}-{loss} Draws: {draws}\n" +
+                $"Invite Code: {inviteCode}\n" +
+                $"Approved By: {Context.User.Mention}");
+
+            var embedAuthor = Context.Guild.GetUser(winner);
+            if (embedAuthor != default)
+            {
+                embed = embed.WithAuthor(embedAuthor);
+            }
+            await ReplyAsync(embed: embed.Build());
         }
 
         [Command("DeleteSeries")]
         [Alias("ds")]
         [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.Administrator)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [Cooldown(3600000, 5)]
         public async Task DeleteSeries(int id)
         {
             try

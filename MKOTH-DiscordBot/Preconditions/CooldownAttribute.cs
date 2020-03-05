@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -10,9 +11,30 @@ namespace MKOTHDiscordBot
 {
     class CommandCooldown : RateLimiterBase<ulong>
     {
-        public CommandCooldown(double fairUsageinterval, double triggeredColdown, int burstLimitTimes) : base(fairUsageinterval, triggeredColdown, burstLimitTimes)
+        public static Dictionary<string, CommandCooldown> SharedInstances { get; } = new Dictionary<string, CommandCooldown>();
+
+        public CommandCooldown(double fairUsageinterval, double triggeredColdown, int burstLimitTimes) 
+            : base(fairUsageinterval, triggeredColdown, burstLimitTimes) 
         {
             limiterDebugName = "Cooldown Attribute";
+        }
+
+        public static CommandCooldown GetOrCreateInstance(string name, Func<CommandCooldown> initialiser)
+        {
+            var output = SharedInstances.GetValueOrDefault(name);
+
+            if (output != null)
+            {
+                return output;
+            }
+
+            output = initialiser();
+
+            SharedInstances.Add(name, output);
+
+            Logger.Debug(name, "Created cooldown shared instance");
+
+            return output;
         }
 
         public TimeSpan GetCoolDown(ulong id)
@@ -26,12 +48,21 @@ namespace MKOTHDiscordBot
         private int CoolDownMS { get; }
         private int Bursts { get;  }
         private CommandCooldown CommandCooldown { get; }
-        public CooldownAttribute(int cooldownMs, int bursts = 1) 
+        public CooldownAttribute(int cooldownMs, int bursts = 1, string instanceName = null) 
         {
+            CommandCooldown buildCooldown() => new CommandCooldown(cooldownMs, cooldownMs, bursts);
+
             CoolDownMS = cooldownMs;
             Bursts = bursts;
-            CommandCooldown = new CommandCooldown(cooldownMs, cooldownMs, bursts);
-            Logger.Debug($"Cooldown Attibute: {cooldownMs}");
+
+            if (instanceName != null)
+            {
+                CommandCooldown = CommandCooldown.GetOrCreateInstance(instanceName, buildCooldown);
+            }
+            else
+            {
+                CommandCooldown = buildCooldown();
+            }
         }
 
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
@@ -40,14 +71,14 @@ namespace MKOTHDiscordBot
             {
                 return Task.FromResult(
                     PreconditionResult.FromError(
-                        $"You have to wait for another {CommandCooldown.GetCoolDown(context.User.Id).AsRoundedDuration()} to use this command."));
+                        $"{context.User.Mention}, you have to wait for another {CommandCooldown.GetCoolDown(context.User.Id).AsRoundedDuration()} to use this command."));
             }
             return Task.FromResult(PreconditionResult.FromSuccess());
         }
 
         public override string ToString()
         {
-            return $"Cooldown {TimeSpan.FromMilliseconds(CoolDownMS).AsRoundedDuration()} for every {Bursts} use(s).";
+            return $"Cooldown: {TimeSpan.FromMilliseconds(CoolDownMS).AsRoundedDuration()} for every {Bursts} use(s)";
         }
     }
 }

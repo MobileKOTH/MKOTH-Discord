@@ -196,7 +196,11 @@ namespace MKOTHDiscordBot.Services
 
             var tiers = playerRanking.GroupBy(x => PlayerTier(x.Value.Elo));
 
-            var lines = tiers.Select(x => $"{Format.Underline(Format.Bold(x.Key.ToString("G").PadRight(66, ' ')))}\n" + PrintRankingList(x) + "\n").JoinLines().Split("\n");
+            static string getTierHeader(Tiers tier) => $"{Format.Underline(Format.Bold(tier.ToString("G").PadRight(66, ' ')))}";
+
+            var lines = tiers.Select(x => $"{getTierHeader(x.Key)}\n" + PrintRankingList(x).JoinLines() + "\n")
+                .JoinLines()
+                .Split("\n");
 
             var chunksize = 30;
             for (int i = 0, m = 0; i < lines.Length; i += chunksize, m++)
@@ -215,12 +219,15 @@ namespace MKOTHDiscordBot.Services
             return client.GetUser(ulong.Parse(id))?.Mention ?? $"<@{id}>";
         }
 
-        public string PrintRankingList(IEnumerable<KeyValuePair<int, SeriesPlayer>> list)
+        public IEnumerable<string> PrintRankingList(IEnumerable<KeyValuePair<int, SeriesPlayer>> list)
         {
-            return list.Select(x => $"`#{x.Key.ToString("D2")}` | " +
-            $"`{x.Value.Elo.ToString("N2").PadLeft(8, '0')}` | " +
-            $"`{x.Value.Points.ToString().PadLeft(3, '0')}` | " +
-            $"{TierIcon(PlayerTier(x.Value.Elo))} {getPlayerMention(x.Value.Id)}").JoinLines();
+            foreach (var player in list)
+            {
+                yield return $"`#{player.Key.ToString("D2")}` | " +
+                    $"`{player.Value.Elo.ToString("N2").PadLeft(8, '0')}` | " +
+                    $"`{player.Value.Points.ToString().PadLeft(3, '0')}` | " +
+                    $"{TierIcon(PlayerTier(player.Value.Elo))} {getPlayerMention(player.Value.Id)}";
+            }
         }
 
         private void ProcessSeries(Series series)

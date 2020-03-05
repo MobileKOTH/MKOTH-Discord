@@ -89,10 +89,11 @@ namespace MKOTHDiscordBot.Services
             return sessions.Any(x => x.Users.Select(y => y.User.Id).Intersect(users.Select(y => y.Id)).Any());
         }
 
-        public bool StartSession(IUser userA, IUser userB, ITextChannel textChannel)
+        public bool StartSession(IUser userA, IUser userB, ITextChannel textChannel, out TowerBanSession outSession)
         {
             if (IsInSession(userA, userB))
             {
+                outSession = null;
                 return false;
             }
 
@@ -102,6 +103,8 @@ namespace MKOTHDiscordBot.Services
             session.InitiateChannel = textChannel;
 
             sessions.Add(session);
+
+            outSession = session;
 
             return true;
         }
@@ -124,6 +127,11 @@ namespace MKOTHDiscordBot.Services
             }
 
             return session;
+        }
+
+        public void CancelSession(TowerBanSession session)
+        {
+            sessions.Remove(session);
         }
 
         private void CompleteSession(TowerBanSession session)

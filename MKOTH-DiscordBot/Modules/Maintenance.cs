@@ -37,6 +37,7 @@ namespace MKOTHDiscordBot.Modules
         [Command("BotInfo", RunMode = RunMode.Async)]
         [Alias("BotStats", "SystemInfo", "sys", "system", "stats")]
         [Summary("Displays the bot information and statistics.")]
+        [Cooldown(10000, 2, "SystemCommand")]
         public async Task BotInfo()
         {
             var msgTask = ReplyAsync(embed: buildEmbed());
@@ -93,6 +94,7 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Ping", RunMode = RunMode.Async)]
         [Summary("Checks the bot's realtime connection and command response.")]
+        [Cooldown(10000, 2, "SystemCommand")]
         public async Task Ping()
         {
             var msg = await ReplyAsync("`loading...`");
@@ -123,6 +125,7 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Pong", RunMode = RunMode.Async)]
         [Summary("Gets the client latency, with an input `<reflection>`(any text) to reflect the input from you.")]
+        [Cooldown(10000, 2, "SystemCommand")]
         public async Task Pong([Remainder] string reflection = null)
         {
             EmbedBuilder embed = new EmbedBuilder()
