@@ -57,6 +57,30 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync(Format.Sanitize(msg.Content.SliceBack(2000 - 7)).MarkdownCodeBlock());
         }
 
+        [Command("CopyMessage")]
+        [Alias("cm")]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
+        public async Task CopyMessasge(ITextChannel channel, params ulong[] messageIds)
+        {
+            foreach (var item in messageIds)
+            {
+                await CopyMessasge(channel, item);
+            }
+        }
+
+        [Command("CopyMessage")]
+        [Alias("cm")]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
+        public async Task CopyMessasge(ITextChannel channel, ulong messageId)
+        {
+            var loadWebhook = webhookLoader.Value;
+            var msg = await channel.GetMessageAsync(messageId) as IUserMessage;
+            var user = msg.Author as IGuildUser;
+            var webHook = await loadWebhook;
+            
+            _ = webHook.SendMessageAsync(msg.Content.Replace("@", "`@`") + "\n" + msg.Attachments.Select(x => x.Url).JoinLines(), false, msg.Embeds.Select(x => x as Embed), user.GetDisplayName(), user.GetAvatarUrl());
+        }
+
         [Command("Reply")]
         [RequireBotPermission(GuildPermission.ManageWebhooks)]
         [RequireBotPermission(GuildPermission.ManageMessages)]

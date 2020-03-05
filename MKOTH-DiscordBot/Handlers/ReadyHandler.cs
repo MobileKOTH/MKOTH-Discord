@@ -17,8 +17,20 @@ namespace MKOTHDiscordBot.Handlers
         private readonly ActivityCycler activityCycler;
         private readonly DiscordLogger discordLogger;
 
+        private async IAsyncEnumerable<int> Test()
+        {
+            foreach (var item in Enumerable.Range(0, 10))
+            {
+                yield return item;
+                await Task.Delay(1000);
+            }
+        }
+
         private async Task RunTests()
         {
+            var chn = client.GetChannel(0) as ITextChannel;
+            var msgs = chn.GetMessagesAsync();
+
             await Task.CompletedTask;
         }
 

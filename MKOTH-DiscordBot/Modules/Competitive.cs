@@ -261,16 +261,20 @@ namespace MKOTHDiscordBot.Modules
 
             if (playerRanking.Values.Any(x => x.Id == user.Id.ToString()))
             {
+                IConvertible getWins(IEnumerable<Series> seriesSet, string playerId) => seriesSet.Sum(x => x.WinnerId == playerId ? x.Wins : x.Losses);
+
                 var player = playerRanking.First(x => x.Value.Id == user.Id.ToString());
-                var seriesHistory = seriesService.SeriesHistory.Where(x => x.WinnerId == player.Value.Id || x.LoserId == player.Value.Id);
+                var playerId = player.Value.Id;
+                var seriesHistory = seriesService.SeriesHistory.Where(x => x.WinnerId == playerId || x.LoserId == playerId);
                 var gamesPlayed = seriesHistory.Sum(x => x.Wins + x.Losses);
+                var seriesHistoryLast3 = seriesHistory.Reverse().Take(3).Reverse();
+
 
                 var playerRankoutput = $"{Format.Bold("Position")}\n{rankingService.PrintRankingList(playerRanking.Skip(player.Key - 2).Take(3))}";
                 var gamesPlayedOutput = $"{gamesPlayed} Games played";
-                var winRateOverall = seriesHistory.Sum(x => x.WinnerId == player.Value.Id ? x.Wins : 0) / Convert.ToDouble(gamesPlayed);
+                var winRateOverall = getWins(seriesHistory, playerId).ToDouble(default) / gamesPlayed;
                 var winRateOverallOutput = $"`{winRateOverall.ToString("P2")}` Overall win rate";
-                var seriesHistoryLast3 = seriesHistory.Reverse().Take(3).Reverse();
-                var winRateLast3 = seriesHistoryLast3.Sum(x => x.WinnerId == player.Value.Id ? x.Wins : 0) / Convert.ToDouble(seriesHistoryLast3.Sum(x => x.Wins + x.Losses));
+                var winRateLast3 = getWins(seriesHistoryLast3, playerId).ToDouble(default) / seriesHistoryLast3.Sum(x => x.Wins + x.Losses);
                 var winRateLast3Output = $"`{winRateLast3.ToString("P2")}` Last 3 series win rate";
                 var seriesHistoryOutput = $"{Format.Bold("Recent Series")}\n{seriesService.PrintSeriesHistoryLines(seriesHistoryLast3).JoinLines()}";
                 var playerStatsOutput = string.Join('\n', gamesPlayedOutput, winRateOverallOutput, winRateLast3Output, playerRankoutput, seriesHistoryOutput);
@@ -394,14 +398,14 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Elo")]
         [Summary("Basic Elo calculator with default K factor of 40.")]
-        public async Task Elo(IUser otherUser, int wins = 0, int losses = 0, int draws = 0, double kFactor = 40)
+        public async Task Elo(IUser otherUser, int wins = 0, int losses = 0, int draws = 0, double kFactor = RankingService.Elo_K_Factor)
         {
             await Elo(Context.User, otherUser, wins, losses, draws, kFactor);
         }
 
         [Command("Elo")]
         [Summary("Basic Elo calculator with default K factor of 40.")]
-        public async Task Elo(IUser userA, IUser userB, int wins = 0, int losses = 0, int draws = 0, double kFactor = 40)
+        public async Task Elo(IUser userA, IUser userB, int wins = 0, int losses = 0, int draws = 0, double kFactor = RankingService.Elo_K_Factor)
         {
             var playerA = rankingService.SeriesPlayers.FirstOrDefault(x => x.Id == userA.Id.ToString())?.Elo ?? 1200;
             var playerB = rankingService.SeriesPlayers.FirstOrDefault(x => x.Id == userB.Id.ToString())?.Elo ?? 1200;
