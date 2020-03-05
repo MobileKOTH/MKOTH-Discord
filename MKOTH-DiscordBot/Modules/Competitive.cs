@@ -65,6 +65,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireContext(ContextType.Guild)]
         [Summary("Challenge a user on a series, decide if to have towers banned. Only one has to agree to have towers banned.\n" +
             "Please also refer to the [series rules and ranking system](http://mobilekoth.github.io/system).")]
+        [Cooldown(10000, 2)]
         public async Task Challenge(IGuildUser user)
         {
             if (user == Context.User)
@@ -440,75 +441,87 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync("Refresh complete.");
         }
 
-        [Command("CreateSeries")]
-        [Alias("cs")]
-        [Summary("Administrator command to create a series, bypassing most restrictions.")]
+        [Group]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.ManageMessages)]
-        public async Task CreateSeries(IGuildUser winner, IGuildUser loser, byte wins, byte loss, string inviteCode = "NA")
+        class CreateSeries: InteractiveBase
         {
-            await CreateSeries(winner, loser, wins, loss, 0, inviteCode);
-        }
+            private readonly SeriesService seriesService;
+            private readonly RankingService rankingService;
 
-        [Command("CreateSeries")]
-        [Alias("cs")]
-        [Summary("Administrator command to create a series, bypassing most restrictions.")]
-        [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
-        public async Task CreateSeries(IGuildUser winner, IGuildUser loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
-        {
-            await CreateSeries(winner.Id, loser.Id, wins, loss, draws, inviteCode);
-        }
-
-        [Command("CreateSeriesForced")]
-        [Alias("csf")]
-        [Summary("Administrator command to create a series, even for non existant players.")]
-        [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
-        public async Task CreateSeries(ulong winner, ulong loser, byte wins, byte loss, string inviteCode = "NA")
-        {
-            await CreateSeries(winner, loser, wins, loss, 0, inviteCode);
-        }
-
-        [Command("CreateSeriesForced")]
-        [Alias("csf")]
-        [Summary("Administrator command to create a series, even for non existant players.")]
-        [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.ManageMessages)]
-        public async Task CreateSeries(ulong winner, ulong loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
-        {
-            if (wins < loss)
+            public CreateSeries(IServiceProvider services, IOptions<AppSettings> appSettings)
             {
-                await ReplyAsync("Wins must greater than losses");
-                return;
+                seriesService = services.GetService<SeriesService>();
+                rankingService = services.GetService<RankingService>();
             }
 
-            if (inviteCode != "NA")
+            private bool IsValidReplayId(string id)
             {
-                if (!IsValidReplayId(inviteCode.ToUpper()))
+                return Regex.IsMatch(id, "^[A-Z]{7}$");
+            }
+
+            [Command("CreateSeries")]
+            [Alias("cs")]
+            [Summary("Administrator command to create a series, bypassing most restrictions.")]
+            public async Task CreateSeriesCommand(IGuildUser winner, IGuildUser loser, byte wins, byte loss, string inviteCode = "NA")
+            {
+                await CreateSeriesCommand(winner, loser, wins, loss, 0, inviteCode);
+            }
+
+            [Command("CreateSeries")]
+            [Alias("cs")]
+            [Summary("Administrator command to create a series, bypassing most restrictions.")]
+            public async Task CreateSeriesCommand(IGuildUser winner, IGuildUser loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
+            {
+                await CreateSeriesCommand(winner.Id, loser.Id, wins, loss, draws, inviteCode);
+            }
+
+            [Command("CreateSeries")]
+            [Alias("cs")]
+            [Summary("Administrator command to create a series, bypassing most restrictions.")]
+            public async Task CreateSeriesCommand(ulong winner, ulong loser, byte wins, byte loss, string inviteCode = "NA")
+            {
+                await CreateSeriesCommand(winner, loser, wins, loss, 0, inviteCode);
+            }
+
+            [Command("CreateSeriesForce")]
+            [Alias("csf")]
+            [Summary("Administrator command to create a series, bypassing most restrictions.")]
+            public async Task CreateSeriesCommand(ulong winner, ulong loser, byte wins, byte loss, byte draws, string inviteCode = "NA")
+            {
+                if (wins < loss)
                 {
-                    await ReplyAsync("Invalid invite code.");
+                    await ReplyAsync("Wins must greater than losses");
                     return;
                 }
-            }
 
-            var series = seriesService.MakeSeries(winner, loser, wins, loss, draws, inviteCode.ToUpper());
-            await seriesService.AdminCreateAsync(series);
-            var embed = new EmbedBuilder()
-                .WithColor(Color.Orange)
-                .WithDescription($"Id: {series.Id.ToString("D4")}\n" +
-                $"Winner: {rankingService.getPlayerMention(series.WinnerId)}\n" +
-                $"Loser: {rankingService.getPlayerMention(series.LoserId)}\n" +
-                $"Score: {wins}-{loss} Draws: {draws}\n" +
-                $"Invite Code: {inviteCode}\n" +
-                $"Approved By: {Context.User.Mention}");
+                if (inviteCode != "NA")
+                {
+                    if (!IsValidReplayId(inviteCode.ToUpper()))
+                    {
+                        await ReplyAsync("Invalid invite code.");
+                        return;
+                    }
+                }
 
-            var embedAuthor = Context.Guild.GetUser(winner);
-            if (embedAuthor != default)
-            {
-                embed = embed.WithAuthor(embedAuthor);
+                var series = seriesService.MakeSeries(winner, loser, wins, loss, draws, inviteCode.ToUpper());
+                await seriesService.AdminCreateAsync(series);
+                var embed = new EmbedBuilder()
+                    .WithColor(Color.Orange)
+                    .WithDescription($"Id: {series.Id.ToString("D4")}\n" +
+                    $"Winner: {rankingService.getPlayerMention(series.WinnerId)}\n" +
+                    $"Loser: {rankingService.getPlayerMention(series.LoserId)}\n" +
+                    $"Score: {wins}-{loss} Draws: {draws}\n" +
+                    $"Invite Code: {inviteCode}\n" +
+                    $"Approved By: {Context.User.Mention}");
+
+                var embedAuthor = Context.Guild.GetUser(winner);
+                if (embedAuthor != default)
+                {
+                    embed = embed.WithAuthor(embedAuthor);
+                }
+                await ReplyAsync(embed: embed.Build());
             }
-            await ReplyAsync(embed: embed.Build());
         }
 
         [Command("DeleteSeries")]

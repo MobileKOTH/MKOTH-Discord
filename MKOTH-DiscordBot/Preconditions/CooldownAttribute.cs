@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 using Discord.Commands;
 
 using MKOTHDiscordBot.Services;
 
-namespace MKOTHDiscordBot.Preconditions
+namespace MKOTHDiscordBot
 {
     class CommandCooldown : RateLimiterBase<ulong>
     {
@@ -13,26 +14,40 @@ namespace MKOTHDiscordBot.Preconditions
         {
             limiterDebugName = "Cooldown Attribute";
         }
+
+        public TimeSpan GetCoolDown(ulong id)
+        {
+            return (limitedEntities.FirstOrDefault(x => x.Id == id)?.StartTime.AddMilliseconds(cooldown) ?? DateTime.Now) - DateTime.Now;
+        }
     }
 
-    public class CooldownAttributeAttribute : PreconditionAttribute
+    public class CooldownAttribute : PreconditionAttribute
     {
         private int CoolDownMS { get; }
+        private int Bursts { get;  }
         private CommandCooldown CommandCooldown { get; }
-        public CooldownAttributeAttribute(int cooldownMs)
+        public CooldownAttribute(int cooldownMs, int bursts = 1) 
         {
             CoolDownMS = cooldownMs;
-            CommandCooldown = new CommandCooldown(cooldownMs, cooldownMs, 1);
+            Bursts = bursts;
+            CommandCooldown = new CommandCooldown(cooldownMs, cooldownMs, bursts);
+            Logger.Debug($"Cooldown Attibute: {cooldownMs}");
         }
 
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
-            throw new NotImplementedException();
+            if (CommandCooldown.Audit(context.User.Id))
+            {
+                return Task.FromResult(
+                    PreconditionResult.FromError(
+                        $"You have to wait for another {CommandCooldown.GetCoolDown(context.User.Id).AsRoundedDuration()} to use this command."));
+            }
+            return Task.FromResult(PreconditionResult.FromSuccess());
         }
 
         public override string ToString()
         {
-            return $"Cooldown {TimeSpan.FromMilliseconds(CoolDownMS).AsRoundedDuration()}";
+            return $"Cooldown {TimeSpan.FromMilliseconds(CoolDownMS).AsRoundedDuration()} for every {Bursts} use(s).";
         }
     }
 }

@@ -255,6 +255,8 @@ namespace MKOTHDiscordBot.Modules
         [Command("Ban")]
         [RequireContext(ContextType.Guild)]
         [Summary("In Development: Future moderation tools.")]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
+        [Cooldown(3600000 * 12, 3)]
         public async Task Ban(IGuildUser user)
         {
             await ReplyAsync("This command is reserved for future chat moderation uses.\n" +
