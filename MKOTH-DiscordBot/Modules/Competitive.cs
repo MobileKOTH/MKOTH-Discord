@@ -12,6 +12,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using MKOTHDiscordBot.Core;
 using MKOTHDiscordBot.Models;
 using MKOTHDiscordBot.Properties;
 using MKOTHDiscordBot.Services;
@@ -25,8 +26,8 @@ namespace MKOTHDiscordBot.Modules
     {
         private readonly DiscordSocketClient client;
         private readonly SubmissionRateLimiter submissionRateLimiter;
-        private readonly SeriesService seriesService;
-        private readonly RankingService rankingService;
+        private readonly ISeriesManager seriesService;
+        private readonly IRankingManager rankingService;
         private readonly TowerBanManager towerBanManager;
         private readonly RoleManager roleManager;
         private readonly ITextChannel logChannel;
@@ -36,8 +37,8 @@ namespace MKOTHDiscordBot.Modules
         public Competitive(IServiceProvider services, IOptions<AppSettings> appSettings)
         {
             client = services.GetService<DiscordSocketClient>();
-            seriesService = services.GetService<SeriesService>();
-            rankingService = services.GetService<RankingService>();
+            seriesService = services.GetService<ISeriesManager>();
+            rankingService = services.GetService<IRankingManager>();
             submissionRateLimiter = services.GetService<SubmissionRateLimiter>();
             towerBanManager = services.GetService<TowerBanManager>();
             roleManager = services.GetService<RoleManager>();
@@ -114,6 +115,7 @@ namespace MKOTHDiscordBot.Modules
             var banEmote = await rankingService.RankingChannel.Guild.GetEmoteAsync(683258477421920342);
 
             var challengeEmbed = new EmbedBuilder()
+                .WithColor(Color.Orange)
                 .WithAuthor(Context.User)
                 .WithTitle("Series Challenge")
                 .WithDescription(Context.User.Mention + " is challenging " + user.Mention + " on a series.\n" +
@@ -136,6 +138,7 @@ namespace MKOTHDiscordBot.Modules
                         return;
                     }
                     await ReplyAsync(embed: new EmbedBuilder()
+                        .WithColor(Color.Orange)
                         .WithDescription($"{Context.User.Mention} {user.Mention} Challenge session has timed out.")
                         .Build());
                 }).WithCallback(banEmote, async (c, e) =>
@@ -169,8 +172,9 @@ namespace MKOTHDiscordBot.Modules
                         voteCount++;
                         denied = true;
                         await ReplyAsync(embed: new EmbedBuilder()
-                          .WithDescription($"{e.User.Value.Mention} has rejected the challenge")
-                          .Build());
+                            .WithColor(Color.Orange)
+                            .WithDescription($"{e.User.Value.Mention} has rejected the challenge")
+                            .Build());
                     }
                 });
 
@@ -182,16 +186,14 @@ namespace MKOTHDiscordBot.Modules
                 }
                 if (leftAgree || rightAgree)
                 {
-                    await ReplyAsync(embed: new EmbedBuilder()
-                      .WithDescription($"{Context.User.Mention} {user.Mention} One or both of you have agreed to have towers banned. ")
-                      .Build());
                     await BanTowerSession(user);
                 }
                 else
                 {
                     await ReplyAsync(embed: new EmbedBuilder()
-                      .WithDescription($"{Context.User.Mention} {user.Mention} Both of you have disagreed to have towers banned. You may begin your series with no tower banned.")
-                      .Build());
+                        .WithColor(Color.Orange)
+                        .WithDescription($"{Context.User.Mention} {user.Mention} Both of you have disagreed to have towers banned. You may begin your series with no tower banned.")
+                        .Build());
                 }
             }
 
@@ -233,6 +235,57 @@ namespace MKOTHDiscordBot.Modules
             }
         }
 
+        private EmbedBuilder ListTowers()
+        {
+            return new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithTitle("Bannable Towers")
+                .WithDescription(towerBanManager.ListTowners());
+        }
+
+        [Command("BannableTowers")]
+        public async Task BannableTowers()
+        {
+            await ReplyAsync(embed: ListTowers().Build());
+        }
+
+        [Command("BanTower")]
+        public async Task BanTower(IGuildUser user)
+        {
+            if (!Context.IsPrivate)
+            {
+                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series and to start a tower banning session." +
+                    "\nYou can only select a tower to ban in our DM.");
+            }
+            return;
+        }
+
+        [Command("BanTower")]
+        [Alias("b", "bt", "ban")]
+        [Summary("Please enter the number or the exact name of the tower given.")]
+        public async Task BanTower(Tower tower)
+        {
+            if (!Context.IsPrivate)
+            {
+                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series and to start a tower banning session." +
+                    "\nYou can only select a tower to ban in our DM.");
+                return;
+            }
+
+            var session = towerBanManager.ProcessChoice(Context.User, tower);
+
+            if (session == null)
+            {
+                await ReplyAsync("The tower banning session has ended or you are not in a session to select a tower to ban.");
+                return;
+            }
+            var embed = new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithDescription($"Click [here](https://discordapp.com/channels/{session.InitiateChannel.GuildId}/{session.InitiateChannel.Id}) to return to the channel.");
+            await ReplyAsync("Banned Tower Choice: " + tower.ToString("g"), embed: embed.Build());
+        }
+
+
         [Command("Submit")]
         [RequireContext(ContextType.Guild)]
         public async Task Submit()
@@ -271,7 +324,7 @@ namespace MKOTHDiscordBot.Modules
                 var seriesHistoryLast3 = seriesHistory.Reverse().Take(3).Reverse();
                 var totalWins = getWins(seriesHistory, playerId);
 
-                var playerRankoutput = $"{Format.Bold("Position")}\n{rankingService.PrintRankingList(playerRanking.Skip(player.Key - 2).Take(3))}";
+                var playerRankoutput = $"{Format.Bold("Position")}\n{rankingService.PrintRankingList(playerRanking.Skip(player.Key - 2).Take(3)).JoinLines()}";
                 var gamesPlayedOutput = $"`{gamesPlayed}` Games played";
                 var winLossOutput = $"`{totalWins}-{gamesPlayed - totalWins.ToInt32(default)}` Win loss";
                 var winRateOverall = getWins(seriesHistory, playerId).ToDouble(default) / gamesPlayed;
@@ -294,69 +347,17 @@ namespace MKOTHDiscordBot.Modules
         public async Task Serieshistory(IUser user = null)
         {
             var limit = 25;
-            var targetSet = (user == null ? seriesService.SeriesHistory : seriesService.SeriesHistory
-                .Where(x => x.WinnerId == user.Id.ToString() || x.LoserId == user.Id.ToString()))
-                .Reverse()
-                .Take(limit)
-                .Reverse();
-            var lines = seriesService
-                .PrintSeriesHistoryLines(targetSet);
+            var targetSet = user == null 
+                ? seriesService.SeriesHistory 
+                : seriesService.SeriesHistory
+                .Where(x => x.WinnerId == user.Id.ToString() || x.LoserId == user.Id.ToString());
+            var lines = seriesService.PrintSeriesHistoryLines(targetSet.Reverse().Take(limit).Reverse());
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithTitle("Series History")
                 .WithDescription($"`{targetSet.Sum(x => x.Wins + x.Losses)}` Games played\n\n" + lines.JoinLines())
                 .WithFooter($"Displaying up to last {lines.Count()} series.");
             await ReplyAsync(embed: embed.Build());
-        }
-
-        private EmbedBuilder ListTowers()
-        {
-            return new EmbedBuilder()
-                .WithColor(Color.Orange)
-                .WithTitle("Bannable Towers")
-                .WithDescription(towerBanManager.ListTowners());
-        }
-
-        [Command("BannableTowers")]
-        public async Task BannableTowers()
-        {
-            await ReplyAsync(embed: ListTowers().Build());
-        }
-
-        [Command("BanTower")]
-        public async Task BanTower(IGuildUser user)
-        {
-            if (!Context.IsPrivate)
-            {
-                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series and to start a tower banning session." +
-                    "\nYou can only select a tower to ban in our DM.");
-            }
-            return;
-        }
-
-        [Command("BanTower")]
-        [Alias("b", "bt", "ban")]
-        [Summary("Please enter the number or the exact name of the tower given.")]
-        public async Task BanTower(Tower tower)
-        {
-            if (!Context.IsPrivate)
-            {
-                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series and to start a tower banning session." + 
-                    "\nYou can only select a tower to ban in our DM.");
-                return;
-            }
-
-            var session = towerBanManager.ProcessChoice(Context.User, tower);
-
-            if (session == null)
-            {
-                await ReplyAsync("The tower banning session has ended or you are not in a session to select a tower to ban.");
-                return;
-            }
-            var embed = new EmbedBuilder()
-                .WithColor(Color.Orange)
-                .WithDescription($"Click [here](https://discordapp.com/channels/{session.InitiateChannel.GuildId}/{session.InitiateChannel.Id}) to return to the channel.");
-            await ReplyAsync("Banned Tower Choice: " + tower.ToString("g"), embed: embed.Build());
         }
 
         private bool IsValidReplayId(string id)
@@ -400,14 +401,14 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Elo")]
         [Summary("Basic Elo calculator with default K factor of 40.")]
-        public async Task Elo(IUser otherUser, int wins = 0, int losses = 0, int draws = 0, double kFactor = RankingService.Elo_K_Factor)
+        public async Task Elo(IUser otherUser, int wins = 0, int losses = 0, int draws = 0, double? kFactor = null)
         {
             await Elo(Context.User, otherUser, wins, losses, draws, kFactor);
         }
 
         [Command("Elo")]
         [Summary("Basic Elo calculator with default K factor of 40.")]
-        public async Task Elo(IUser userA, IUser userB, int wins = 0, int losses = 0, int draws = 0, double kFactor = RankingService.Elo_K_Factor)
+        public async Task Elo(IUser userA, IUser userB, int wins = 0, int losses = 0, int draws = 0, double? kFactor = null)
         {
             var playerA = rankingService.SeriesPlayers.FirstOrDefault(x => x.Id == userA.Id.ToString())?.Elo ?? 1200;
             var playerB = rankingService.SeriesPlayers.FirstOrDefault(x => x.Id == userB.Id.ToString())?.Elo ?? 1200;
@@ -417,14 +418,15 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Elo")]
         [Summary("Basic Elo calculator with default K factor of 40.")]
-        public async Task Elo(double a = 1200, double b = 1200, int wins = 0, int losses = 0, int draws = 0, double kFactor = RankingService.Elo_K_Factor)
+        public async Task Elo(double a = 1200, double b = 1200, int wins = 0, int losses = 0, int draws = 0, double? kFactor = null)
         {
-            var (eloLeft, eloRight) = EloCalculator.Calculate(kFactor, a, b, wins, losses, draws);
+            kFactor ??= rankingService.ELO_KFactor;
+            var (eloLeft, eloRight) = EloCalculator.Calculate(kFactor.Value, a, b, wins, losses, draws);
             var diffLeft = eloLeft - a;
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithTitle("Elo calculator")
-                .WithDescription($"`A = {a.ToString("N2")}` `B = {b.ToString("N2")}` `wins = {wins}` `losses = {losses}` `draws = {draws}` `K factor = {kFactor}`")
+                .WithDescription($"`A = {a.ToString("N2")}` `B = {b.ToString("N2")}` `wins = {wins}` `losses = {losses}` `draws = {draws}` `K factor = {kFactor.Value}`")
                 .AddField("Elo A", $"`{a.ToString("N2")} -> {eloLeft.ToString("N2")}`", true)
                 .AddField("Elo B", $"`{b.ToString("N2")} -> {eloRight.ToString("N2")}`", true)
                 .AddField("Difference", $"`{(diffLeft <= 0 ? "" : "+")}{diffLeft.ToString("N2")}`");
@@ -437,8 +439,9 @@ namespace MKOTHDiscordBot.Modules
         [RequireUserPermission(GuildPermission.Administrator)]
         public async Task Refresh()
         {
+            var refresh = seriesService as IRefreshable;
             await ReplyAsync("Pulling from remote spreadsheet...");
-            await seriesService.RefreshAsync();
+            await refresh.RefreshAsync();
             await ReplyAsync("Refresh complete.");
         }
 

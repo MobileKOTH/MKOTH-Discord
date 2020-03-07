@@ -7,6 +7,7 @@ using Discord;
 
 using Microsoft.Extensions.Options;
 
+using MKOTHDiscordBot.Core;
 using MKOTHDiscordBot.Models;
 using MKOTHDiscordBot.Properties;
 
@@ -16,7 +17,7 @@ using RestSharp;
 
 namespace MKOTHDiscordBot.Services
 {
-    public class SeriesService : ISeriesService
+    public class SeriesManagerV1 : ISeriesManager, IRefreshable
     {
         private readonly string endPoint;
         private readonly string adminKey;
@@ -33,8 +34,11 @@ namespace MKOTHDiscordBot.Services
         private int? nextId = null;
 
         public int NextId => nextId.HasValue ? (int)(nextId = nextId.Value + 1) : (seriesList.Count > 0 ? (int)(nextId = seriesList.Max(x => x.Id) + 1) : 1);
-        public IEnumerable<ulong> AllPlayers => seriesList.Select(x => ulong.Parse(x.WinnerId)).Concat(seriesList.Select(x => ulong.Parse(x.LoserId))).Distinct();
-        public IEnumerable<Series> SeriesHistory => seriesList;
+        public IQueryable<ulong> AllPlayers => seriesList.Select(x => ulong.Parse(x.WinnerId))
+            .Concat(seriesList.Select(x => ulong.Parse(x.LoserId)))
+            .Distinct()
+            .AsQueryable();
+        public IQueryable<Series> SeriesHistory => seriesList.AsQueryable();
 
         private const string collectionName = "_series";
 
@@ -42,7 +46,7 @@ namespace MKOTHDiscordBot.Services
 
         public bool Ready { get; private set; } = false;
 
-        public SeriesService(IOptions<AppSettings> appSettings, IOptions<Credentials> credentials)
+        public SeriesManagerV1(IOptions<AppSettings> appSettings, IOptions<Credentials> credentials)
         {
             //rankingService = services.GetService<RankingService>();
 
@@ -54,10 +58,10 @@ namespace MKOTHDiscordBot.Services
 
             pendingList = new List<Series>();
 
-            _ = RefreshAsync();
+            _ = (this as IRefreshable).RefreshAsync();
         }
 
-        public async Task RefreshAsync()
+        async Task IRefreshable.RefreshAsync()
         {
             // Load local cache first
             seriesList = LocalSeriesCollection.FindAll().ToList();
@@ -75,7 +79,7 @@ namespace MKOTHDiscordBot.Services
             // Replace local cache
             localCacheDb.DropCollection(collectionName);
             LocalSeriesCollection.InsertBulk(seriesList);
-      
+
             Ready = true;
             _ = Updated.Invoke();
 
@@ -179,22 +183,5 @@ namespace MKOTHDiscordBot.Services
                 yield return $"`#{series.Id.ToString("D4")}` {(currentDate - series.Date).AsRoundedDuration()} ago <@!{series.WinnerId}> <@!{series.LoserId}> {series.Wins} {series.Losses}";
             }
         }
-    }
-
-    public interface ISeriesService
-    {
-        int NextId { get; }
-
-        event Func<Task> Updated;
-
-        void AddPending(Series series);
-        Task AdminCreateAsync(Series series);
-        Task ApproveAsync(int id);
-        bool CanApprove(Series series, IGuildUser user);
-        bool HasNewPlayer(Series series);
-        Series MakeSeries(ulong winner, ulong loser, int wins, int losses, int draws, string replay);
-        Task PostAsync();
-        Task RefreshAsync();
-        Task RemoveAsync(int id);
     }
 }

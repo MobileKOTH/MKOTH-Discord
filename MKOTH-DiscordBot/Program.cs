@@ -11,7 +11,7 @@ using Discord.WebSocket;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
+using MKOTHDiscordBot.Core;
 using MKOTHDiscordBot.Handlers;
 using MKOTHDiscordBot.Properties;
 using MKOTHDiscordBot.Services;
@@ -93,8 +93,8 @@ namespace MKOTHDiscordBot
                 .AddSingleton<ActivityCycler>()
                 .AddTransient<ChatService>()
                 .AddTransient<IssueTracker>()
-                .AddSingleton<RankingService>()
-                .AddSingleton<SeriesService>()
+                .AddSingleton<IRankingManager, RankingManagerV1>()
+                .AddSingleton<ISeriesManager, SeriesManagerV1>()
                 .AddSingleton<TowerBanManager>()
                 .AddSingleton<RoleManager>()
                 .BuildServiceProvider();

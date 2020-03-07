@@ -56,7 +56,7 @@ namespace MKOTHDiscordBot.Services
             responseService = services.GetService<ResponseService>();
 
             sessions = new List<TowerBanSession>();
-            timer = new Timer(MAX_SESSION_SECONDS / 10);
+            timer = new Timer(MAX_SESSION_SECONDS * 1000 / 2);
             timer.Elapsed += HandleTimer;
             timer.Start();
         }
@@ -78,7 +78,7 @@ namespace MKOTHDiscordBot.Services
             {
                 if (!user.Choice.HasValue)
                 {
-                    session.InitiateChannel.SendMessageAsync($"{user.User.Mention} has failed to respond in time for a tower banning session.");
+                    _ = responseService.SendToChannelAsync(session.InitiateChannel, $"{user.User.Mention} has failed to respond in time for a tower banning session.");
                 }
             }
             sessions.Remove(session);
@@ -136,7 +136,8 @@ namespace MKOTHDiscordBot.Services
 
         private void CompleteSession(TowerBanSession session)
         {
-            session.InitiateChannel.SendMessageAsync($"The banned tower(s) between {session.Users.Select(x => x.User.Mention).JoinLines(" and ")} will be " +
+            _ = responseService.SendToChannelAsync(session.InitiateChannel, 
+                $"The banned tower(s) between {session.Users.Select(x => x.User.Mention).JoinLines(" and ")} will be " +
                 $"{session.Users.Select(x => x.Choice.Value).Distinct().Select(x => x.ToString("f")).JoinLines(" and ")}");
 
             sessions.Remove(session);

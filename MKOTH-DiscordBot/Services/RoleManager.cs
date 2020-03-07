@@ -9,6 +9,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using MKOTHDiscordBot.Core;
 using MKOTHDiscordBot.Properties;
 
 namespace MKOTHDiscordBot.Services
@@ -16,8 +17,7 @@ namespace MKOTHDiscordBot.Services
     public class RoleManager
     {
         private readonly DiscordSocketClient client;
-        private readonly ISeriesService seriesService;
-        private readonly IRankingService rankingService;
+        private readonly IRankingManager rankingService;
 
         private readonly Lazy<IGuild> lazyguild;
         private readonly Lazy<IRole> lazyMemberRole;
@@ -35,11 +35,10 @@ namespace MKOTHDiscordBot.Services
         private IRole Vassal => TierRoles["Vassal"];
         private IRole Peasant => TierRoles["Peasant"];
 
-        public RoleManager(IServiceProvider serivces, IOptions<AppSettings> appSettings)
+        public RoleManager(IServiceProvider services, IOptions<AppSettings> appSettings)
         {
-            client = serivces.GetService<DiscordSocketClient>();
-            seriesService = serivces.GetService<SeriesService>();
-            rankingService = serivces.GetService<RankingService>(); 
+            client = services.GetService<DiscordSocketClient>();
+            rankingService = services.GetService<IRankingManager>(); 
             rankingService.Updated += HandleSeriesUpdate;
 
             var settings = appSettings.Value.Settings;
@@ -115,7 +114,7 @@ namespace MKOTHDiscordBot.Services
 
         public async Task UpdateTierRole(IGuildUser user, double elo)
         {
-            var role = TierRole(rankingService.PlayerTier(elo));
+            var role = TierRole(rankingService.SeriesPlayers.PlayerTeir(user.Id.ToString()));
 
             var badTiers = TierRoles.Select(x => x.Value.Id).Where(x => x != role.Id);
             var intersects = badTiers.Intersect(user.RoleIds);

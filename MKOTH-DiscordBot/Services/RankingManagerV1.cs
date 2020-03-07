@@ -9,6 +9,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using MKOTHDiscordBot.Core;
 using MKOTHDiscordBot.Models;
 using MKOTHDiscordBot.Properties;
 using MKOTHDiscordBot.Utilities;
@@ -17,24 +18,17 @@ using RestSharp;
 
 namespace MKOTHDiscordBot.Services
 {
-    public enum Tiers
+    public class RankingManagerV1 : IRankingManager
     {
-        King,
-        Nobles = 1400,
-        Squires = 1300,
-        Vassals = 1250,
-        Peasants
-    }
-    public class RankingService : IRankingService
-    {
-        public const double Elo_K_Factor = 75;
-        public const int Rank_Show_Games = 5;
+        public int ELO_KFactor { get; } = 75;
+        public int InativeDaysToRemove { get; } = 30;
+        public IQueryable<SeriesPlayer> SeriesPlayers => seriesPlayers.AsQueryable();
 
         private readonly string endPoint;
         private readonly string adminKey;
 
         private readonly DiscordSocketClient client;
-        private readonly SeriesService seriesService;
+        private readonly ISeriesManager seriesService;
         private List<SeriesPlayer> seriesPlayers;
 
         private ulong productionGuildId;
@@ -44,32 +38,51 @@ namespace MKOTHDiscordBot.Services
         private IGuild ProductionGuild => client.GetGuild(productionGuildId);
         public ITextChannel RankingChannel => client.GetChannel(rankingChannel) as ITextChannel;
 
-        public IEnumerable<SeriesPlayer> SeriesPlayers => seriesPlayers;
 
         private const string collectionName = "_players";
 
-        private bool clientReady = false;
-
         public event Func<Task> Updated;
 
-        public RankingService(IServiceProvider services, IOptions<AppSettings> appSettings, IOptions<Credentials> credentials)
+        private TaskCompletionSource<bool> ClientReady = new TaskCompletionSource<bool>();
+
+        public RankingManagerV1(IServiceProvider services, IOptions<AppSettings> appSettings, IOptions<Credentials> credentials)
         {
             endPoint = appSettings.Value.ConnectionStrings.AppsScript;
             adminKey = credentials.Value.AppsScriptAdminKey;
 
             client = services.GetService<DiscordSocketClient>();
-            seriesService = services.GetService<SeriesService>();
+            seriesService = services.GetService<ISeriesManager>();
             productionGuildId = appSettings.Value.Settings.ProductionGuild.Id;
             rankingChannel = appSettings.Value.Settings.ProductionGuild.Ranking;
 
             restClient = new RestClient(endPoint);
 
             seriesService.Updated += Refresh;
-            client.Ready += () => Task.Run(() =>
+            client.Ready += () => Task.Run(() => ClientReady.SetResult(false));
+        }
+
+        private Task Client_Ready() => throw new NotImplementedException();
+
+        public async Task Refresh()
+        {
+            await ClientReady.Task;
+            var guildUsers = await ProductionGuild.GetUsersAsync();
+            seriesPlayers = seriesService.AllPlayers
+                .Select(x => CreatePlayer(x, TryGetPlayerName(guildUsers, x)))
+                .ToList();
+
+            foreach (var series in seriesService.SeriesHistory)
             {
-                clientReady = true;
-                _ = Refresh();
-            });
+                ProcessSeries(series);
+            }
+
+            seriesPlayers = seriesPlayers.OrderByDescending(x => x.Elo).ToList();
+
+            Logger.Debug("Refreshed", "Ranking");
+
+            await Task.WhenAll(PostAsync(), UpdateFullLeaderBoard());
+
+            _ = Updated.Invoke();
         }
 
         public Tiers PlayerTier(double elo) => elo switch
@@ -102,7 +115,7 @@ namespace MKOTHDiscordBot.Services
 
         public async Task AddSeriesAsync(Series series)
         {
-            foreach (var item in new ulong[] { ulong.Parse(series.WinnerId), ulong.Parse(series.LoserId)})
+            foreach (var item in new ulong[] { ulong.Parse(series.WinnerId), ulong.Parse(series.LoserId) })
             {
                 if (!SeriesPlayers.Any(x => x.Id == item.ToString()))
                 {
@@ -130,31 +143,6 @@ namespace MKOTHDiscordBot.Services
             {
                 Logger.Debug(e.Message, "Player list post error");
             }
-        }
-
-        public async Task Refresh()
-        {
-            if (!(seriesService.Ready && clientReady))
-            {
-                return;
-            }
-            var guildUsers = await ProductionGuild.GetUsersAsync();
-            seriesPlayers = seriesService.AllPlayers
-                .Select(x => CreatePlayer(x, TryGetPlayerName(guildUsers, x)))
-                .ToList();
-
-            foreach (var series in seriesService.SeriesHistory)
-            {
-                ProcessSeries(series);
-            }
-
-            seriesPlayers = seriesPlayers.OrderByDescending(x => x.Elo).ToList();
-
-            Logger.Debug("Refreshed", "Ranking");
-
-            await Task.WhenAll(PostAsync(), UpdateFullLeaderBoard());
-
-            _ = Updated.Invoke();
         }
 
         private async Task<IUserMessage> GetOrCreateRankingMessage(Queue<IMessage> messageQueue)
@@ -254,7 +242,7 @@ namespace MKOTHDiscordBot.Services
                 Logger.Log($"{loser.Name} Negative Elo at Series {series.Id}", LogType.Error);
             }
 
-            var (eloLeft, eloRight) = EloCalculator.Calculate(Elo_K_Factor, winner.Elo, loser.Elo, series.Wins, series.Losses, series.Draws);
+            var (eloLeft, eloRight) = EloCalculator.Calculate(ELO_KFactor, winner.Elo, loser.Elo, series.Wins, series.Losses, series.Draws);
             winner.Elo = eloLeft;
             loser.Elo = eloRight;
         }
@@ -264,13 +252,5 @@ namespace MKOTHDiscordBot.Services
         {
             return users.FirstOrDefault(y => y.Id == id)?.GetDisplayName() ?? id.ToString();
         }
-    }
-
-    public interface IRankingService
-    {
-        IEnumerable<SeriesPlayer> SeriesPlayers { get; }
-        event Func<Task> Updated;
-        Task Refresh();
-        Tiers PlayerTier(double elo);
     }
 }
