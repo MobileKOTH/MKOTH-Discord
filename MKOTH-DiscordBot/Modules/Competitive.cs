@@ -25,7 +25,6 @@ namespace MKOTHDiscordBot.Modules
     public class Competitive : InteractiveBase
     {
         private readonly DiscordSocketClient client;
-        private readonly SubmissionRateLimiter submissionRateLimiter;
         private readonly ISeriesManager seriesService;
         private readonly IRankingManager rankingService;
         private readonly TowerBanManager towerBanManager;
@@ -39,7 +38,6 @@ namespace MKOTHDiscordBot.Modules
             client = services.GetService<DiscordSocketClient>();
             seriesService = services.GetService<ISeriesManager>();
             rankingService = services.GetService<IRankingManager>();
-            submissionRateLimiter = services.GetService<SubmissionRateLimiter>();
             towerBanManager = services.GetService<TowerBanManager>();
             roleManager = services.GetService<RoleManager>();
             logChannel = (ITextChannel)client.GetChannel(appSettings.Value.Settings.DevelopmentGuild.Test);
@@ -66,7 +64,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireContext(ContextType.Guild)]
         [Summary("Challenge a user on a series, decide if to have towers banned. Only one has to agree to have towers banned.\n" +
             "Please also refer to the [series rules and ranking system](http://mobilekoth.github.io/system).")]
-        [Cooldown(10000, 2)]
+        [Cooldown(60000, 2)]
         public async Task Challenge(IGuildUser user)
         {
             if (user == Context.User)
@@ -250,17 +248,6 @@ namespace MKOTHDiscordBot.Modules
         }
 
         [Command("BanTower")]
-        public async Task BanTower(IGuildUser user)
-        {
-            if (!Context.IsPrivate)
-            {
-                await ReplyAsync($"Use `{prefix}{nameof(Challenge)}` to challenge someone on a series and to start a tower banning session." +
-                    "\nYou can only select a tower to ban in our DM.");
-            }
-            return;
-        }
-
-        [Command("BanTower")]
         [Alias("b", "bt", "ban")]
         [Summary("Please enter the number or the exact name of the tower given.")]
         public async Task BanTower(Tower tower)
@@ -288,13 +275,19 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("Submit")]
         [RequireContext(ContextType.Guild)]
-        public async Task Submit()
+        [Cooldown(3600000, 3, "Submission")]
+        public async Task Submit(IGuildUser user, int wins, int loss, string inviteCode)
         {
-            if (submissionRateLimiter.Audit(Context))
-            {
-                return;
-            }
+            await ReplyAsync("Self series submission is not available yet.\n" +
+                $"Please send a submission manually at " +
+                $"{(Context.Guild.Channels.First(x => x.Name == "series-submit") as ITextChannel).Mention} for an admin to process it.");
+        }
 
+        [Command("Submit")]
+        [RequireContext(ContextType.Guild)]
+        [Cooldown(3600000, 3, "Submission")]
+        public async Task Submit(IGuildUser user, int wins, int loss, int draws, string inviteCode)
+        {
             await ReplyAsync("Self series submission is not available yet.\n" +
                 $"Please send a submission manually at " +
                 $"{(Context.Guild.Channels.First(x => x.Name == "series-submit") as ITextChannel).Mention} for an admin to process it.");
@@ -360,17 +353,12 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync(embed: embed.Build());
         }
 
-        private bool IsValidReplayId(string id)
-        {
-            return Regex.IsMatch(id, "^[A-Z]{7}$");
-        }
-
         [Command("Replay")]
         [Alias("r")]
         public async Task ReplayLink(string inviteCode)
         {
             inviteCode = inviteCode.ToUpper();
-            if (!IsValidReplayId(inviteCode))
+            if (!BattlesTV.IsValidReplayIdFormat(inviteCode))
             {
                 await ReplyAsync("Invalid invite code.");
                 return;
@@ -453,7 +441,7 @@ namespace MKOTHDiscordBot.Modules
         [Cooldown(3600000, 10, "CreateSeries")]
         public async Task CreateSeries(IGuildUser winner, IGuildUser loser, byte wins, byte loss, string inviteCode = "NA")
         {
-            await CreateSeries(winner, loser, wins, loss, 0, inviteCode);
+            await CreateSeries(winner.Id, loser.Id, wins, loss, 0, inviteCode);
         }
 
         [Command("CreateSeries")]
@@ -494,7 +482,7 @@ namespace MKOTHDiscordBot.Modules
 
             if (inviteCode != "NA")
             {
-                if (!IsValidReplayId(inviteCode.ToUpper()))
+                if (!BattlesTV.IsValidReplayIdFormat(inviteCode.ToUpper()))
                 {
                     await ReplyAsync("Invalid invite code.");
                     return;

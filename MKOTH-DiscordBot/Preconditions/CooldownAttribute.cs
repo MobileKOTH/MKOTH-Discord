@@ -13,6 +13,8 @@ namespace MKOTHDiscordBot
     {
         public static Dictionary<string, CommandCooldown> SharedInstances { get; } = new Dictionary<string, CommandCooldown>();
 
+        private ICommandContext lastContext;
+
         public CommandCooldown(double fairUsageinterval, double triggeredColdown, int burstLimitTimes) 
             : base(fairUsageinterval, triggeredColdown, burstLimitTimes) 
         {
@@ -41,6 +43,29 @@ namespace MKOTHDiscordBot
         {
             return (limitedEntities.FirstOrDefault(x => x.Id == id)?.StartTime.AddMilliseconds(cooldown) ?? DateTime.Now) - DateTime.Now;
         }
+
+        public bool Audit(ICommandContext context)
+        {
+            if (context == lastContext)
+            {
+                return IsLimited(context.User.Id);
+            }
+            else
+            {
+                if (lastContext == null)
+                {
+                    lastContext = context;
+                }
+                else
+                {
+                    lock (lastContext)
+                    {
+                        lastContext = context;
+                    }
+                }
+                return base.Audit(context.User.Id);
+            }
+        }
     }
 
     public class CooldownAttribute : PreconditionAttribute
@@ -67,7 +92,8 @@ namespace MKOTHDiscordBot
 
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
-            if (CommandCooldown.Audit(context.User.Id))
+            Logger.Debug($"Checking cooldown: {context.User.Username} {command.Name}");
+            if (CommandCooldown.Audit(context))
             {
                 return Task.FromResult(
                     PreconditionResult.FromError(

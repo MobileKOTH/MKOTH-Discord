@@ -151,19 +151,6 @@ namespace Cerlancism.ChatSystem
 
             return choosen;
         }
-        //=> Funcify<string, string>(RemovePunctuationsAndLower)
-        //.Then(Analyse)
-        //.Then(GetResults)
-        //.Then(GetRandomReply)(message);
-
-        //=> TrimMessage(message)
-        //.ToLower()
-        //.Forward(Analyse)
-        //.Forward(x => GetResults(x, message))
-        //.Forward(x => x.SelectRandom())
-        //.Forward(x => GetTriggerOrResponse(x, message));
-
-        //=> GetTriggerOrResponse(GetResults(Analyse(TrimMessage(message).ToLower()), message).SelectRandom(), message);
 
         public void Dispose()
         {

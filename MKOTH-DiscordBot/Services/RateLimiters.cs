@@ -9,29 +9,6 @@ using Discord.Commands;
 
 namespace MKOTHDiscordBot.Services
 {
-    //public class CreateSeriesRateLimiter : RateLimiterBase<ulong>
-    //{
-    //    public CreateSeriesRateLimiter() : base(60000, 60000, 10)
-    //    {
-    //        limiterDebugName = "Create Series";
-    //    }
-
-    //    public bool Audit(ICommandContext context)
-    //    {
-    //        var limited = limitedEntities.FirstOrDefault(x => x.Id == context.User.Id);
-    //        if (limited != default)
-    //        {
-    //            var time = (TimeSpan.FromMilliseconds(cooldown) - (DateTime.Now - limited.StartTime)).AsRoundedDuration();
-    //            _ = context.Channel.SendMessageAsync(text: $"{context.User.Mention}, you are creating too many series, please wait for {time}.");
-    //            return true;
-    //        }
-    //        return base.Audit(context.User.Id, () =>
-    //        {
-    //            var time = new TimeSpan(0, 0, (int)cooldown / 1000).AsRoundedDuration();
-    //            _ = context.Channel.SendMessageAsync(text: $"{context.User.Mention}, you are creating too many series, please wait for {time}.");
-    //        });
-    //    }
-    //}
     public class UsageRateLimiter : RateLimiterBase<ulong>
     {
         public UsageRateLimiter() : base(5000, 30000, 3)
@@ -47,28 +24,6 @@ namespace MKOTHDiscordBot.Services
             });
     }
 
-    public class SubmissionRateLimiter : RateLimiterBase<ulong>
-    {
-        public SubmissionRateLimiter() : base(900000, 3600000, 3)
-        {
-            limiterDebugName = "Submission";
-        }
-        public bool Audit(ICommandContext context)
-        {
-            var limited = limitedEntities.FirstOrDefault(x => x.Id == context.User.Id);
-            if (limited != default)
-            {
-                var time = (TimeSpan.FromMilliseconds(cooldown) - (DateTime.Now - limited.StartTime)).AsRoundedDuration();
-                _ = context.Channel.SendMessageAsync(text: $"{context.User.Mention}, you are submitting too many series, please wait for {time}.");
-                return true;
-            }
-            return base.Audit(context.User.Id, () =>
-            {
-                var time = new TimeSpan(0, 0, (int)cooldown / 1000).AsRoundedDuration();
-                _ = context.Channel.SendMessageAsync(text: $"{context.User.Mention}, you are submitting too many series, please wait for {time}.");
-            });
-        }
-    }
     public abstract class RateLimiterBase<T> where T : IEquatable<T>
     {
         private readonly Timer refresher;
@@ -98,11 +53,16 @@ namespace MKOTHDiscordBot.Services
             }
         }
 
+        protected bool IsLimited(T watchId)
+        {
+            return watchList.Count(x => x.Equals(watchId)) > burstLimit;
+        }
+
         public virtual bool Audit(T watchId, Action rateLimiteResponder = null)
         {
             var id = watchId;
             watchList.Add(id);
-            if (watchList.Count(x => x.Equals(id)) > burstLimit)
+            if (IsLimited(watchId))
             {
                 var limitedEntity = new LimitedEntity
                 {

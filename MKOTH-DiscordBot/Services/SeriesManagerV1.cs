@@ -66,6 +66,7 @@ namespace MKOTHDiscordBot.Services
             // Load local cache first
             seriesList = LocalSeriesCollection.FindAll().ToList();
 
+
             // Pull from remote
             var request = new RestRequest()
                 //.AddQueryParameter("admin", adminKey)
@@ -84,20 +85,22 @@ namespace MKOTHDiscordBot.Services
             _ = Updated.Invoke();
 
             Logger.Debug(response.Count, "Series Service Refresh Data Size");
+            await Task.CompletedTask;
         }
 
         public async Task PostAsync()
         {
+#if !DEBUG
             var request = new RestRequest()
                    .AddQueryParameter("admin", adminKey)
                    .AddQueryParameter("spreadSheet", collectionName)
                    .AddQueryParameter("operation", "all")
                    .AddJsonBody(seriesList);
             var response = await restClient.PostAsync<dynamic>(request);
-
-            _ = Updated.Invoke();
-
             Logger.Debug(response, "Series Service Update");
+#endif
+            _ = Updated.Invoke();
+            await Task.CompletedTask;
         }
 
         public Series MakeSeries(ulong winner, ulong loser, int wins, int losses, int draws, string replay)

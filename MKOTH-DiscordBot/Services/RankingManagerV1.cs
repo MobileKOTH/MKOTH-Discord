@@ -129,6 +129,7 @@ namespace MKOTHDiscordBot.Services
 
         public async Task PostAsync()
         {
+#if !DEBUG
             try
             {
                 var request = new RestRequest()
@@ -143,6 +144,8 @@ namespace MKOTHDiscordBot.Services
             {
                 Logger.Debug(e.Message, "Player list post error");
             }
+#endif
+            await Task.CompletedTask;
         }
 
         private async Task<IUserMessage> GetOrCreateRankingMessage(Queue<IMessage> messageQueue)

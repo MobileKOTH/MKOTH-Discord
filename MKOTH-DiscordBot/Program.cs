@@ -89,7 +89,6 @@ namespace MKOTHDiscordBot
                 .AddSingleton<InteractiveService>()
                 .AddSingleton<ResponseService>()
                 .AddSingleton<UsageRateLimiter>()
-                .AddSingleton<SubmissionRateLimiter>()
                 .AddSingleton<ActivityCycler>()
                 .AddTransient<ChatService>()
                 .AddTransient<IssueTracker>()

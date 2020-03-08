@@ -44,10 +44,10 @@ namespace MKOTHDiscordBot.Core
 
         public static ITier ToTierModel(this Tiers tier)
         {
-            return new Tier { Name = tier.ToString("g"), Icon = tier.TierIcon(), EloRequirement = (double)tier };
+            return new TiersModel { Name = tier.ToString("g"), Icon = tier.TierIcon(), EloRequirement = (double)tier };
         }
 
-        private class Tier : ITier
+        private class TiersModel : ITier
         {
             public string Name { get; set; }
             public string Icon { get; set; }
