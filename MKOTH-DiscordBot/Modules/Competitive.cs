@@ -24,11 +24,11 @@ namespace MKOTHDiscordBot.Modules
     public class Competitive : InteractiveBase
     {
         private readonly DiscordSocketClient client;
+        private readonly ITextChannel logChannel;
         private readonly ISeriesManager seriesService;
         private readonly IRankingManager rankingService;
         private readonly TowerBanManager towerBanManager;
         private readonly RoleManager roleManager;
-        private readonly ITextChannel logChannel;
 
         private readonly Lazy<IEmote> lazyBanEmote;
         private IEmote BanEmote => lazyBanEmote.Value;
@@ -111,7 +111,10 @@ namespace MKOTHDiscordBot.Modules
             {
                 if ((lower?.Points ?? 0) < 5)
                 {
-                    await ReplyAsync("If a player's elo is more than 1300 and the Elo difference of the players is more than 300, the lower Elo player needs to have at least 5 points earned to challenge.");
+                    await ReplyAsync(
+                        "If a player's elo is more than 1300 and the Elo difference of the players is more than 300, " +
+                        "the lower Elo player needs to have at least 5 points earned to challenge."
+                    );
                     return;
                 }
             }
@@ -120,15 +123,19 @@ namespace MKOTHDiscordBot.Modules
                 .WithColor(Color.Orange)
                 .WithAuthor(Context.User)
                 .WithTitle("Series Challenge")
-                .WithDescription(Context.User.Mention + " is challenging " + user.Mention + " on a series.\n" +
-                "Please decide if to ban towers. Both must agree or disagree to ban towers.\n" +
-                "<:ban:683258477421920342> Ban Towers ⭕ No Ban Towers 🚶 Reject Challenge")
+                .WithDescription(
+                    Context.User.Mention + " is challenging " + user.Mention + " on a series.\n" +
+                    "Engineer is banned by default unless [rule 7](https://mobilekoth.github.io/system) is applied.\n" +
+                    "Please decide if to ban more towers. Both must agree or there will be no other towers banned.\n" +
+                    "<:ban:683258477421920342> Ban Towers ⭕ No Ban Towers 🚶 Reject Challenge"
+                )
                 .WithFooter($"Both of you have {TowerBanManager.MAX_SESSION_SECONDS} seconds to decide.");
 
             bool leftAgree = false, rightAgree = false, denied = false;
             int voteCount = 0;
 
-            var reactionCallBackData = new ReactionCallbackData(string.Empty,
+            var reactionCallBackData = new ReactionCallbackData(
+                string.Empty,
                 embed: challengeEmbed.Build(),
                 false, // Expires after use
                 true,  // Single use per user
@@ -149,8 +156,8 @@ namespace MKOTHDiscordBot.Modules
                     {
                         return;
                     }
-                    leftAgree = e.UserId == Context.User.Id;
-                    rightAgree = e.UserId == user.Id;
+                    leftAgree = leftAgree || e.UserId == Context.User.Id;
+                    rightAgree = rightAgree || e.UserId == user.Id;
                     voteCount++;
                     await handleVote();
                 })
@@ -194,7 +201,11 @@ namespace MKOTHDiscordBot.Modules
                 {
                     await ReplyAsync(embed: new EmbedBuilder()
                         .WithColor(Color.Orange)
-                        .WithDescription($"{Context.User.Mention} {user.Mention} Both of you have disagreed to have towers banned. You may begin your series with no tower banned.")
+                        .WithDescription(
+                            $"{Context.User.Mention} {user.Mention} " +
+                            $"There is at least 1 disagreement to have towers banned. " +
+                            $"You may begin your series with no tower banned."
+                        )
                         .Build());
                 }
             }
