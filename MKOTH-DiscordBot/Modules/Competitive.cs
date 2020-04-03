@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Discord;
@@ -31,6 +30,9 @@ namespace MKOTHDiscordBot.Modules
         private readonly RoleManager roleManager;
         private readonly ITextChannel logChannel;
 
+        private readonly Lazy<IEmote> lazyBanEmote;
+        private IEmote BanEmote => lazyBanEmote.Value;
+
         private readonly string prefix;
 
         public Competitive(IServiceProvider services, IOptions<AppSettings> appSettings)
@@ -40,9 +42,10 @@ namespace MKOTHDiscordBot.Modules
             rankingService = services.GetService<IRankingManager>();
             towerBanManager = services.GetService<TowerBanManager>();
             roleManager = services.GetService<RoleManager>();
-            logChannel = (ITextChannel)client.GetChannel(appSettings.Value.Settings.DevelopmentGuild.Test);
+            logChannel = client.GetChannel(appSettings.Value.Settings.DevelopmentGuild.Test) as ITextChannel;
 
             prefix = services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
+            lazyBanEmote = new Lazy<IEmote>(() => rankingService.RankingChannel.Guild.GetEmoteAsync(683258477421920342).Result);
         }
 
         /*
@@ -62,8 +65,11 @@ namespace MKOTHDiscordBot.Modules
         [Command("Challenge")]
         [Alias("ch")]
         [RequireContext(ContextType.Guild)]
-        [Summary("Challenge a user on a series, decide if to have towers banned. Only one has to agree to have towers banned.\n" +
-            "Please also refer to the [series rules and ranking system](http://mobilekoth.github.io/system).")]
+        [Summary(
+            "Challenge a user on a series, decide if to have towers banned. " +
+            "Both have to agree to have towers banned.\n" +
+            "Please also refer to the [series rules and ranking system](http://mobilekoth.github.io/system)."
+        )]
         [Cooldown(60000, 2)]
         public async Task Challenge(IGuildUser user)
         {
@@ -110,14 +116,12 @@ namespace MKOTHDiscordBot.Modules
                 }
             }
 
-            var banEmote = await rankingService.RankingChannel.Guild.GetEmoteAsync(683258477421920342);
-
             var challengeEmbed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithAuthor(Context.User)
                 .WithTitle("Series Challenge")
                 .WithDescription(Context.User.Mention + " is challenging " + user.Mention + " on a series.\n" +
-                "Please decide if to ban towers. Both must respond, but only one has to agree to ban towers.\n" +
+                "Please decide if to ban towers. Both must agree or disagree to ban towers.\n" +
                 "<:ban:683258477421920342> Ban Towers ⭕ No Ban Towers 🚶 Reject Challenge")
                 .WithFooter($"Both of you have {TowerBanManager.MAX_SESSION_SECONDS} seconds to decide.");
 
@@ -139,7 +143,7 @@ namespace MKOTHDiscordBot.Modules
                         .WithColor(Color.Orange)
                         .WithDescription($"{Context.User.Mention} {user.Mention} Challenge session has timed out.")
                         .Build());
-                }).WithCallback(banEmote, async (c, e) =>
+                }).WithCallback(BanEmote, async (c, e) =>
                 {
                     if (!(e.UserId == Context.User.Id || e.UserId == user.Id) || denied)
                     {
@@ -182,7 +186,7 @@ namespace MKOTHDiscordBot.Modules
                 {
                     return;
                 }
-                if (leftAgree || rightAgree)
+                if (leftAgree && rightAgree)
                 {
                     await BanTowerSession(user);
                 }
@@ -207,23 +211,30 @@ namespace MKOTHDiscordBot.Modules
             }
 
             var dmEmbed = ListTowers()
-                .AddField("Examples",
-                $"`{prefix}{nameof(BanTower)} 1`\n" +
-                $"`{prefix}{nameof(BanTower)} Dart`\n" +
-                $"`{prefix}b 1`\n" +
-                $"`{prefix}b dart`")
+                .AddField(
+                    "Examples",
+                    $"`{prefix}{nameof(BanTower)} 1`\n" +
+                    $"`{prefix}{nameof(BanTower)} Dart`\n" +
+                    $"`{prefix}b 1`\n" +
+                    $"`{prefix}b dart`"
+                )
                 .WithFooter($"You have {TowerBanManager.MAX_SESSION_SECONDS} seconds to make your choice.");
 
             try
             {
-                var dmStarter = await Context.User.SendMessageAsync(embed: dmEmbed.Build());
-                var dmOther = await user.SendMessageAsync(embed: dmEmbed.Build());
+                var dmStarterTask = Context.User.SendMessageAsync(embed: dmEmbed.Build());
+                var dmOtherTask = user.SendMessageAsync(embed: dmEmbed.Build());
+                await Task.WhenAll(dmStarterTask, dmOtherTask);
+                var dmStarter = await dmStarterTask;
+                var dmOther = await dmOtherTask;
                 var embed = new EmbedBuilder()
                     .WithColor(Color.Orange)
-                    .WithDescription($"A tower ban session has created between {Context.User.Mention} and {user.Mention}. " +
-                    $"Please select a tower to ban in our DM within {TowerBanManager.MAX_SESSION_SECONDS} seconds.\n\n" +
-                    $"{Context.User.Mention}: You can click [here](https://discordapp.com/channels/@me/{dmStarter.Channel.Id}) to switch to our dm.\n" +
-                    $"{user.Mention}: You can click [here](https://discordapp.com/channels/@me/{dmOther.Channel.Id}) to switch to our dm.");
+                    .WithDescription(
+                        $"A tower ban session has created between {Context.User.Mention} and {user.Mention}. " +
+                        $"Please select a tower to ban in our DM within {TowerBanManager.MAX_SESSION_SECONDS} seconds.\n\n" +
+                        $"{Context.User.Mention}: You can click [here](https://discordapp.com/channels/@me/{dmStarter.Channel.Id}) to switch to our dm.\n" +
+                        $"{user.Mention}: You can click [here](https://discordapp.com/channels/@me/{dmOther.Channel.Id}) to switch to our dm."
+                    );
                 await ReplyAsync(embed: embed.Build());
             }
             catch (Exception e)
@@ -332,7 +343,7 @@ namespace MKOTHDiscordBot.Modules
             {
                 embed.AddField("Player Statistics", "The player has no series history.");
             }
-            await ReplyAsync(message: "Full list at " + rankingService.RankingChannel.Mention,embed: embed.Build());
+            await ReplyAsync(message: "Full list at " + rankingService.RankingChannel.Mention, embed: embed.Build());
         }
 
         [Command("SeriesHistory")]
@@ -340,8 +351,8 @@ namespace MKOTHDiscordBot.Modules
         public async Task Serieshistory(IUser user = null)
         {
             var limit = 25;
-            var targetSet = user == null 
-                ? seriesService.SeriesHistory 
+            var targetSet = user == null
+                ? seriesService.SeriesHistory
                 : seriesService.SeriesHistory
                 .Where(x => x.WinnerId == user.Id.ToString() || x.LoserId == user.Id.ToString());
             var lines = seriesService.PrintSeriesHistoryLines(targetSet.Reverse().Take(limit).Reverse());
@@ -518,7 +529,7 @@ namespace MKOTHDiscordBot.Modules
             try
             {
                 await seriesService.RemoveAsync(id);
-                await ReplyAsync("Series deleted.");
+                await ReplyAsync($"Series `#{id}` is deleted.");
             }
             catch (Exception e)
             {

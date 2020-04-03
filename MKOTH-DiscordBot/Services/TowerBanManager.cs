@@ -35,7 +35,7 @@ namespace MKOTHDiscordBot.Services
         Mortar,
         Boomerang,
         Ninja,
-        Engineer,
+        //Engineer,
         Village,
         Dartling,
         Cobra,
