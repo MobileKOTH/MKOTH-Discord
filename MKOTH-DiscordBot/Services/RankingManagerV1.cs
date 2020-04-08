@@ -169,7 +169,7 @@ namespace MKOTHDiscordBot.Services
 
             var headerEmbed = new EmbedBuilder()
                 .WithColor(Color.Orange)
-                .WithDescription("Formatting maybe incorrect in mobile.")
+                .WithDescription("Formatting maybe incorrect on mobile.")
                 .WithFooter("Updated At")
                 .WithTimestamp(DateTime.Now);
 
