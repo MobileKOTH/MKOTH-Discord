@@ -204,22 +204,22 @@ namespace MKOTHDiscordBot.Modules
         [Alias("alt")]
         [Summary("Checks the user's registration and server join date.")]
         [RequireContext(ContextType.Guild)]
-        public async Task User(IGuildUser user = null)
+        public async Task User(IUser user = null)
         {
-            user ??= Context.User as IGuildUser;
-            var isThisBot = user.Id == Context.Client.CurrentUser.Id;
+            var guildUser = (user ?? Context.User) as IGuildUser;
+            var isThisBot = guildUser.Id == Context.Client.CurrentUser.Id;
             if (!isThisBot)
             {
-                user = await user.Guild.GetUserAsync(user.Id, CacheMode.AllowDownload);
+                guildUser = await (Context.Guild as IGuild).GetUserAsync(guildUser.Id, CacheMode.AllowDownload);
             }
-            var resgistrationDate = user.CreatedAt;
-            var joinedDate = user.JoinedAt.Value;
+            var resgistrationDate = guildUser.CreatedAt;
+            var joinedDate = guildUser.JoinedAt.Value;
             var difference = joinedDate - resgistrationDate;
-            var activity = !isThisBot ? user.Activity : Context.Client.Activity;
+            var activity = !isThisBot ? guildUser.Activity : Context.Client.Activity;
 
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
-                .WithAuthor(user)
+                .WithAuthor(guildUser)
                 .WithDescription($"**Registered:** {resgistrationDate.ToString("R")}\n" +
                 $"**Joined:** {joinedDate.ToString("R")}\n" +
                 $"**Difference:** {difference.AsRoundedDuration()}");
@@ -249,7 +249,7 @@ namespace MKOTHDiscordBot.Modules
                 }
             }
 
-            await ReplyAsync(user == Context.User ? "Checking yourself." : string.Empty, embed: embed.Build());
+            await ReplyAsync(guildUser == Context.User ? "Checking yourself." : string.Empty, embed: embed.Build());
         }
 
         [Command("Ban")]

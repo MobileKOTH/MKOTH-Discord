@@ -261,6 +261,14 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync($"My username has changed to: {Format.Bold(userName)}");
         }
 
+        [Command("DownloadUsers")]
+        [RequireDeveloper]
+        public async Task DownloadUsers()
+        {
+            await Context.Guild.DownloadUsersAsync();
+            await ReplyAsync($"Done! Members: {Context.Guild.MemberCount} Downloaded: {Context.Guild.DownloadedMemberCount}");
+        }
+
         [Command("GarbageCollection", RunMode = RunMode.Async)]
         [Alias("GC")]
         [RequireDeveloper]
