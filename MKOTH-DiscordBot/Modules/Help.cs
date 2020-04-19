@@ -220,8 +220,8 @@ namespace MKOTHDiscordBot.Modules
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithAuthor(guildUser)
-                .WithDescription($"**Registered:** {resgistrationDate.ToString("R")}\n" +
-                $"**Joined:** {joinedDate.ToString("R")}\n" +
+                .WithDescription($"**Registered:** {resgistrationDate:R}\n" +
+                $"**Joined:** {joinedDate:R}\n" +
                 $"**Difference:** {difference.AsRoundedDuration()}");
 
             if (activity != null)
