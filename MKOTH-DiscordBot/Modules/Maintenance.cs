@@ -44,8 +44,8 @@ namespace MKOTHDiscordBot.Modules
             var (ramUsageMB, freeRamGB, ramSizeGB, cpuUsagePercent) = ApplicationManager.GetResourceUsage();
 
             await msgTask.Result.ModifyAsync(x => x.Embed = buildEmbed(
-                $"{ramUsageMB.ToString("N2")} MB",
-                $"Free RAM: {freeRamGB.ToString("N2")} / {ramSizeGB.ToString("N2")} GB\nCPU Load: {cpuUsagePercent.ToString()}%"));
+                $"{ramUsageMB:N2} MB",
+                $"Free RAM: {freeRamGB:N2} / {ramSizeGB:N2} GB\nCPU Load: {cpuUsagePercent}%"));
 
             Embed buildEmbed(string ramUsage = "Loading...", string systemInfo = "Loading...")
             {
@@ -140,7 +140,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireDeveloper]
         public async Task DiscordStats(ITextChannel channel = null, int limit = 100)
         {
-            channel = channel ?? (ITextChannel)Context.Channel;
+            channel ??= (ITextChannel)Context.Channel;
             var messages = await channel.GetMessagesAsync(limit).FlattenAsync();
             var (avgWorker, avgProcess, avgIncrement) = (getAverage(getWorker), getAverage(getProcess), getAverage(getIncrement));
             var load = (avgWorker * avgProcess * avgIncrement) * 1000;
@@ -170,12 +170,12 @@ namespace MKOTHDiscordBot.Modules
                     .Forward(x => selector(x))
                     .FirstOrDefault();
 
+            string getStamped(IMessage message, ulong value) => $"`{value}`\nId:` {message.Id}`\nTimeStamp: {message.Timestamp.LocalDateTime}";
+
             string getMaxField(Func<ulong, ulong> converter)
                 => getMinMax(converter, x => x.OrderByDescending(y => y.value))
-                    .Forward(x
-                    => getStamped(x.message, x.value));
+                    .Forward(x => getStamped(x.message, x.value));
 
-            string getStamped(IMessage message, ulong value) => $"`{value}`\nId:` {message.Id}`\nTimeStamp: {message.Timestamp.LocalDateTime}";
         }
 
         [Command("Logs")]
@@ -300,7 +300,7 @@ namespace MKOTHDiscordBot.Modules
             stopWatch.Stop();
 
             var collectionMessage = $"`Garbage Collection Took: {stopWatch.Elapsed.TotalMilliseconds} ms`";
-            var afterMessage = $"After GC: `{ApplicationManager.GetResourceUsage().ramUsageMB.ToString("N2")} MB`";
+            var afterMessage = $"After GC: `{ApplicationManager.GetResourceUsage().ramUsageMB:N2} MB`";
 
             await modTask;
 
