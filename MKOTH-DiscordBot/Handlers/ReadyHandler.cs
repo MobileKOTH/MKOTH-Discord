@@ -50,7 +50,7 @@ namespace MKOTHDiscordBot.Handlers
                 {
                     case "pm":
                         {
-                            discordLogger.Log("Bot has started by a process manager");
+                            discordLogger.Log("Bot has started by a process manager.");
                             break;
                         }
                     default:
