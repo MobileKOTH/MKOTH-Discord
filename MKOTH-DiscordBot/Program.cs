@@ -28,7 +28,14 @@ namespace MKOTHDiscordBot
         {
             FirstArgument = args.FirstOrDefault();
             SecondArgument = args.ElementAtOrDefault(1);
-            Console.Title = Assembly.GetAssembly(typeof(Program)).GetName().Name;
+            try
+            {
+                Console.Title = Assembly.GetAssembly(typeof(Program)).GetName().Name;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Set title error", e.Message);
+            }
             Console.WriteLine(args.Length > 0 ? "Arguments: " + string.Join(", ", args) : "No start up arguments");
             Console.WriteLine(ApplicationContext.GetFrameworkDescription());
             Console.WriteLine($"CLR {Environment.Version}");
