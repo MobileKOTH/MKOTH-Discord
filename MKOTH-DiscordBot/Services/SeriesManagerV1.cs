@@ -34,11 +34,10 @@ namespace MKOTHDiscordBot.Services
         private int? nextId = null;
 
         public int NextId => nextId.HasValue ? (int)(nextId = nextId.Value + 1) : (seriesList.Count > 0 ? (int)(nextId = seriesList.Max(x => x.Id) + 1) : 1);
-        public IQueryable<ulong> AllPlayers => seriesList.Select(x => ulong.Parse(x.WinnerId))
+        public IEnumerable<ulong> AllPlayers => seriesList.Select(x => ulong.Parse(x.WinnerId))
             .Concat(seriesList.Select(x => ulong.Parse(x.LoserId)))
-            .Distinct()
-            .AsQueryable();
-        public IQueryable<Series> SeriesHistory => seriesList.AsQueryable();
+            .Distinct();
+        public IEnumerable<Series> SeriesHistory => seriesList;
 
         private const string collectionName = "_series";
 

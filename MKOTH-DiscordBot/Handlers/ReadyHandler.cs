@@ -19,9 +19,6 @@ namespace MKOTHDiscordBot.Handlers
 
         private async Task RunTests()
         {
-            var chn = client.GetChannel(0) as ITextChannel;
-            var msgs = chn.GetMessagesAsync();
-
             await Task.CompletedTask;
         }
 
@@ -51,16 +48,9 @@ namespace MKOTHDiscordBot.Handlers
 
                 switch (Program.FirstArgument)
                 {
-                    case "Restarted":
+                    case "pm":
                         {
-                            var restartChannel = client.GetChannel(ulong.Parse(Program.SecondArgument)) as SocketTextChannel ?? discordLogger.LogChannel;
-                            restartChannel.SendMessageAsync("Bot has restarted");
-                            break;
-                        }
-                    case "Updated":
-                        {
-                            var restartChannel = client.GetChannel(ulong.Parse(Program.SecondArgument)) as SocketTextChannel ?? discordLogger.LogChannel;
-                            restartChannel.SendMessageAsync($"Bot updated: {File.ReadAllText("../updatelog.txt").SliceBack(1900).MarkdownCodeBlock("c")}");
+                            discordLogger.Log("Bot has started by a process manager");
                             break;
                         }
                     default:
@@ -81,7 +71,7 @@ namespace MKOTHDiscordBot.Handlers
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(e.Message.AddLine() + e.StackTrace);
                 Console.WriteLine("Failed loading context!");
-                Console.ReadKey();
+                Console.Error.WriteLine($"{DateTime.Now:yyyy-MM-dd hh:mm:ss} Application has failed to start!");
                 Environment.Exit(0);
             }
 

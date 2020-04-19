@@ -13,6 +13,11 @@ namespace MKOTHDiscordBot.Services
 {
     public class ErrorResolver
     {
+        private class TooManyErrorsException : Exception
+        {
+            public override string Message => "The application has experienced too many errors and is attempting to auto restart";
+        }
+
         public int CriticalErrors = 0;
         public int Threshold = 3;
         private readonly DiscordLogger logger;
@@ -37,7 +42,7 @@ namespace MKOTHDiscordBot.Services
             catch (TooManyErrorsException e)
             {
                 await Handle(e, false);
-                ApplicationManager.RestartApplication(logger.LogChannel.Id);
+                ApplicationManager.ShutDownApplication();
             }
             catch (Exception e)
             {
@@ -47,11 +52,6 @@ namespace MKOTHDiscordBot.Services
             {
                 Logger.LogError(error);
             }
-        }
-
-        private class TooManyErrorsException : Exception
-        {
-            public override string Message => "The application has experienced too many errors and is attempting to auto restart";
         }
     }
 }

@@ -11,8 +11,8 @@ namespace MKOTHDiscordBot.Core
 {
     public interface ISeriesManager
     {
-        IQueryable<ulong> AllPlayers { get; }
-        IQueryable<Series> SeriesHistory { get; }
+        IEnumerable<ulong> AllPlayers { get; }
+        IEnumerable<Series> SeriesHistory { get; }
         bool Ready { get; }
         event Func<Task> Updated;
         Series MakeSeries(ulong winner, ulong loser, int wins, int losses, int draws, string replay);

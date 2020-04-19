@@ -29,8 +29,7 @@ namespace MKOTHDiscordBot.Handlers
         private readonly Lazy<TowerBanManager> lazyTowerBanManager;
         private TowerBanManager TowerBanManager => lazyTowerBanManager.Value;
 
-        private ulong testChannelId;
-        private ulong currentUserId;
+        private readonly ulong testChannelId;
 
         public MessageHandler(IServiceProvider theServices, IOptions<AppSettings> appSettings) : base(theServices)
         {
@@ -42,8 +41,6 @@ namespace MKOTHDiscordBot.Handlers
             lazyTowerBanManager = new Lazy<TowerBanManager>(() => services.GetService<TowerBanManager>());
 
             testChannelId = appSettings.Value.Settings.DevelopmentGuild.Test;
-
-            client.Ready += async () => currentUserId = await Task.FromResult(client.CurrentUser.Id);
 
             defaultCommandPrefix = services.GetScoppedSettings<AppSettings>().Settings.DefaultCommandPrefix;
 

@@ -22,7 +22,7 @@ namespace MKOTHDiscordBot.Services
     {
         public int ELO_KFactor { get; } = 75;
         public int InativeDaysToRemove { get; } = 30;
-        public IQueryable<SeriesPlayer> SeriesPlayers => seriesPlayers.AsQueryable();
+        public IEnumerable<SeriesPlayer> SeriesPlayers => seriesPlayers;
 
         private readonly string endPoint;
         private readonly string adminKey;
@@ -205,7 +205,7 @@ namespace MKOTHDiscordBot.Services
             }
         }
 
-        public string getPlayerMention(string id)
+        public string GetPlayerMention(string id)
         {
             return client.GetUser(ulong.Parse(id))?.Mention ?? $"<@{id}>";
         }
@@ -217,7 +217,7 @@ namespace MKOTHDiscordBot.Services
                 yield return $"`#{player.Key.ToString("D2")}` | " +
                     $"`{player.Value.Elo.ToString("N2").PadLeft(8, '0')}` | " +
                     $"`{player.Value.Points.ToString().PadLeft(3, '0')}` | " +
-                    $"{TierIcon(PlayerTier(player.Value.Elo))} {getPlayerMention(player.Value.Id)}";
+                    $"{TierIcon(PlayerTier(player.Value.Elo))} {GetPlayerMention(player.Value.Id)}";
             }
         }
 

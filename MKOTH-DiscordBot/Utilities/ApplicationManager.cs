@@ -33,13 +33,6 @@ namespace MKOTHDiscordBot
             return (ramUsageMB, freeRamGB, ramSizeGB, cpuUsagePercent);
         }
 
-        public static void RestartApplication(ulong responseChannelId)
-        {
-            ClosingPreparation();
-            Process.Start("dotnet", $"\"{Assembly.GetExecutingAssembly().Location}\" Restarted {responseChannelId}");
-            Environment.Exit(0);
-        }
-
         public static void ShutDownApplication()
         {
             ClosingPreparation();

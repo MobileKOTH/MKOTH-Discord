@@ -516,8 +516,8 @@ namespace MKOTHDiscordBot.Modules
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithDescription($"Id: {series.Id.ToString("D4")}\n" +
-                $"Winner: {rankingService.getPlayerMention(series.WinnerId)}\n" +
-                $"Loser: {rankingService.getPlayerMention(series.LoserId)}\n" +
+                $"Winner: {rankingService.GetPlayerMention(series.WinnerId)}\n" +
+                $"Loser: {rankingService.GetPlayerMention(series.LoserId)}\n" +
                 $"Score: {wins}-{loss} Draws: {draws}\n" +
                 $"Invite Code: {inviteCode}\n" +
                 $"Approved By: {Context.User.Mention}");

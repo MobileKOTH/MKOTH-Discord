@@ -25,7 +25,6 @@ namespace MKOTHDiscordBot.Modules
         private readonly ErrorResolver resolver;
         private readonly LazyDisposable<IssueTracker> lazyIssueTracker;
         private readonly string prefix;
-        private static Process nodeJS = null;
 
         public Maintenance(IServiceProvider services, ErrorResolver errorResolver)
         {
@@ -263,10 +262,26 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("DownloadUsers")]
         [RequireDeveloper]
-        public async Task DownloadUsers()
+        public async Task DownloadUsers(ulong? guildId)
         {
-            await Context.Guild.DownloadUsersAsync();
-            await ReplyAsync($"Done! Members: {Context.Guild.MemberCount} Downloaded: {Context.Guild.DownloadedMemberCount}");
+            var guild = guildId != null ? Context.Client.GetGuild(guildId.Value) : Context.Guild;
+
+            var replyTask = ReplyAsync("Downloading users for: " + guild.Name);
+            var before = guild.Users.ToArray();
+            
+            await guild.DownloadUsersAsync();
+            await replyTask;
+
+            var after = guild.Users.ToArray();
+
+            var except = after.Select(x => x.Id).Except(before.Select(x => x.Id)).Select(x => guild.GetUser(x));
+
+            await ReplyAsync(
+                $"Done! Before Members: {before.Length} Downloaded: {after.Length}", embed: new EmbedBuilder()
+                .WithColor(Color.Orange)
+                .WithTitle("Cache misses")
+                .WithDescription(except.Select(x => x.Mention).JoinLines())
+                .Build());
         }
 
         [Command("GarbageCollection", RunMode = RunMode.Async)]
@@ -347,66 +362,6 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync(embed: embed.Build());
         }
 
-        [Command("node")]
-        [RequireDeveloper]
-        public async Task NodeJS([Remainder] string input)
-        {
-            if (nodeJS == null)
-            {
-                _ = ReplyAsync("Node process opened");
-                nodeJS = new Process();
-                nodeJS.StartInfo.FileName = "node";
-                nodeJS.StartInfo.UseShellExecute = false;
-                nodeJS.StartInfo.RedirectStandardInput = true;
-                nodeJS.StartInfo.RedirectStandardOutput = true;
-                nodeJS.StartInfo.RedirectStandardError = true;
-                nodeJS.Start();
-            }
-
-            var writer = nodeJS.StandardInput;
-            writer.WriteLine(input);
-
-            await Task.CompletedTask;
-        }
-
-        [Command("nodeclose")]
-        [RequireDeveloper]
-        public async Task NodeJSClose()
-        {
-            if (nodeJS != null)
-            {
-                await ReplyAsync("Closed Node Process");
-                nodeJS.StandardInput.Close();
-                nodeJS.WaitForExit();
-                var output = nodeJS.StandardOutput.ReadToEnd();
-                await ReplyAsync(output.SliceBack(1900).MarkdownCodeBlock());
-                nodeJS.Close();
-                nodeJS = null;
-            }
-            else
-            {
-                await ReplyAsync("Node Process Not started");
-            }
-        }
-
-        [Command("Python")]
-        [Alias("py")]
-        [Summary("Eval Python snippet.")]
-        [RequireDeveloper]
-        public async Task Python([Remainder] string input)
-        {
-            await Run("py", $"-c \"{input.Replace("\"", "\\\"")}\"");
-        }
-
-        [Command("Javascript")]
-        [Alias("js")]
-        [Summary("Eval JavasScript snippet.")]
-        [RequireDeveloper]
-        public async Task JavaScript([Remainder] string input)
-        {
-            await Run("node", $"-e \"{input.Replace("\"", "\\\"")}\"");
-        }
-
         [Command("Run")]
         [Summary("Command line interface.")]
         [RequireDeveloper]
@@ -433,32 +388,30 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync(output.SliceBack(1900).MarkdownCodeBlock());
         }
 
-        [Command("Restart")]
-        [Alias("Reboot")]
-        [Summary("Restarts the bot application.")]
+        [Command("Python")]
+        [Alias("py")]
+        [Summary("Eval Python snippet.")]
         [RequireDeveloper]
-        public async Task Restart()
+        public async Task Python([Remainder] string input)
         {
-            await ReplyAsync("Restarting...");
-            _ = Task.Run(() => ApplicationManager.RestartApplication(Context.Channel.Id));
+            await Run("py", $"-c \"{input.Replace("\"", "\\\"")}\"");
         }
 
-        [Command("ShutDown")]
-        [Summary("Shuts down the bot application.")]
+        [Command("Javascript")]
+        [Alias("js")]
+        [Summary("Eval JavasScript snippet.")]
+        [RequireDeveloper]
+        public async Task JavaScript([Remainder] string input)
+        {
+            await Run("node", $"-e \"{input.Replace("\"", "\\\"")}\"");
+        }
+
+        [Command("KillProcess")]
+        [Summary("Kills the bot application process.")]
         [RequireDeveloper]
         public async Task ShutDown()
         {
-            await ReplyAsync("Shutting Down...");
-            _ = Task.Run(() => ApplicationManager.ShutDownApplication());
-        }
-
-        [Command("Update")]
-        [Summary("Updates the bot.")]
-        [RequireDeveloper]
-        public async Task Update()
-        {
-            await ReplyAsync("Updating...");
-            Process.Start("../update.bat", Context.Channel.Id.ToString());
+            await ReplyAsync("Exiting...");
             _ = Task.Run(() => ApplicationManager.ShutDownApplication());
         }
 
