@@ -58,6 +58,7 @@ namespace MKOTHDiscordBot.Services
         private async Task HandleSeriesUpdate()
         {
             Logger.Debug("Updating Member Roles", "Update");
+            // TODO: Now all users are not guaranteed to be complete, especially offline users.
             var members = await Guild.GetUsersAsync();
             var playerSet = rankingService.SeriesPlayers.ToDictionary(x => ulong.Parse(x.Id));
 
