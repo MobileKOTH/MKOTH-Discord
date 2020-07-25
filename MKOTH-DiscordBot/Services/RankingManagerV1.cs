@@ -78,11 +78,18 @@ namespace MKOTHDiscordBot.Services
 
             seriesPlayers = seriesPlayers.OrderByDescending(x => x.Elo).ToList();
 
-            Logger.Debug("Refreshed", "Ranking");
+            try
+            {
+                await Task.WhenAll(PostAsync(), UpdateFullLeaderBoard());
 
-            await Task.WhenAll(PostAsync(), UpdateFullLeaderBoard());
+                _ = Updated.Invoke();
 
-            _ = Updated.Invoke();
+                Logger.Debug("Refreshed", "Ranking");
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e);
+            }
         }
 
         public Tiers PlayerTier(double elo) => elo switch
@@ -191,10 +198,10 @@ namespace MKOTHDiscordBot.Services
 
             var lines = tiers.Select(x => $"{getTierHeader(x.Key)}\n" + PrintRankingList(x).JoinLines() + "\n")
                 .JoinLines()
+                .TrimEnd()
                 .Split("\n");
 
-            var chunksize = 30;
-            for (int i = 0, m = 0; i < lines.Length; i += chunksize, m++)
+            for (int i = 0, m = 0, chunksize = 30; i < lines.Length; i += chunksize, m++)
             {
                 var targetMessage = await GetOrCreateRankingMessage(messages);
 

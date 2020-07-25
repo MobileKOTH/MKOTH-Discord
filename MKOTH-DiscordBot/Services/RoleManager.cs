@@ -60,6 +60,13 @@ namespace MKOTHDiscordBot.Services
             Logger.Debug("Updating Member Roles", "Update");
             // TODO: Now all users are not guaranteed to be complete, especially offline users.
             var members = await Guild.GetUsersAsync();
+
+            if (members.Count != (Guild as SocketGuild).MemberCount)
+            {
+                await Guild.DownloadUsersAsync();
+                members = await Guild.GetUsersAsync();
+            }
+
             var playerSet = rankingService.SeriesPlayers.ToDictionary(x => ulong.Parse(x.Id));
 
             foreach (var member in members)
