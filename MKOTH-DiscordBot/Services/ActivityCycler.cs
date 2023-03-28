@@ -22,6 +22,9 @@ namespace MKOTHDiscordBot.Services
             }
             public string Name => $"{prefix}help for general help";
             public ActivityType Type => ActivityType.Listening;
+
+            public ActivityProperties Flags => ActivityProperties.None;
+            public string Details { get; }
         }
 
         class ShowMemory : IActivity
@@ -30,6 +33,9 @@ namespace MKOTHDiscordBot.Services
                 .Forward(x => $"RAM: {x.ramUsageMB.ToString("N3")}MB CPU: {x.cpuUsagePercent}%");
 
             public ActivityType Type => ActivityType.Watching;
+
+            public ActivityProperties Flags => ActivityProperties.None;
+            public string Details { get; }
         }
 
 
