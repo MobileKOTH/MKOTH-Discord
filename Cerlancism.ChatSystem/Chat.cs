@@ -131,11 +131,17 @@ namespace Cerlancism.ChatSystem
             })
             : await GetEntryByIdAsync(lastId);
 
+        public async Task<(int, IEnumerable<Analysis>)> GenerateResults(string message)
+        {
+            var (wordCount, analysis) = await AnalyseAsync(message);
+            var results = GetResults(wordCount, analysis);
+            return (wordCount, results);
+        }
+
         public async Task<string> ReplyAsync(string message)
         {
             var stopWatch = Stopwatch.StartNew();
-            var (wordCount, analysis) = await AnalyseAsync(message);
-            var results = GetResults(wordCount, analysis);
+            var (wordCount, results) = await GenerateResults(message);
             var choosen = GetRandomReply(wordCount, results, out Analysis result);
 
             stopWatch.Stop();

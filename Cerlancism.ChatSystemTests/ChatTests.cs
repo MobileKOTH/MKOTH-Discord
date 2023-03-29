@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+using Cerlancism.ChatSystem.OpenAIExtensions;
 
 namespace Cerlancism.ChatSystem.Tests
 {
@@ -14,9 +16,12 @@ namespace Cerlancism.ChatSystem.Tests
     public class ChatTests
     {
         [TestMethod()]
-        public void ChatTest()
+        public void SanitizeNameTest()
         {
-            Assert.IsTrue(true);
+            var input = "Your input string here-123";
+            var output = ChatMessageWithName.SanitizeName(input);
+
+            Console.WriteLine(output);
         }
     }
 }

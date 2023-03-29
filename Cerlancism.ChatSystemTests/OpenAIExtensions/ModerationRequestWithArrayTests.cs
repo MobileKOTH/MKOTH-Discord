@@ -1,13 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Cerlancism.ChatSystem.OpenAIExtensions;
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using OpenAI_API;
-using OpenAI_API.Moderation;
 
 namespace Cerlancism.ChatSystem.OpenAIExtensions.Tests
 {
@@ -21,16 +17,15 @@ namespace Cerlancism.ChatSystem.OpenAIExtensions.Tests
 
             var inputs = new[]
             {
-                "Sentence A",
-                "Sentence B"
+                "A",
+                "B"
             };
 
             var result = await api.Moderation.CallModerationAsync(new ModerationRequestWithArray(inputs));
 
-            for (int i = 0; i < result.Results.Count; i++)
+            foreach (var (input, moderation) in inputs.Zip(result.Results))
             {
-                var item = result.Results[i];
-                Console.WriteLine($"{inputs[i]} -> {item.Flagged}");
+                Console.WriteLine($"{input} -> {(moderation.Flagged ? moderation.MainContentFlag : "False")}");
             }
         }
     }
