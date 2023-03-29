@@ -10,7 +10,7 @@ namespace Cerlancism.ChatSystem.OpenAIExtensions
 {
     public class ChatMessageWithName : ChatMessage
     {
-        [JsonProperty("user")]
+        [JsonProperty("name")]
         public string Name { get; set; }
 
         public ChatMessageWithName(ChatMessageRole role, string name, string content): base (role, content)

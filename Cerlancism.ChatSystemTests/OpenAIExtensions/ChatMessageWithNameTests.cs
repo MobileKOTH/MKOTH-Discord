@@ -17,9 +17,24 @@ namespace Cerlancism.ChatSystem.OpenAIExtensions.Tests
         [TestMethod()]
         public async Task ChatMessageWithNameTest()
         {
-            var api = new OpenAIAPI("");
-            var message = new ChatMessageWithName(ChatMessageRole.User, "", "");
-            Assert.IsTrue(true);
+            var api = new OpenAIAPI(APIAuthentication.LoadFromEnv());
+
+            var results = await api.Chat.CreateChatCompletionAsync(new ChatRequest
+            {
+                MaxTokens = 256,
+                Temperature = 1,
+                Messages = new []
+                {
+                    new ChatMessage(ChatMessageRole.System, "Join the conversion in this work place chat"),
+                    new ChatMessageWithName(ChatMessageRole.User, "John", "Hello everyone"),
+                    new ChatMessageWithName(ChatMessageRole.User, "Edward", "Good morning all"),
+                    new ChatMessageWithName(ChatMessageRole.User, "Boss", "Is John and Amy in the chat?"),
+                }
+            });
+
+            var reply = results.Choices[0].Message;
+            Console.WriteLine($"{reply.Role}: {reply.Content.Trim()}");
+
             await Task.CompletedTask;
         }
     }
