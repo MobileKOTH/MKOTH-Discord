@@ -1,10 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Cerlancism.ChatSystem.OpenAIExtensions;
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using OpenAI_API;
 using OpenAI_API.Chat;
@@ -33,6 +29,7 @@ namespace Cerlancism.ChatSystem.OpenAIExtensions.Tests
             });
 
             var reply = results.Choices[0].Message;
+
             Console.WriteLine($"{reply.Role}: {reply.Content.Trim()}");
 
             await Task.CompletedTask;
