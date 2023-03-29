@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Cerlancism.ChatSystem.Core;
+using Cerlancism.ChatSystem.Model;
 using LiteDB;
 using Newtonsoft.Json;
 

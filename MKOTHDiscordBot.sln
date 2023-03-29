@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MKOTH-DiscordBot", "MKOTH-D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cerlancism.ChatSystem", "Cerlancism.ChatSystem\Cerlancism.ChatSystem.csproj", "{7B095135-22C5-42AB-8FE4-ADEC5F32C71F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cerlancism.ChatSystemTests", "Cerlancism.ChatSystemTests\Cerlancism.ChatSystemTests.csproj", "{4285CF36-8D35-48DA-80D1-B6F5BD18C7C7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{7B095135-22C5-42AB-8FE4-ADEC5F32C71F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B095135-22C5-42AB-8FE4-ADEC5F32C71F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B095135-22C5-42AB-8FE4-ADEC5F32C71F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4285CF36-8D35-48DA-80D1-B6F5BD18C7C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4285CF36-8D35-48DA-80D1-B6F5BD18C7C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4285CF36-8D35-48DA-80D1-B6F5BD18C7C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4285CF36-8D35-48DA-80D1-B6F5BD18C7C7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

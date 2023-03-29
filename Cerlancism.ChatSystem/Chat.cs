@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Caching;
 using System.Threading.Tasks;
-using Cerlancism.ChatSystem.Core;
+using Cerlancism.ChatSystem.Model;
 using LiteDB;
 
 namespace Cerlancism.ChatSystem

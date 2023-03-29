@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Cerlancism.ChatSystem.Core
+namespace Cerlancism.ChatSystem.Model
 {
     public class Entry
     {

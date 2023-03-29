@@ -9,6 +9,12 @@ namespace Cerlancism.ChatSystem.Extensions
     {
         static readonly Random Random = new Random();
         public static T SelectRandom<T>(this IEnumerable<T> collection, Random rng = null)
-            => collection.ElementAt((int)((rng ?? Random).NextDouble() * collection.Count()));
+        {
+            rng ??= Random;
+            lock (rng)
+            {
+                return collection.ElementAt((int)((rng ?? Random).NextDouble() * collection.Count()));
+            }
+        }
     }
 }

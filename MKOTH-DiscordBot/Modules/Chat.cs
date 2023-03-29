@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-using Cerlancism.ChatSystem.Core;
+using Cerlancism.ChatSystem.Model;
 
 using Discord;
 using Discord.Commands;
