@@ -362,50 +362,6 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync(embed: embed.Build());
         }
 
-        [Command("Run")]
-        [Summary("Command line interface.")]
-        [RequireDeveloper]
-        public async Task Run(string command, [Remainder] string input = null)
-        {
-            var process = new Process();
-            process.StartInfo.CreateNoWindow = true;
-            process.StartInfo.FileName = command;
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.RedirectStandardInput = true;
-            process.StartInfo.RedirectStandardOutput = true;
-            process.StartInfo.RedirectStandardError = true;
-            if (input != null)
-            {
-                process.StartInfo.Arguments = input;
-            }
-            process.Start();
-
-            process.StandardInput.Close();
-            string output = process.StandardOutput.ReadToEnd();
-            output += "\n" + process.StandardError.ReadToEnd();
-            process.WaitForExit();
-
-            await ReplyAsync(output.SliceBack(1900).MarkdownCodeBlock());
-        }
-
-        [Command("Python")]
-        [Alias("py")]
-        [Summary("Eval Python snippet.")]
-        [RequireDeveloper]
-        public async Task Python([Remainder] string input)
-        {
-            await Run("py", $"-c \"{input.Replace("\"", "\\\"")}\"");
-        }
-
-        [Command("Javascript")]
-        [Alias("js")]
-        [Summary("Eval JavasScript snippet.")]
-        [RequireDeveloper]
-        public async Task JavaScript([Remainder] string input)
-        {
-            await Run("node", $"-e \"{input.Replace("\"", "\\\"")}\"");
-        }
-
         [Command("KillProcess")]
         [Summary("Kills the bot application process.")]
         [RequireDeveloper]
