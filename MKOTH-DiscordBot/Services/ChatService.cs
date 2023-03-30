@@ -242,7 +242,7 @@ namespace MKOTHDiscordBot.Services
             }
 
             await delay;
-            await responseService.SendToContextAsync(context, reply, typing);
+            await responseService.SendToContextAsync(context, reply.Replace("@", "`@`"), typing);
         }
 
         void HandleLog(string log)
