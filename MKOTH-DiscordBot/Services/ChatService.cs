@@ -106,8 +106,9 @@ namespace MKOTHDiscordBot.Services
 
             if (moderatedInput.Results[0].Flagged)
             {
+                Logger.Debug($"Flagged input: {moderatedInput.Results[0].MainContentFlag}");
                 await responseService.SendToChannelAsync(context.Channel as ITextChannel, null, new EmbedBuilder()
-                    .WithDescription($"Flagged input: {moderatedInput.Results[0].MainContentFlag}")
+                    .WithDescription($"Input rejected by moderator")
                     .Build()); ;
                 return;
             }
@@ -225,11 +226,12 @@ namespace MKOTHDiscordBot.Services
             chatTimer.Reset();
 
             var reply = chatResult.Choices[0].Message.Content.Trim();
-
-            if ((await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(reply))).Results[0].Flagged)
+            var outputModeration = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(reply));
+            if (outputModeration.Results[0].Flagged)
             {
+                Logger.Debug($"Flagged output: {outputModeration.Results[0].MainContentFlag}");
                 await responseService.SendToChannelAsync(context.Channel as ITextChannel, null, new EmbedBuilder()
-                    .WithDescription($"Flagged output: {moderatedInput.Results[0].MainContentFlag}")
+                    .WithDescription($"Output rejected by moderator")
                     .Build());
                 typing.Dispose();
                 return;
