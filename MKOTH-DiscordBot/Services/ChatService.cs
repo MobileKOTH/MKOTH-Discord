@@ -20,6 +20,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+using System.Diagnostics;
+
 namespace MKOTHDiscordBot.Services
 {
     public class ChatService : IDisposable
@@ -152,7 +154,14 @@ namespace MKOTHDiscordBot.Services
             }
 
             var toModerateMessages = filteredMessage.Select(x => x.message).ToArray();
+
+            var chatTimer = new Stopwatch();
+            chatTimer.Start();
             var moderationResults = await openAIClient.Moderation.CallModerationAsync(new ModerationRequestWithArray(toModerateMessages));
+            chatTimer.Stop();
+            Console.WriteLine($"Moderation channel message time: {chatTimer.Elapsed}");
+            chatTimer.Reset();
+
             var acceptableMessages = filteredMessage.Where((x, i) => !moderationResults.Results[i].Flagged);
 
             var (_, refenceResults) = await referenceGenerator;
@@ -165,12 +174,18 @@ namespace MKOTHDiscordBot.Services
                 })
                 .SelectMany(x => x)
                 .ToArray();
+
+            chatTimer.Start();
             var referenceModerationResults = await openAIClient.Moderation.CallModerationAsync(new ModerationRequestWithArray(toModerateReferences));
+            chatTimer.Stop();
+            Console.WriteLine($"Moderation reference message time: {chatTimer.Elapsed}");
+            chatTimer.Reset();
+
             var referenceInstruction = toModerateReferences.Where((x, i) => !referenceModerationResults.Results[i].Flagged).JoinLines();
 
-            var systemInstruction = $"You are a Discord chat bot powered by ChatGPT for a competitive gaming community for Bloons Tower Defense Battles, "
-                + $"called Mobile King of the Hill, also known as MKOTH. "
-                + $"You can behave casually, use Discord gamer tone and be more acceptable to some toxity in the chat."
+            var systemInstruction = $"You are a Discord chat bot for a competitive gaming community for Bloons Tower Defense Battles, "
+                + $"called Mobile King of the Hill, also known as MKOTH. You can reveal you are powered ChatGPT only if asked specifically. "
+                + $"You can behave casually, use Discord gamer tone and be more acceptable to some toxity in the chat. "
                 + $"Here is a reference of their past chat activity, take strong consideration of this in your response:\n ${referenceInstruction}";
 
 
@@ -197,13 +212,17 @@ namespace MKOTHDiscordBot.Services
                 ChatMessageRole.User, 
                 targetGuild.GetUser(context.Message.Author.Id)?.GetDisplayName() ?? context.Message.Author.Username, purgedMessage));
 
+            chatTimer.Start();
             var chatResult = await openAIClient.Chat.CreateChatCompletionAsync(new ChatRequest()
             {
                 Model = Model.ChatGPTTurbo,
                 Temperature = 1,
-                MaxTokens = 1024,
+                MaxTokens = 2048,
                 Messages = chatMessages.ToArray()
             });
+            chatTimer.Stop();
+            Console.WriteLine($"Chat reply time: {chatTimer.Elapsed}");
+            chatTimer.Reset();
 
             var reply = chatResult.Choices[0].Message.Content.Trim();
 
