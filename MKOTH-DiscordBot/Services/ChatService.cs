@@ -250,6 +250,7 @@ namespace MKOTHDiscordBot.Services
             Logger.Debug(chatTimer.Elapsed, $"[ChatGPT Time]");
             chatTimer.Reset();
 
+
             Logger.Debug(chatResult.Usage, "[ChatGPT Usage]");
             var reply = chatResult.Choices[0].Message.Content.Trim();
 
@@ -257,6 +258,8 @@ namespace MKOTHDiscordBot.Services
             {
                 reply = userChat.RevertName(reply);
             }
+
+            Logger.Log($"Prompt:\n\n{chatMessages.Select((x, i) => $"{i}. {x.Content}\n").JoinLines("--------------------------------------\n")}", LogType.TrashReply);
 
             var outputModeration = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(reply));
             if (outputModeration.Results[0].Flagged)
