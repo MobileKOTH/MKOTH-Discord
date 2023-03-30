@@ -160,7 +160,7 @@ namespace MKOTHDiscordBot.Services
             chatTimer.Start();
             var moderationResults = await openAIClient.Moderation.CallModerationAsync(new ModerationRequestWithArray(toModerateMessages));
             chatTimer.Stop();
-            Console.WriteLine($"Moderation channel message time: {chatTimer.Elapsed}");
+            Logger.Debug(chatTimer.Elapsed, $"[ModerationChannel Time]");
             chatTimer.Reset();
 
             var acceptableMessages = filteredMessage.Where((x, i) => !moderationResults.Results[i].Flagged);
@@ -179,21 +179,22 @@ namespace MKOTHDiscordBot.Services
             chatTimer.Start();
             var referenceModerationResults = await openAIClient.Moderation.CallModerationAsync(new ModerationRequestWithArray(toModerateReferences));
             chatTimer.Stop();
-            Console.WriteLine($"Moderation reference message time: {chatTimer.Elapsed}");
+            Logger.Debug(chatTimer.Elapsed, $"[ModerationReference Time]");
             chatTimer.Reset();
 
-            var referenceInstruction = toModerateReferences.Where((x, i) => !referenceModerationResults.Results[i].Flagged).JoinLines();
-
-            var systemInstruction = $"You are a Discord chat bot for a competitive gaming community for Bloons Tower Defense Battles, "
-                + $"called Mobile King of the Hill, also known as MKOTH. You can reveal you are powered ChatGPT only if asked specifically. "
-                + $"You can behave casually, use Discord gamer tone and be more acceptable to some toxity in the chat. "
-                + $"Here is a reference of their past chat activity, take strong consideration of this in your response:\n ${referenceInstruction}";
-
+            var referenceChat = toModerateReferences.Where((x, i) => !referenceModerationResults.Results[i].Flagged).JoinLines();
 
             var chatMessages = new List<ChatMessage>();
             var chatUserMessages = new List<ChatMessageWithName>();
 
-            chatMessages.Add(new ChatMessage(ChatMessageRole.System, systemInstruction));
+            chatMessages.Add(new ChatMessage(ChatMessageRole.System,
+                $"You are a Discord chat bot enhanced with ChatGPT of a competitive gaming community for BTD Battles, "
+                + $"called MKOTH (Mobile King of the Hill). "
+                + $"You behave casually and use a Discord gamer tone. "
+            ));
+            chatMessages.Add(new ChatMessage(ChatMessageRole.User,
+                $"With the style and tone of the following context:\n\n{referenceChat}\n\n"
+            ));
 
             foreach (var item in acceptableMessages)
             {
@@ -209,8 +210,10 @@ namespace MKOTHDiscordBot.Services
                 }
             }
 
+            chatMessages.Add(new ChatMessage(ChatMessageRole.User, "Give your funny and goofy live reaction and response to:"));
+
             chatMessages.Add(new ChatMessageWithName(
-                ChatMessageRole.User, 
+                ChatMessageRole.User,
                 targetGuild.GetUser(context.Message.Author.Id)?.GetDisplayName() ?? context.Message.Author.Username, purgedMessage));
 
             chatTimer.Start();
@@ -222,9 +225,10 @@ namespace MKOTHDiscordBot.Services
                 Messages = chatMessages.ToArray()
             });
             chatTimer.Stop();
-            Console.WriteLine($"Chat reply time: {chatTimer.Elapsed}");
+            Logger.Debug(chatTimer.Elapsed, $"[ChatGPT Time]");
             chatTimer.Reset();
 
+            Logger.Debug(chatResult.Usage, "[ChatGPT Usage]");
             var reply = chatResult.Choices[0].Message.Content.Trim();
             var outputModeration = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(reply));
             if (outputModeration.Results[0].Flagged)

@@ -332,6 +332,14 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync(output.Replace("@", "`@`"));
         }
 
+        [Command("prune")]
+        public async Task Prune(int quantity)
+        {
+            var channel = ((ITextChannel)Context.Channel);
+            var messages = await Context.Channel.GetMessagesAsync(quantity).FlattenAsync();
+            await channel.DeleteMessagesAsync(messages);
+        }
+
         public void Dispose()
         {
             lazyChatService.Dispose();

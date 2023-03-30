@@ -343,9 +343,9 @@ namespace MKOTHDiscordBot.Modules
                 var gamesPlayedOutput = $"`{gamesPlayed}` Games played";
                 var winLossOutput = $"`{totalWins}-{gamesPlayed - totalWins.ToInt32(default)}` Win loss";
                 var winRateOverall = getWins(seriesHistory, playerId).ToDouble(default) / gamesPlayed;
-                var winRateOverallOutput = $"`{winRateOverall.ToString("P2")}` Overall win rate";
+                var winRateOverallOutput = $"`{winRateOverall:P2}` Overall win rate";
                 var winRateLast3 = getWins(seriesHistoryLast3, playerId).ToDouble(default) / seriesHistoryLast3.Sum(x => x.Wins + x.Losses);
-                var winRateLast3Output = $"`{winRateLast3.ToString("P2")}` Last 3 series win rate";
+                var winRateLast3Output = $"`{winRateLast3:P2}` Last 3 series win rate";
                 var seriesHistoryOutput = $"{Format.Bold("Recent Series")}\n{seriesService.PrintSeriesHistoryLines(seriesHistoryLast3).JoinLines()}";
                 var playerStatsOutput = string.Join('\n', gamesPlayedOutput, winLossOutput, winRateOverallOutput, winRateLast3Output, playerRankoutput, seriesHistoryOutput);
                 embed.AddField("Player Statistics", playerStatsOutput);
@@ -436,10 +436,10 @@ namespace MKOTHDiscordBot.Modules
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
                 .WithTitle("Elo calculator")
-                .WithDescription($"`A = {a.ToString("N2")}` `B = {b.ToString("N2")}` `wins = {wins}` `losses = {losses}` `draws = {draws}` `K factor = {kFactor.Value}`")
-                .AddField("Elo A", $"`{a.ToString("N2")} -> {eloLeft.ToString("N2")}`", true)
-                .AddField("Elo B", $"`{b.ToString("N2")} -> {eloRight.ToString("N2")}`", true)
-                .AddField("Difference", $"`{(diffLeft <= 0 ? "" : "+")}{diffLeft.ToString("N2")}`");
+                .WithDescription($"`A = {a:N2}` `B = {b:N2}` `wins = {wins}` `losses = {losses}` `draws = {draws}` `K factor = {kFactor.Value}`")
+                .AddField("Elo A", $"`{a:N2} -> {eloLeft:N2}`", true)
+                .AddField("Elo B", $"`{b:N2} -> {eloRight:N2}`", true)
+                .AddField("Difference", $"`{(diffLeft <= 0 ? "" : "+")}{diffLeft:N2}`");
 
             await ReplyAsync(embed: embed.Build());
         }
@@ -515,7 +515,7 @@ namespace MKOTHDiscordBot.Modules
             await seriesService.AdminCreateAsync(series);
             var embed = new EmbedBuilder()
                 .WithColor(Color.Orange)
-                .WithDescription($"Id: {series.Id.ToString("D4")}\n" +
+                .WithDescription($"Id: {series.Id:D4}\n" +
                 $"Winner: {rankingService.GetPlayerMention(series.WinnerId)}\n" +
                 $"Loser: {rankingService.GetPlayerMention(series.LoserId)}\n" +
                 $"Score: {wins}-{loss} Draws: {draws}\n" +
