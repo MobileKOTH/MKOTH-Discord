@@ -135,7 +135,7 @@ namespace MKOTHDiscordBot.Handlers
                     return;
                 }
 
-                chatReply(message.Content);
+                chatReply(message, message.Content);
                 return;
             }
             else
@@ -147,7 +147,7 @@ namespace MKOTHDiscordBot.Handlers
                         return;
                     }
 
-                    chatReply(message.Content.Replace(client.CurrentUser.Id.ToString(), ""));
+                    chatReply(message, message.Content.Replace(client.CurrentUser.Id.ToString(), ""));
                     return;
                 }
             }
@@ -164,7 +164,7 @@ namespace MKOTHDiscordBot.Handlers
                 {
                     return;
                 }
-                chatReply(message.Content.Replace(client.CurrentUser.Id.ToString(), ""));
+                chatReply(message, message.Content.Replace(client.CurrentUser.Id.ToString(), ""));
                 return;
             }
 
@@ -217,7 +217,7 @@ namespace MKOTHDiscordBot.Handlers
                 {
                     if (message.HasMentionPrefix(client.CurrentUser, ref argPos))
                     {
-                        chatReply(message.Content.Remove(0, argPos));
+                        chatReply(message, message.Content.Remove(0, argPos));
                         return;
                     }
                 }
@@ -230,10 +230,17 @@ namespace MKOTHDiscordBot.Handlers
                     .Single(x => x.Name == "Help" && x.Parameters.Count == 1)
                     .ExecuteAsync(context, new object[1] { defaultCommandPrefix + commands.Search(context, argPos).Commands.First().Command.Name }, null, services);
 
-            void chatReply(string input)
-                => _ = commands.Commands
+            void chatReply(SocketMessage message, string input)
+            {
+                foreach (var user in message.MentionedUsers)
+                {
+                    input = input.Replace("<@" + user.Id.ToString(), "<@!" + user.Id.ToString());
+                    input = input.Replace(user.Mention, user.Username);
+                }
+                _ = commands.Commands
                     .Single(x => x.Name == "TrashReply")
                     .ExecuteAsync(context, new object[1] { input }, null, services);
+            }
         }
     }
 }

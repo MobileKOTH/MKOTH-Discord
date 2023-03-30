@@ -23,7 +23,7 @@ namespace MKOTHDiscordBot.Services
             public string Name => $"{prefix}help for general help";
             public ActivityType Type => ActivityType.Listening;
 
-            public ActivityProperties Flags => ActivityProperties.None;
+            //public ActivityProperties Flags => ActivityProperties.None;
             public string Details { get; }
         }
 
@@ -34,7 +34,7 @@ namespace MKOTHDiscordBot.Services
 
             public ActivityType Type => ActivityType.Watching;
 
-            public ActivityProperties Flags => ActivityProperties.None;
+            //public ActivityProperties Flags => ActivityProperties.None;
             public string Details { get; }
         }
 
