@@ -207,7 +207,7 @@ namespace MKOTHDiscordBot.Services
                 + $"You behave casually and use a Discord gamer tone. "
             ));
             chatMessages.Add(new ChatMessage(ChatMessageRole.User,
-                $"With the style and tone of the following context:\n\n{referenceChat}\n\n"
+                $"With the style, tone, information and knowledge of the following context:\n\n{referenceChat}\n\n"
             ));
 
             foreach (var item in acceptableMessages)
@@ -224,7 +224,7 @@ namespace MKOTHDiscordBot.Services
                 }
             }
 
-            chatMessages.Add(new ChatMessage(ChatMessageRole.User, "Give your subtle funny and goofy live reaction and response to:"));
+            chatMessages.Add(new ChatMessage(ChatMessageRole.User, "Give your funny and goofy live reaction and response to:"));
 
             var lastMessage = new ChatMessageWithName(ChatMessageRole.User,
                 targetGuild.GetUser(context.Message.Author.Id)?.GetDisplayName() ?? context.Message.Author.Username, 
