@@ -96,13 +96,16 @@ namespace MKOTHDiscordBot.Services
                 return;
             }
 #if !DEBUG
-            if (context.Guild.Id != officialChat)
+            if (context.Channel.Id != officialChat)
             {
+                await responseService.SendToContextAsync(context, "I can only chat in MKOTH Official Chat");
                 return;
             }
 #endif
             var delay = Task.Delay(500);
             var moderatedInput = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(message));
+
+            Logger.Debug(message, "[ChatMessage]");
 
             if (moderatedInput.Results[0].Flagged)
             {
