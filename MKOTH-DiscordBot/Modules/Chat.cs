@@ -332,7 +332,8 @@ namespace MKOTHDiscordBot.Modules
             await ReplyAsync(output.Replace("@", "`@`"));
         }
 
-        [Command("prune")]
+        [Command("prune", RunMode = RunMode.Async)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
         public async Task Prune(int quantity)
         {
             var channel = ((ITextChannel)Context.Channel);
