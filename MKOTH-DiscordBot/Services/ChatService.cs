@@ -126,7 +126,7 @@ namespace MKOTHDiscordBot.Services
             var targetChannel = context.Channel;
             var lastMessages = await targetChannel.GetMessagesAsync().FlattenAsync();
             var filteredMessage = lastMessages.Skip(1)
-                .TakeWhile(x =>
+                .Where(x =>
                 {
                     if (string.IsNullOrEmpty(x.Content))
                     {
@@ -147,8 +147,18 @@ namespace MKOTHDiscordBot.Services
                 .Select(x =>
                 {
                     var user = targetGuild.GetUser(x.Author.Id);
-                    var name = user?.GetDisplayName() ?? x.Author.Username;
-                    return (id: x.Author.Id, name: name, message: x.Content.SliceBack(ChatContextMessageLengthLimit));
+                    var displayName = user?.GetDisplayName() ?? x.Author.Username;
+                    var messageContent = x.Content;
+
+                    foreach (var mentionId in x.MentionedUserIds)
+                    {
+                        var mentionUser = targetGuild.GetUser(mentionId);
+                        var mentionDisplay = mentionUser?.GetDisplayName() ?? mentionUser.Username;
+                        messageContent = messageContent.Replace("<@" + mentionId.ToString(), "<@!" + mentionId.ToString());
+                        messageContent = messageContent.Replace(mentionUser.Mention, mentionDisplay);
+                    }
+
+                    return (id: x.Author.Id, name: displayName, message: messageContent.SliceBack(ChatContextMessageLengthLimit));
                 })
                 .ToList();
 
@@ -166,7 +176,7 @@ namespace MKOTHDiscordBot.Services
             Logger.Debug(chatTimer.Elapsed, $"[ModerationChannel Time]");
             chatTimer.Reset();
 
-            var acceptableMessages = filteredMessage.Where((x, i) => !moderationResults.Results[i].Flagged);
+            var acceptableMessages = filteredMessage.Where((x, i) => !moderationResults.Results[i].Flagged).ToList();
 
             var (_, refenceResults) = await referenceGenerator;
             var toModerateReferences = refenceResults.Take(ChatContextSizeLimit)
@@ -185,7 +195,8 @@ namespace MKOTHDiscordBot.Services
             Logger.Debug(chatTimer.Elapsed, $"[ModerationReference Time]");
             chatTimer.Reset();
 
-            var referenceChat = toModerateReferences.Where((x, i) => !referenceModerationResults.Results[i].Flagged).JoinLines();
+            var acceptableReferences = toModerateReferences.Where((x, i) => !referenceModerationResults.Results[i].Flagged).ToList();
+            var referenceChat = acceptableReferences.JoinLines();
 
             var chatMessages = new List<ChatMessage>();
             var chatUserMessages = new List<ChatMessageWithName>();
@@ -213,11 +224,19 @@ namespace MKOTHDiscordBot.Services
                 }
             }
 
-            chatMessages.Add(new ChatMessage(ChatMessageRole.User, "Give your funny and goofy live reaction and response to:"));
+            chatMessages.Add(new ChatMessage(ChatMessageRole.User, "Give your subtle funny and goofy live reaction and response to:"));
 
-            chatMessages.Add(new ChatMessageWithName(
-                ChatMessageRole.User,
-                targetGuild.GetUser(context.Message.Author.Id)?.GetDisplayName() ?? context.Message.Author.Username, purgedMessage));
+            var lastMessage = new ChatMessageWithName(ChatMessageRole.User,
+                targetGuild.GetUser(context.Message.Author.Id)?.GetDisplayName() ?? context.Message.Author.Username, 
+                purgedMessage
+            );
+
+            chatUserMessages.Add(lastMessage);
+            chatMessages.Add(lastMessage);
+
+            Logger.Debug($"References: {acceptableReferences.Count} ({referenceChat.Length}) " +
+                $"UserChats: {chatUserMessages.Count} ({chatUserMessages.Sum(x => x.Content.Length)}) " +
+                $"PromptChats: {chatMessages.Count} ({chatMessages.Sum(x => x.Content.Length)})", "[ChatContext]");
 
             chatTimer.Start();
             var chatResult = await openAIClient.Chat.CreateChatCompletionAsync(new ChatRequest()
@@ -233,6 +252,12 @@ namespace MKOTHDiscordBot.Services
 
             Logger.Debug(chatResult.Usage, "[ChatGPT Usage]");
             var reply = chatResult.Choices[0].Message.Content.Trim();
+
+            foreach (var userChat in chatUserMessages)
+            {
+                reply = userChat.RevertName(reply);
+            }
+
             var outputModeration = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(reply));
             if (outputModeration.Results[0].Flagged)
             {
@@ -245,7 +270,7 @@ namespace MKOTHDiscordBot.Services
             }
 
             await delay;
-            await responseService.SendToContextAsync(context, reply.Replace("@", "`@`"), typing);
+            await responseService.SendToContextAsync(context, reply.Replace("@", "`@`").SliceBack(2000), typing);
         }
 
         void HandleLog(string log)

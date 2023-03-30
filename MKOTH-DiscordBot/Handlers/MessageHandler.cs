@@ -234,8 +234,10 @@ namespace MKOTHDiscordBot.Handlers
             {
                 foreach (var user in message.MentionedUsers)
                 {
+                    var guildUser = user as IGuildUser;
+                    var displayName = guildUser?.GetDisplayName() ?? user.Username;
                     input = input.Replace("<@" + user.Id.ToString(), "<@!" + user.Id.ToString());
-                    input = input.Replace(user.Mention, user.Username);
+                    input = input.Replace(user.Mention, displayName);
                 }
                 _ = commands.Commands
                     .Single(x => x.Name == "TrashReply")
