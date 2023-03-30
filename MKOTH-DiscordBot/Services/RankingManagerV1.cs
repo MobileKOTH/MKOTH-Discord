@@ -65,6 +65,10 @@ namespace MKOTHDiscordBot.Services
 
         public async Task Refresh()
         {
+#if DEBUG
+            await Task.CompletedTask;
+            return;
+#endif
             await ClientReady.Task;
             var guildUsers = await ProductionGuild.GetUsersAsync();
             seriesPlayers = seriesService.AllPlayers

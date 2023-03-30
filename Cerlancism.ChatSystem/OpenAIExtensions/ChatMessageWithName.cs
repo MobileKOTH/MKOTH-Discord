@@ -41,7 +41,7 @@ namespace Cerlancism.ChatSystem.OpenAIExtensions
             // Check if the sanitized string matches the regex pattern
             if (!Regex.IsMatch(sanitizedString, @"^[a-zA-Z0-9_-]{1,64}$"))
             {
-                sanitizedString = fallback; // or any other default value you prefer
+                sanitizedString = Regex.Replace(sanitizedString, @"[^a-zA-Z0-9]", "");
             }
 
             return sanitizedString;

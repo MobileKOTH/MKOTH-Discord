@@ -233,7 +233,7 @@ namespace MKOTHDiscordBot.Handlers
             void chatReply(string input)
                 => _ = commands.Commands
                     .Single(x => x.Name == "TrashReply")
-                    .ExecuteAsync(context, new object[1] { Chat.PurgeMessage(input) }, null, services);
+                    .ExecuteAsync(context, new object[1] { input }, null, services);
         }
     }
 }

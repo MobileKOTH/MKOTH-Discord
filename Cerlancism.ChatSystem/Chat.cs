@@ -28,7 +28,7 @@ namespace Cerlancism.ChatSystem
             {
                 cachePolicy = new CacheItemPolicy
                 {
-                    SlidingExpiration = TimeSpan.FromSeconds(20),
+                    SlidingExpiration = TimeSpan.FromSeconds(300),
                     RemovedCallback = _ => Task.Run(async () =>
                     {
                         historyCache = null;

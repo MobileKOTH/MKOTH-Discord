@@ -266,6 +266,7 @@ namespace MKOTHDiscordBot.Modules
 
         [Command("TrashReply", RunMode = RunMode.Async)]
         [Summary("Get a reply against the input content")]
+        [Cooldown(60000, 3)]
         public async Task Reply([Remainder] string input)
         {
             await ChatService.ReplyAsync(Context, input);

@@ -60,7 +60,7 @@ namespace Cerlancism.ChatSystem
         {
             var query = analysis.AsParallel();
             float wordCountTarget = wordCount;
-            float matchRate = 0.9f;
+            float matchRate = 0.8f;
 
             while (!query.Any(x => x.Score >= matchRate))
             {
