@@ -134,7 +134,6 @@ namespace MKOTHDiscordBot.Services
                     }
                     return true;
                 })
-                .Reverse()
                 .Select(x =>
                 {
                     var user = targetGuild.GetUser(x.Author.Id);
@@ -158,6 +157,7 @@ namespace MKOTHDiscordBot.Services
                     }
                     return true;
                 })
+                .Reverse()
                 .ToList();
             if (filteredMessage.Count == 0)
             {

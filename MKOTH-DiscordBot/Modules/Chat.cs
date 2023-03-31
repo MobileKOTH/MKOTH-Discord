@@ -278,15 +278,15 @@ namespace MKOTHDiscordBot.Modules
         [RequireContext(ContextType.Guild)]
         public async Task Reply([Remainder] string input)
         {
-            if (context.IsPrivate)
+            if (Context.IsPrivate)
             {
-                await ReplyAsync(Context, "I can only chat in MKOTH Official Chat.");
+                await ReplyAsync("I can only chat in MKOTH Official Chat.");
                 return;
             }
 #if !DEBUG
             if (Context.Channel.Id != officialChat && Context.Guild.Id != developmentGuild)
             {
-                await ReplyAsync(Context, "I can only chat in MKOTH Official Chat.");
+                await ReplyAsync("I can only chat in MKOTH Official Chat.");
                 return;
             }
 #endif
