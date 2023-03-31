@@ -124,6 +124,10 @@ namespace MKOTHDiscordBot.Services
                     {
                         return false;
                     }
+                    if (x.Author.IsWebhook)
+                    {
+                        return true;
+                    }
                     if (x.Author.IsBot && x.Author.Id != context.Client.CurrentUser.Id)
                     {
                         return false;
@@ -203,7 +207,7 @@ namespace MKOTHDiscordBot.Services
                 + $"called MKOTH (Mobile King of the Hill). "
                 + $"You behave casually and use a Discord gamer tone. ";
             var referenceChatInstruction = $"With the style, tone, information and knowledge of the following context:\n\n{referenceChat}\n";
-            var replyChatInstruction = "Give your fun and goofy response or live reaction to:";
+            var replyChatInstruction = "Give your fun and goofy short response or quick live reaction to:";
 
             chatMessages.Add(new ChatMessage(ChatMessageRole.System, systemInstruction));
 
@@ -239,7 +243,7 @@ namespace MKOTHDiscordBot.Services
             {
                 Model = Model.ChatGPTTurbo,
                 Temperature = 1,
-                MaxTokens = 128,
+                MaxTokens = 256,
                 Messages = chatMessages.ToArray()
             });
             chatTimer.Stop();
