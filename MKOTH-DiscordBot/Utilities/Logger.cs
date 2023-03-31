@@ -20,6 +20,10 @@ namespace MKOTHDiscordBot
 
     public static class Logger
     {
+        public static void Log(object obj, LogType type)
+        {
+            Log(JsonConvert.SerializeObject(obj, Formatting.Indented), type);
+        }
         public static void Log(string log, LogType type)
         {
             switch (type)

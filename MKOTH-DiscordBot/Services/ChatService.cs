@@ -35,8 +35,9 @@ namespace MKOTHDiscordBot.Services
 
         private readonly OpenAIAPI openAIClient;
 
-        private const int ChatContextSizeLimit = 10;
-        private const int ChatContextMessageLengthLimit = 200;
+        private const int ReferenceChatContextSizeLimit = 16;
+        //private const int ChatContextMessageLengthLimit = 512;
+        private const int CurrentChatContextTotalLengthLimit = 4096;
 
         public ChatService(IServiceProvider services, IOptions<AppSettings> appSettings)
         {
@@ -91,40 +92,31 @@ namespace MKOTHDiscordBot.Services
 
         public async Task ReplyAsync(SocketCommandContext context, string message)
         {
-            if (context.IsPrivate)
-            {
-                return;
-            }
-#if !DEBUG
-            if (context.Channel.Id != officialChat)
-            {
-                await responseService.SendToContextAsync(context, "I can only chat in MKOTH Official Chat");
-                return;
-            }
-#endif
             var delay = Task.Delay(500);
+            var typing = responseService.StartTypingAsync(context);
             var moderatedInput = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(message));
 
             Logger.Debug(message, "[ChatMessage]");
 
             if (moderatedInput.Results[0].Flagged)
             {
-                Logger.Debug($"Flagged input: {moderatedInput.Results[0].MainContentFlag}");
-                await responseService.SendToChannelAsync(context.Channel as ITextChannel, null, new EmbedBuilder()
+                Logger.Log($"Flagged input: {moderatedInput.Results[0].MainContentFlag}\n{message}", LogType.TrashReply);
+                typing.Dispose();
+                var embed = new EmbedBuilder()
                     .WithDescription($"Input rejected by moderator")
-                    .Build()); ;
+                    .Build();
+                await responseService.SendToChannelAsync(context.Channel as ITextChannel, null, embed); ;
                 return;
             }
 
-            var typing = responseService.StartTypingAsync(context);
-
             var purgedMessage = Chat.PurgeMessage(message);
-
+            Logger.Debug(purgedMessage, "[PurgedMessage]");
             var referenceGenerator = ChatSystem.GenerateResults(purgedMessage);
 
-            var targetGuild = context.Client.GetGuild(officialGuild);
+            var targetGuild = context.Client.GetGuild(context.Guild.Id);
             var targetChannel = context.Channel;
             var lastMessages = await targetChannel.GetMessagesAsync().FlattenAsync();
+            var contextLength = 0;
             var filteredMessage = lastMessages.Skip(1)
                 .Where(x =>
                 {
@@ -142,14 +134,12 @@ namespace MKOTHDiscordBot.Services
                     }
                     return true;
                 })
-                .Take(ChatContextSizeLimit)
                 .Reverse()
                 .Select(x =>
                 {
                     var user = targetGuild.GetUser(x.Author.Id);
                     var displayName = user?.GetDisplayName() ?? x.Author.Username;
                     var messageContent = x.Content;
-
                     foreach (var mentionId in x.MentionedUserIds)
                     {
                         var mentionUser = targetGuild.GetUser(mentionId);
@@ -157,11 +147,18 @@ namespace MKOTHDiscordBot.Services
                         messageContent = messageContent.Replace("<@" + mentionId.ToString(), "<@!" + mentionId.ToString());
                         messageContent = messageContent.Replace(mentionUser.Mention, mentionDisplay);
                     }
-
-                    return (id: x.Author.Id, name: displayName, message: messageContent.SliceBack(ChatContextMessageLengthLimit));
+                    //messageContent = x.Author.Id == context.Client.CurrentUser.Id ? messageContent : messageContent.SliceBack(ChatContextMessageLengthLimit);
+                    return (id: x.Author.Id, name: displayName, message: messageContent);
+                })
+                .TakeWhile(x =>
+                {
+                    if ((contextLength += x.message.Length) > CurrentChatContextTotalLengthLimit)
+                    {
+                        return false;
+                    }
+                    return true;
                 })
                 .ToList();
-
             if (filteredMessage.Count == 0)
             {
                 filteredMessage.Add((0, "test", "Test Message"));
@@ -179,12 +176,12 @@ namespace MKOTHDiscordBot.Services
             var acceptableMessages = filteredMessage.Where((x, i) => !moderationResults.Results[i].Flagged).ToList();
 
             var (_, refenceResults) = await referenceGenerator;
-            var toModerateReferences = refenceResults.Take(ChatContextSizeLimit)
+            var toModerateReferences = refenceResults.Take(ReferenceChatContextSizeLimit)
                 .Select(x => new[]
                 {
-                    x.Trigger.Message,
-                    x.Rephrase.Message,
-                    x.Response.Message
+                    x.Trigger.Message.SliceBack(128),
+                    x.Rephrase.Message.SliceBack(128),
+                    x.Response.Message.SliceBack(128)
                 })
                 .SelectMany(x => x)
                 .ToArray();
@@ -201,14 +198,14 @@ namespace MKOTHDiscordBot.Services
             var chatMessages = new List<ChatMessage>();
             var chatUserMessages = new List<ChatMessageWithName>();
 
-            chatMessages.Add(new ChatMessage(ChatMessageRole.System,
-                $"You are a Discord chat bot enhanced with ChatGPT of a competitive gaming community for BTD Battles, "
+            var systemInstruction = $"You are a Discord chat bot {context.Client.CurrentUser.Username}#{context.Client.CurrentUser.Discriminator} "
+                + $"enhanced with ChatGPT of a competitive gaming community for BTD Battles, "
                 + $"called MKOTH (Mobile King of the Hill). "
-                + $"You behave casually and use a Discord gamer tone. "
-            ));
-            chatMessages.Add(new ChatMessage(ChatMessageRole.User,
-                $"With the style, tone, information and knowledge of the following context:\n\n{referenceChat}\n\n"
-            ));
+                + $"You behave casually and use a Discord gamer tone. ";
+            var referenceChatInstruction = $"With the style, tone, information and knowledge of the following context:\n\n{referenceChat}\n";
+            var replyChatInstruction = "Give your fun and goofy response or live reaction to:";
+
+            chatMessages.Add(new ChatMessage(ChatMessageRole.System, systemInstruction));
 
             foreach (var item in acceptableMessages)
             {
@@ -223,57 +220,62 @@ namespace MKOTHDiscordBot.Services
                     chatMessages.Add(chatMessage);
                 }
             }
-
-            chatMessages.Add(new ChatMessage(ChatMessageRole.User, "Give your funny and goofy live reaction and response to:"));
-
-            var lastMessage = new ChatMessageWithName(ChatMessageRole.User,
-                targetGuild.GetUser(context.Message.Author.Id)?.GetDisplayName() ?? context.Message.Author.Username, 
-                purgedMessage
-            );
-
+            chatMessages.Add(new ChatMessage(ChatMessageRole.User, referenceChatInstruction));
+            chatMessages.Add(new ChatMessage(ChatMessageRole.User, replyChatInstruction));
+            
+            var lastUserDisplay = targetGuild.GetUser(context.Message.Author.Id)?.GetDisplayName() ?? context.Message.Author.Username;
+            var lastMessage = new ChatMessageWithName(ChatMessageRole.User, lastUserDisplay, message);
             chatUserMessages.Add(lastMessage);
+            
             chatMessages.Add(lastMessage);
 
-            Logger.Debug($"References: {acceptableReferences.Count} ({referenceChat.Length}) " +
+            var chatMetricsLog = $"References: {acceptableReferences.Count}/{toModerateReferences.Length}/{refenceResults.Count() * 3} [{refenceResults.Max(x => x.Score):F2},{refenceResults.Min(x => x.Score):F2}] ({referenceChat.Length}) " +
                 $"UserChats: {chatUserMessages.Count} ({chatUserMessages.Sum(x => x.Content.Length)}) " +
-                $"PromptChats: {chatMessages.Count} ({chatMessages.Sum(x => x.Content.Length)})", "[ChatContext]");
+                $"PromptChats: {chatMessages.Count} ({chatMessages.Sum(x => x.Content.Length)})";
+            Logger.Log(chatMetricsLog, LogType.TrashReply);
 
             chatTimer.Start();
             var chatResult = await openAIClient.Chat.CreateChatCompletionAsync(new ChatRequest()
             {
                 Model = Model.ChatGPTTurbo,
                 Temperature = 1,
-                MaxTokens = 2048,
+                MaxTokens = 128,
                 Messages = chatMessages.ToArray()
             });
             chatTimer.Stop();
-            Logger.Debug(chatTimer.Elapsed, $"[ChatGPT Time]");
+            Logger.Log($"[ChatGPT Time] {chatTimer.Elapsed}", LogType.TrashReply);
             chatTimer.Reset();
 
+            var rawreply = chatResult.Choices[0].Message.Content.Trim();
+            var reply = rawreply;
 
-            Logger.Debug(chatResult.Usage, "[ChatGPT Usage]");
-            var reply = chatResult.Choices[0].Message.Content.Trim();
-
-            foreach (var userChat in chatUserMessages)
+            foreach (var userChat in chatUserMessages.GroupBy(x => x.Name).Select(x => x.First()))
             {
                 reply = userChat.RevertName(reply);
             }
+            reply = reply.Replace("@", "`@`").SliceBack(2000);
 
-            Logger.Log($"Prompt:\n\n{chatMessages.Select((x, i) => $"{i}. {x.Content}\n").JoinLines("--------------------------------------\n")}", LogType.TrashReply);
+            var chatLog = $"Prompt:\n" +
+                $"{chatMessages.Select((x, i) => $"{i}. [{x.Role}] {(x as ChatMessageWithName)?.Name ?? "N/A"}: {x.Content}\n").JoinLines(new string('-', 32) + "\n")}\n" +
+                $"[Reply Raw] {rawreply}\n--------\n" +
+                $"[Reply Out] {reply}\n--------";
+            Logger.Log(chatLog, LogType.TrashReply);
+            Logger.Log(chatResult.Usage, LogType.TrashReply);
 
             var outputModeration = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(reply));
             if (outputModeration.Results[0].Flagged)
             {
-                Logger.Debug($"Flagged output: {outputModeration.Results[0].MainContentFlag}");
-                await responseService.SendToChannelAsync(context.Channel as ITextChannel, null, new EmbedBuilder()
-                    .WithDescription($"Output rejected by moderator")
-                    .Build());
+                Logger.Log($"Flagged output: {outputModeration.Results[0].MainContentFlag}\n", LogType.TrashReply);
                 typing.Dispose();
+                var embed = new EmbedBuilder()
+                    .WithDescription($"Output rejected by moderator")
+                    .Build();
+                await responseService.SendToChannelAsync(context.Channel as ITextChannel, null, embed);
                 return;
             }
 
             await delay;
-            await responseService.SendToContextAsync(context, reply.Replace("@", "`@`").SliceBack(2000), typing);
+            await responseService.SendToContextAsync(context, reply, typing);
         }
 
         void HandleLog(string log)

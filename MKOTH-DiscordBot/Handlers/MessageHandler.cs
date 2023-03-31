@@ -52,9 +52,11 @@ namespace MKOTHDiscordBot.Handlers
         {
             if (!result.IsSuccess && result is ExecuteResult executeResult && info.IsSpecified)
             {
-                await context.Channel.SendMessageAsync(executeResult.ErrorReason + executeResult.Exception.StackTrace
+                var description = executeResult.ErrorReason + executeResult.Exception.StackTrace
                     .SliceFront(1500)
-                    .MarkdownCodeBlock("yaml"));
+                    .MarkdownCodeBlock("yaml");
+                var embed = new EmbedBuilder().WithDescription(description).Build();
+                await context.Channel.SendMessageAsync(embed: embed);
             }
         }
 
@@ -84,7 +86,8 @@ namespace MKOTHDiscordBot.Handlers
             if (!ReplyToTestServer && message.Content == defaultCommandPrefix + "settest")
             {
                 ReplyToTestServer = true;
-                await context.Channel.SendMessageAsync("Replying to test channel");
+                var embed = new EmbedBuilder().WithDescription("Replying to test channel").Build();
+                await context.Channel.SendMessageAsync(embed: embed);
                 return;
             }
             // Special test mode to not handle certain messages.
@@ -194,7 +197,8 @@ namespace MKOTHDiscordBot.Handlers
                 {
                     if (commands.Search(context, argPos).Commands.Count(x => x.Command.Remarks != null) > 0 && result.Error == CommandError.ObjectNotFound)
                     {
-                        await context.Channel.SendMessageAsync("Execution failed, please refer to the command infomation.");
+                        var exeFailEmbed = new EmbedBuilder().WithDescription("Execution failed, please refer to the command infomation.").Build(); 
+                        await context.Channel.SendMessageAsync(embed: exeFailEmbed);
                         sendHelp();
                         return;
                     }
@@ -202,13 +206,15 @@ namespace MKOTHDiscordBot.Handlers
                     {
                         if (result.Error != CommandError.ObjectNotFound)
                         {
-                            await context.Channel.SendMessageAsync(result.ErrorReason);
+                            var objNotFoundEmbed = new EmbedBuilder().WithDescription(result.ErrorReason).Build();
+                            await context.Channel.SendMessageAsync(embed: objNotFoundEmbed);
                             sendHelp();
                             return;
                         }
                     }
                 }
-                await context.Channel.SendMessageAsync(result.ErrorReason);
+                var errorEmbed = new EmbedBuilder().WithDescription(result.ErrorReason).Build();
+                await context.Channel.SendMessageAsync(embed: errorEmbed);
                 return;
             }
             else
@@ -232,13 +238,6 @@ namespace MKOTHDiscordBot.Handlers
 
             void chatReply(SocketMessage message, string input)
             {
-                foreach (var user in message.MentionedUsers)
-                {
-                    var guildUser = user as IGuildUser;
-                    var displayName = guildUser?.GetDisplayName() ?? user.Username;
-                    input = input.Replace("<@" + user.Id.ToString(), "<@!" + user.Id.ToString());
-                    input = input.Replace(user.Mention, displayName);
-                }
                 _ = commands.Commands
                     .Single(x => x.Name == "TrashReply")
                     .ExecuteAsync(context, new object[1] { input }, null, services);

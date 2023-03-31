@@ -10,6 +10,7 @@ using Discord.Commands;
 using Discord.Webhook;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 using MKOTHDiscordBot.Common;
 using MKOTHDiscordBot.Properties;
@@ -29,10 +30,13 @@ namespace MKOTHDiscordBot.Modules
         private readonly LazyDisposable<Task<DiscordWebhookClient>> webhookLoader;
         private readonly LazyDisposable<ChatService> lazyChatService;
         private readonly Lazy<string> lazyTranslationScriptId;
+        private readonly ulong developmentGuild;
+        private readonly ulong officialGuild;
+        private readonly ulong officialChat;
 
         private ChatService ChatService => lazyChatService.Value;
 
-        public Chat(IServiceProvider services)
+        public Chat(IServiceProvider services, IOptions<AppSettings> appSettings)
         {
             webhookLoader = new LazyDisposable<Task<DiscordWebhookClient>>(async () =>
             {
@@ -48,6 +52,10 @@ namespace MKOTHDiscordBot.Modules
             });
 
             lazyTranslationScriptId = new Lazy<string>(() => services.GetScoppedSettings<Credentials>().TranslationScriptId);
+
+            developmentGuild = appSettings.Value.Settings.DevelopmentGuild.Id;
+            officialGuild = appSettings.Value.Settings.ProductionGuild.Id;
+            officialChat = appSettings.Value.Settings.ProductionGuild.Official;
         }
 
         [Command("RawMessage")]
@@ -267,8 +275,28 @@ namespace MKOTHDiscordBot.Modules
         [Command("TrashReply", RunMode = RunMode.Async)]
         [Summary("Get a reply against the input content")]
         [Cooldown(60000, 3)]
+        [RequireContext(ContextType.Guild)]
         public async Task Reply([Remainder] string input)
         {
+            if (context.IsPrivate)
+            {
+                await ReplyAsync(Context, "I can only chat in MKOTH Official Chat.");
+                return;
+            }
+#if !DEBUG
+            if (Context.Channel.Id != officialChat && Context.Guild.Id != developmentGuild)
+            {
+                await ReplyAsync(Context, "I can only chat in MKOTH Official Chat.");
+                return;
+            }
+#endif
+            foreach (var user in Context.Message.MentionedUsers)
+            {
+                var guildUser = user as IGuildUser;
+                var displayName = guildUser?.GetDisplayName() ?? user.Username;
+                input = input.Replace("<@" + user.Id.ToString(), "<@!" + user.Id.ToString());
+                input = input.Replace(user.Mention, displayName);
+            }
             await ChatService.ReplyAsync(Context, input);
         }
 
