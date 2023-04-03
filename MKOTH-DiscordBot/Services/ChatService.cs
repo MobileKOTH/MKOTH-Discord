@@ -146,9 +146,9 @@ namespace MKOTHDiscordBot.Services
                     foreach (var mentionId in x.MentionedUserIds)
                     {
                         var mentionUser = targetGuild.GetUser(mentionId);
-                        var mentionDisplay = mentionUser?.GetDisplayName() ?? mentionUser.Username;
-                        messageContent = messageContent.Replace("<@" + mentionId.ToString(), "<@!" + mentionId.ToString());
-                        messageContent = messageContent.Replace(mentionUser.Mention, mentionDisplay);
+                        var mentionDisplay = mentionUser?.GetDisplayName() ?? mentionUser?.Username ?? "";
+                        messageContent = messageContent.Replace("<@" + mentionId, "<@!" + mentionId);
+                        messageContent = messageContent.Replace(mentionUser?.Mention ?? ("<@!" + mentionId + ">"), mentionDisplay);
                     }
                     //messageContent = x.Author.Id == context.Client.CurrentUser.Id ? messageContent : messageContent.SliceBack(ChatContextMessageLengthLimit);
                     return (id: x.Author.Id, name: displayName, message: messageContent);
