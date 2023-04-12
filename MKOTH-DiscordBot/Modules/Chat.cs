@@ -280,7 +280,7 @@ namespace MKOTHDiscordBot.Modules
         [RequireContext(ContextType.Guild)]
         public async Task Reply([Remainder] string input)
         {
-            if (Context.IsPrivate)
+            if (Context.IsPrivate && Context.Message.Author != ApplicationContext.BotOwner)
             {
                 await ReplyAsync("I can only chat in MKOTH Official Chat.");
                 return;
