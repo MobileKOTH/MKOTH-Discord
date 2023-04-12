@@ -11,9 +11,6 @@ namespace Cerlancism.ChatSystem.OpenAIExtensions
 {
     public class ChatMessageWithName : ChatMessage
     {
-        [JsonProperty("name")]
-        public string Name { get; set; }
-
         [JsonIgnore]
         protected string RawName { get; set; }
 
@@ -28,7 +25,7 @@ namespace Cerlancism.ChatSystem.OpenAIExtensions
             return input.Replace(Name, RawName);
         }
 
-        public static string SanitizeName(string name, string fallback = "name")
+        public static string SanitizeName(string name)
         {
             var sanitizedString = Regex.Replace(name.Replace(" ", "_"), @"[^\w-]", "");
 

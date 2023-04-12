@@ -5,7 +5,7 @@
     <LangVersion>8.0</LangVersion>
     <ApplicationIcon />
     <StartupObject />
-    <AssemblyVersion>1.5.1.1445</AssemblyVersion>
+    <AssemblyVersion>1.5.1.1452</AssemblyVersion>
     <RootNamespace>MKOTHDiscordBot</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

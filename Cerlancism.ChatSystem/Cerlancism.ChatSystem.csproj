@@ -9,8 +9,12 @@
   <ItemGroup>
     <PackageReference Include="LiteDB" Version="4.1.4" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="OpenAI" Version="1.6.0" />
+    <PackageReference Include="OpenAI" Version="1.7.2" />
     <PackageReference Include="System.Runtime.Caching" Version="4.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="OpenAIExtensions\" />
   </ItemGroup>
 
 </Project>

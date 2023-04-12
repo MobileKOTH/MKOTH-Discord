@@ -172,7 +172,7 @@ namespace MKOTHDiscordBot.Services
 
             var chatTimer = new Stopwatch();
             chatTimer.Start();
-            var moderationResults = await openAIClient.Moderation.CallModerationAsync(new ModerationRequestWithArray(toModerateMessages));
+            var moderationResults = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(toModerateMessages));
             chatTimer.Stop();
             Logger.Debug(chatTimer.Elapsed, $"[ModerationChannel Time]");
             chatTimer.Reset();
@@ -191,7 +191,7 @@ namespace MKOTHDiscordBot.Services
                 .ToArray();
 
             chatTimer.Start();
-            var referenceModerationResults = await openAIClient.Moderation.CallModerationAsync(new ModerationRequestWithArray(toModerateReferences));
+            var referenceModerationResults = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(toModerateReferences));
             chatTimer.Stop();
             Logger.Debug(chatTimer.Elapsed, $"[ModerationReference Time]");
             chatTimer.Reset();
@@ -207,9 +207,10 @@ namespace MKOTHDiscordBot.Services
                 + $"called MKOTH (Mobile King of the Hill). "
                 + $"You behave casually and use a Discord gamer tone. ";
             var referenceChatInstruction = $"With the style, tone, information and knowledge of the following context:\n\n{referenceChat}\n";
-            var replyChatInstruction = "Give your fun and goofy short response or quick live reaction to:";
+            var replyChatInstruction = "Give your fun and goofy short response or quick live reaction, unless requested otherwise, to:";
 
             chatMessages.Add(new ChatMessage(ChatMessageRole.System, systemInstruction));
+            chatMessages.Add(new ChatMessage(ChatMessageRole.User, referenceChatInstruction));
 
             foreach (var item in acceptableMessages)
             {
@@ -224,7 +225,6 @@ namespace MKOTHDiscordBot.Services
                     chatMessages.Add(chatMessage);
                 }
             }
-            chatMessages.Add(new ChatMessage(ChatMessageRole.User, referenceChatInstruction));
             chatMessages.Add(new ChatMessage(ChatMessageRole.User, replyChatInstruction));
             
             var lastUserDisplay = targetGuild.GetUser(context.Message.Author.Id)?.GetDisplayName() ?? context.Message.Author.Username;

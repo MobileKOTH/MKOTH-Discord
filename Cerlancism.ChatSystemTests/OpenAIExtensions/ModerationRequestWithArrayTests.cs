@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using OpenAI_API;
+using OpenAI_API.Moderation;
 
 namespace Cerlancism.ChatSystem.OpenAIExtensions.Tests
 {
@@ -21,7 +22,7 @@ namespace Cerlancism.ChatSystem.OpenAIExtensions.Tests
                 "B"
             };
 
-            var result = await api.Moderation.CallModerationAsync(new ModerationRequestWithArray(inputs));
+            var result = await api.Moderation.CallModerationAsync(new ModerationRequest(inputs));
 
             foreach (var (input, moderation) in inputs.Zip(result.Results))
             {

@@ -138,139 +138,139 @@ namespace MKOTHDiscordBot.Modules
             _ = Context.Message.DeleteAsync();
         }
 
-        [Command("Translate", RunMode = RunMode.Sync)]
-        [Alias("t")]
-        [Summary("Auto detect translate any text to English")]
-        public async Task Translate([Remainder] string input)
-            => await TranslateInternal(input);
+        //[Command("Translate", RunMode = RunMode.Sync)]
+        //[Alias("t")]
+        //[Summary("Auto detect translate any text to English")]
+        //public async Task Translate([Remainder] string input)
+        //    => await TranslateInternal(input);
 
-        [Command("TranslateFrom", RunMode = RunMode.Sync)]
-        [Alias("tfrom")]
-        public async Task TranslateFrom(string from, [Remainder] string input)
-            => await TranslateInternal(input, from);
+        //[Command("TranslateFrom", RunMode = RunMode.Sync)]
+        //[Alias("tfrom")]
+        //public async Task TranslateFrom(string from, [Remainder] string input)
+        //    => await TranslateInternal(input, from);
 
-        [Command("TranslateTo", RunMode = RunMode.Sync)]
-        [Alias("tto")]
-        public async Task TranslateTo(string to, [Remainder] string input)
-            => await TranslateInternal(input, "", to);
+        //[Command("TranslateTo", RunMode = RunMode.Sync)]
+        //[Alias("tto")]
+        //public async Task TranslateTo(string to, [Remainder] string input)
+        //    => await TranslateInternal(input, "", to);
 
-        [Command("TranslateFromTo", RunMode = RunMode.Sync)]
-        [Alias("tfromto")]
-        public async Task TranslateFromTo(string from, string to, [Remainder] string input)
-            => await TranslateInternal(input, from, to);
+        //[Command("TranslateFromTo", RunMode = RunMode.Sync)]
+        //[Alias("tfromto")]
+        //public async Task TranslateFromTo(string from, string to, [Remainder] string input)
+        //    => await TranslateInternal(input, from, to);
 
-        internal async Task TranslateInternal(string input, string from = "", string to = "en")
-        {
-            var apiBase = $"https://script.google.com/macros/s/{lazyTranslationScriptId.Value}/exec";
-            var request = new RestRequest()
-                .AddQueryParameter("resource", "translate")
-                .AddQueryParameter("from", from)
-                .AddQueryParameter("to", to)
-                .AddQueryParameter("input", input);
+        //internal async Task TranslateInternal(string input, string from = "", string to = "en")
+        //{
+        //    var apiBase = $"https://script.google.com/macros/s/{lazyTranslationScriptId.Value}/exec";
+        //    var request = new RestRequest()
+        //        .AddQueryParameter("resource", "translate")
+        //        .AddQueryParameter("from", from)
+        //        .AddQueryParameter("to", to)
+        //        .AddQueryParameter("input", input);
 
-            try
-            {
-                var response = await new RestClient(apiBase).GetAsync<dynamic>(request);
-                await ReplyAsync((response["response"] as string).Replace("@", "`@`"));
-            }
-            catch (Exception e)
-            {
-                await ReplyAsync($"{e.Message}");
-            }
-        }
+        //    try
+        //    {
+        //        var response = await new RestClient(apiBase).GetAsync<dynamic>(request);
+        //        await ReplyAsync((response["response"] as string).Replace("@", "`@`"));
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        await ReplyAsync($"{e.Message}");
+        //    }
+        //}
 
-        [Command("TrashInfo", RunMode = RunMode.Async)]
-        [Summary("Displays the possible response the bot will give when being pinged with the content.")]
-        [Alias("ti")]
-        public async Task TrashInfo([Remainder] string message)
-        {
-            DateTime start = DateTime.Now;
-            var chatSystem = ChatService.ChatSystem;
-            var purgedMessage = TrashChat.PurgeMessage(message);
-            var (wordCount, analysis) = await chatSystem.AnalyseAsync(purgedMessage);
-            var results = chatSystem.GetResults(wordCount, analysis).ToArray();
-            var takeResults = results.Take(25).ToArray();
-            var embed = new EmbedBuilder();
+        //[Command("TrashInfo", RunMode = RunMode.Async)]
+        //[Summary("Displays the possible response the bot will give when being pinged with the content.")]
+        //[Alias("ti")]
+        //public async Task TrashInfo([Remainder] string message)
+        //{
+        //    DateTime start = DateTime.Now;
+        //    var chatSystem = ChatService.ChatSystem;
+        //    var purgedMessage = TrashChat.PurgeMessage(message);
+        //    var (wordCount, analysis) = await chatSystem.AnalyseAsync(purgedMessage);
+        //    var results = chatSystem.GetResults(wordCount, analysis).ToArray();
+        //    var takeResults = results.Take(25).ToArray();
+        //    var embed = new EmbedBuilder();
 
-            if (results.First().Score == 0)
-            {
-                await ReplyAsync($"No results for: ```{purgedMessage.SliceBack(1900)}```");
-                return;
-            }
+        //    if (results.First().Score == 0)
+        //    {
+        //        await ReplyAsync($"No results for: ```{purgedMessage.SliceBack(1900)}```");
+        //        return;
+        //    }
 
-            foreach (var item in takeResults)
-            {
-                embed.AddField(
-                    string.Format("{0:N2}%",
-                    item.Score * 100),
-                    $"`#{item.Trigger.Id}` {item.Trigger.Message.SliceBack(100)}\n" +
-                    $"`#{item.Rephrase.Id}` {item.Rephrase.Message.SliceBack(100)}\n" +
-                    $"`#{item.Response.Id}` {item.Response.Message.SliceBack(100)}");
+        //    foreach (var item in takeResults)
+        //    {
+        //        embed.AddField(
+        //            string.Format("{0:N2}%",
+        //            item.Score * 100),
+        //            $"`#{item.Trigger.Id}` {item.Trigger.Message.SliceBack(100)}\n" +
+        //            $"`#{item.Rephrase.Id}` {item.Rephrase.Message.SliceBack(100)}\n" +
+        //            $"`#{item.Response.Id}` {item.Response.Message.SliceBack(100)}");
 
-                var omission = takeResults.Length < results.Length ? results.Length - takeResults.Length : 0;
-                embed.WithFooter($"Results: {takeResults.Length}" + (omission > 0 ? $", omitted: {omission}" : ""));
-            }
+        //        var omission = takeResults.Length < results.Length ? results.Length - takeResults.Length : 0;
+        //        embed.WithFooter($"Results: {takeResults.Length}" + (omission > 0 ? $", omitted: {omission}" : ""));
+        //    }
 
-            embed.Title = "Trigger, rephrase and reply pool";
-            embed.Description = "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`";
-            await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"{purgedMessage.SliceBack(100)}\"", false, embed.Build());
-        }
+        //    embed.Title = "Trigger, rephrase and reply pool";
+        //    embed.Description = "**Match %** `#ID Trigger` `#ID Rephrase` `#ID Reply`";
+        //    await ReplyAsync($"`Process time: {(DateTime.Now - start).TotalMilliseconds.ToString()} ms`\nTrash info for:\n\"{purgedMessage.SliceBack(100)}\"", false, embed.Build());
+        //}
 
-        [Command("TrashMessage", RunMode = RunMode.Async)]
-        [Summary("Displays the message content of the trash Id.")]
-        [Alias("tm")]
-        public async Task TrashMessage(int id)
-        {
-            var entry = await ChatService.ChatSystem.GetEntryByIdAsync(id);
-            await ReplyEntry(entry);
-        }
+        //[Command("TrashMessage", RunMode = RunMode.Async)]
+        //[Summary("Displays the message content of the trash Id.")]
+        //[Alias("tm")]
+        //public async Task TrashMessage(int id)
+        //{
+        //    var entry = await ChatService.ChatSystem.GetEntryByIdAsync(id);
+        //    await ReplyEntry(entry);
+        //}
 
-        [Command("LastMessage", RunMode = RunMode.Async)]
-        [Summary("Displays the last recorded message.")]
-        [Alias("lm")]
-        public async Task LastMessage()
-        {
-            var entry = await ChatService.ChatSystem.GetLastEntryAsync();
-            await ReplyEntry(entry);
-        }
+        //[Command("LastMessage", RunMode = RunMode.Async)]
+        //[Summary("Displays the last recorded message.")]
+        //[Alias("lm")]
+        //public async Task LastMessage()
+        //{
+        //    var entry = await ChatService.ChatSystem.GetLastEntryAsync();
+        //    await ReplyEntry(entry);
+        //}
 
-        private async Task ReplyEntry(Entry entry)
-        {
-            var embed = new EmbedBuilder()
-                .WithColor(Color.Orange)
-                .WithDescription(entry?.Message.SliceBack(1900) ?? "`No message found.`");
-            await ReplyAsync($"`Message Id: #{entry?.Id}`", embed: embed.Build());
-        }
+        //private async Task ReplyEntry(Entry entry)
+        //{
+        //    var embed = new EmbedBuilder()
+        //        .WithColor(Color.Orange)
+        //        .WithDescription(entry?.Message.SliceBack(1900) ?? "`No message found.`");
+        //    await ReplyAsync($"`Message Id: #{entry?.Id}`", embed: embed.Build());
+        //}
 
-        [Command("QueryLength", RunMode = RunMode.Async)]
-        [Summary("Find messages with certain character length.")]
-        [Alias("ql")]
-        public async Task QueryLength(int length)
-        {
-            var history = ChatService.ChatSystem.HistoryCache;
-            var results = history.Where(x => x.Message.Length >= length).ToArray();
-            var takeResults = results.Take(25).ToArray();
-            var embed = new EmbedBuilder()
-                .WithColor(Color.Orange);
+        //[Command("QueryLength", RunMode = RunMode.Async)]
+        //[Summary("Find messages with certain character length.")]
+        //[Alias("ql")]
+        //public async Task QueryLength(int length)
+        //{
+        //    var history = ChatService.ChatSystem.HistoryCache;
+        //    var results = history.Where(x => x.Message.Length >= length).ToArray();
+        //    var takeResults = results.Take(25).ToArray();
+        //    var embed = new EmbedBuilder()
+        //        .WithColor(Color.Orange);
 
-            if (results.Count() > 0)
-            {
-                embed.WithDescription($"Messages with length of `{length}`: ");
-                var omission = takeResults.Length < results.Length ? results.Length - takeResults.Length : 0;
-                embed.WithFooter($"Results: {takeResults.Length}" + (omission > 0 ? $", omitted: {omission}" : ""));
-            }
-            else
-            {
-                embed.WithDescription($"No results with length of `{length}`");
-            }
+        //    if (results.Count() > 0)
+        //    {
+        //        embed.WithDescription($"Messages with length of `{length}`: ");
+        //        var omission = takeResults.Length < results.Length ? results.Length - takeResults.Length : 0;
+        //        embed.WithFooter($"Results: {takeResults.Length}" + (omission > 0 ? $", omitted: {omission}" : ""));
+        //    }
+        //    else
+        //    {
+        //        embed.WithDescription($"No results with length of `{length}`");
+        //    }
 
-            foreach (var item in takeResults)
-            {
-                embed.AddField($"{item.Message.Length}", $"`#{item.Id}` {item.Message.SliceBack(100)}");
-            }
+        //    foreach (var item in takeResults)
+        //    {
+        //        embed.AddField($"{item.Message.Length}", $"`#{item.Id}` {item.Message.SliceBack(100)}");
+        //    }
 
-            await ReplyAsync(embed: embed.Build());
-        }
+        //    await ReplyAsync(embed: embed.Build());
+        //}
 
         [Command("TrashReply", RunMode = RunMode.Async)]
         [Summary("Get a reply against the input content")]
