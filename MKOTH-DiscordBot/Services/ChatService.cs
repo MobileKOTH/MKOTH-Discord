@@ -93,7 +93,6 @@ namespace MKOTHDiscordBot.Services
         public async Task ReplyAsync(SocketCommandContext context, string message)
         {
             var delay = Task.Delay(500);
-            var typing = responseService.StartTypingAsync(context);
             var moderatedInput = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(message));
 
             Logger.Debug(message, "[ChatMessage]");
@@ -101,7 +100,6 @@ namespace MKOTHDiscordBot.Services
             if (moderatedInput.Results[0].Flagged)
             {
                 Logger.Log($"Flagged input: {moderatedInput.Results[0].MainContentFlag}\n{message}", LogType.TrashReply);
-                typing.Dispose();
                 var embed = new EmbedBuilder()
                     .WithDescription($"Input rejected by moderator")
                     .Build();
@@ -150,8 +148,8 @@ namespace MKOTHDiscordBot.Services
                         messageContent = messageContent.Replace("<@" + mentionId, "<@!" + mentionId);
                         messageContent = messageContent.Replace(mentionUser?.Mention ?? ("<@!" + mentionId + ">"), mentionDisplay);
                     }
-                    //messageContent = x.Author.Id == context.Client.CurrentUser.Id ? messageContent : messageContent.SliceBack(ChatContextMessageLengthLimit);
-                    return (id: x.Author.Id, name: displayName, message: messageContent);
+                        //messageContent = x.Author.Id == context.Client.CurrentUser.Id ? messageContent : messageContent.SliceBack(ChatContextMessageLengthLimit);
+                        return (id: x.Author.Id, name: displayName, message: messageContent);
                 })
                 .TakeWhile(x =>
                 {
@@ -226,11 +224,11 @@ namespace MKOTHDiscordBot.Services
                 }
             }
             chatMessages.Add(new ChatMessage(ChatMessageRole.User, replyChatInstruction));
-            
+
             var lastUserDisplay = targetGuild.GetUser(context.Message.Author.Id)?.GetDisplayName() ?? context.Message.Author.Username;
             var lastMessage = new ChatMessageWithName(ChatMessageRole.User, lastUserDisplay, message);
             chatUserMessages.Add(lastMessage);
-            
+
             chatMessages.Add(lastMessage);
 
             var chatMetricsLog = $"References: {acceptableReferences.Count}/{toModerateReferences.Length}/{refenceResults.Count() * 3} [{refenceResults.Max(x => x.Score):F2},{refenceResults.Min(x => x.Score):F2}] ({referenceChat.Length}) " +
@@ -270,7 +268,6 @@ namespace MKOTHDiscordBot.Services
             if (outputModeration.Results[0].Flagged)
             {
                 Logger.Log($"Flagged output: {outputModeration.Results[0].MainContentFlag}\n", LogType.TrashReply);
-                typing.Dispose();
                 var embed = new EmbedBuilder()
                     .WithDescription($"Output rejected by moderator")
                     .Build();
@@ -279,7 +276,7 @@ namespace MKOTHDiscordBot.Services
             }
 
             await delay;
-            await responseService.SendToContextAsync(context, reply, typing);
+            await responseService.SendToContextAsync(context, reply);
         }
 
         void HandleLog(string log)

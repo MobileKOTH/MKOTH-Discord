@@ -27,6 +27,7 @@ namespace MKOTHDiscordBot.Modules
     [Remarks("Module C")]
     public class Chat : ModuleBase<SocketCommandContext>, IDisposable
     {
+        private readonly ResponseService responseService;
         private readonly LazyDisposable<Task<DiscordWebhookClient>> webhookLoader;
         private readonly LazyDisposable<ChatService> lazyChatService;
         private readonly Lazy<string> lazyTranslationScriptId;
@@ -38,6 +39,7 @@ namespace MKOTHDiscordBot.Modules
 
         public Chat(IServiceProvider services, IOptions<AppSettings> appSettings)
         {
+            responseService = services.GetService<ResponseService>();
             webhookLoader = new LazyDisposable<Task<DiscordWebhookClient>>(async () =>
             {
                 var webhooks = await Context.Guild.GetWebhooksAsync();
@@ -284,7 +286,7 @@ namespace MKOTHDiscordBot.Modules
                 return;
             }
 #if !DEBUG
-            if (Context.Channel.Id != officialChat && Context.Guild.Id != developmentGuild)
+            if (Context.Channel.Id != officialChat && Context.Guild.Id != developmentGuild && Context.Message.Author != ApplicationContext.BotOwner)
             {
                 await ReplyAsync("I can only chat in MKOTH Official Chat.");
                 return;
@@ -297,7 +299,20 @@ namespace MKOTHDiscordBot.Modules
                 input = input.Replace("<@" + user.Id.ToString(), "<@!" + user.Id.ToString());
                 input = input.Replace(user.Mention, displayName);
             }
-            await ChatService.ReplyAsync(Context, input);
+            var typing = responseService.StartTypingAsync(Context);
+            try
+            {
+                await ChatService.ReplyAsync(Context, input);
+            }
+            catch (Exception e)
+            {
+                var embed = new EmbedBuilder()
+                    .WithDescription($"Error occured:\n```{e.Message}```")
+                    .Build();
+                await responseService.SendToChannelAsync(Context.Channel as ITextChannel, null, embed);
+            }
+            typing.Dispose();
+
         }
 
         [Command("AltCase", RunMode = RunMode.Async)]
