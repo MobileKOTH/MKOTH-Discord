@@ -11,7 +11,7 @@ namespace MKOTHDiscordBot.Services
 {
     public class UsageRateLimiter : RateLimiterBase<ulong>
     {
-        public UsageRateLimiter() : base(60000, 30000, 4)
+        public UsageRateLimiter() : base(60000, 30000, 6)
         {
             limiterDebugName = "All Usage";
         }

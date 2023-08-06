@@ -35,7 +35,7 @@ namespace MKOTHDiscordBot.Services
 
         private readonly OpenAIAPI openAIClient;
 
-        private const int ReferenceChatContextSizeLimit = 16;
+        private const int ReferenceChatContextSizeLimit = 10;
         //private const int ChatContextMessageLengthLimit = 512;
         private const int CurrentChatContextTotalLengthLimit = 4096;
 
@@ -159,6 +159,7 @@ namespace MKOTHDiscordBot.Services
                     }
                     return true;
                 })
+                .Take(30)
                 .Reverse()
                 .ToList();
             if (filteredMessage.Count == 0)
@@ -239,7 +240,7 @@ namespace MKOTHDiscordBot.Services
             chatTimer.Start();
             var chatResult = await openAIClient.Chat.CreateChatCompletionAsync(new ChatRequest()
             {
-                Model = Model.ChatGPTTurbo,
+                Model = Model.ChatGPTTurbo0301,
                 Temperature = 1,
                 MaxTokens = 256,
                 Messages = chatMessages.ToArray()
@@ -264,16 +265,16 @@ namespace MKOTHDiscordBot.Services
             Logger.Log(chatLog, LogType.TrashReply);
             Logger.Log(chatResult.Usage, LogType.TrashReply);
 
-            var outputModeration = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(reply));
-            if (outputModeration.Results[0].Flagged)
-            {
-                Logger.Log($"Flagged output: {outputModeration.Results[0].MainContentFlag}\n", LogType.TrashReply);
-                var embed = new EmbedBuilder()
-                    .WithDescription($"Output rejected by moderator")
-                    .Build();
-                await responseService.SendToChannelAsync(context.Channel as ITextChannel, null, embed);
-                return;
-            }
+            //var outputModeration = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(reply));
+            //if (outputModeration.Results[0].Flagged)
+            //{
+            //    Logger.Log($"Flagged output: {outputModeration.Results[0].MainContentFlag}\n", LogType.TrashReply);
+            //    var embed = new EmbedBuilder()
+            //        .WithDescription($"Output rejected by moderator")
+            //        .Build();
+            //    await responseService.SendToChannelAsync(context.Channel as ITextChannel, null, embed);
+            //    return;
+            //}
 
             await delay;
             await responseService.SendToContextAsync(context, reply);
