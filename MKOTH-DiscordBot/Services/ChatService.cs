@@ -39,6 +39,8 @@ namespace MKOTHDiscordBot.Services
         //private const int ChatContextMessageLengthLimit = 512;
         private const int CurrentChatContextTotalLengthLimit = 4096;
 
+        private const string GPT_Model = "gpt-4o-mini";
+
         public ChatService(IServiceProvider services, IOptions<AppSettings> appSettings)
         {
             responseService = services.GetService<ResponseService>();
@@ -204,7 +206,8 @@ namespace MKOTHDiscordBot.Services
             var systemInstruction = $"You are a Discord chat bot {context.Client.CurrentUser.Username}#{context.Client.CurrentUser.Discriminator} "
                 + $"enhanced with ChatGPT of a competitive gaming community for BTD Battles, "
                 + $"called MKOTH (Mobile King of the Hill). "
-                + $"You behave casually and use a Discord gamer tone. ";
+                + $"You behave casually and use a Discord gamer tone. "
+                + $"Timestamp: {DateTime.Now}";
             var referenceChatInstruction = $"With the style, tone, information and knowledge of the following context:\n\n{referenceChat}\n";
             var replyChatInstruction = "Give your fun and goofy short response or quick live reaction, unless requested otherwise, to:";
 
@@ -240,7 +243,7 @@ namespace MKOTHDiscordBot.Services
             chatTimer.Start();
             var chatResult = await openAIClient.Chat.CreateChatCompletionAsync(new ChatRequest()
             {
-                Model = Model.ChatGPTTurbo0301,
+                Model = GPT_Model,
                 Temperature = 1,
                 MaxTokens = 256,
                 Messages = chatMessages.ToArray()
