@@ -29,6 +29,7 @@ namespace MKOTHDiscordBot.Properties
         public string DefaultCommandPrefix { get; set; }
         public DevelopmentGuild DevelopmentGuild { get; set; }
         public ProductionGuild ProductionGuild { get; set; }
+        public string ChatModel { get; set; } = "gpt-4o-mini";
     }
 
 

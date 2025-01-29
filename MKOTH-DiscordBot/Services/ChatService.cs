@@ -21,6 +21,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using System.Diagnostics;
+using System.Net.Http;
 
 namespace MKOTHDiscordBot.Services
 {
@@ -34,12 +35,26 @@ namespace MKOTHDiscordBot.Services
         private readonly ulong officialChat;
 
         private readonly OpenAIAPI openAIClient;
+        private readonly OpenAIAPI deepseekClient;
 
         private const int ReferenceChatContextSizeLimit = 10;
         //private const int ChatContextMessageLengthLimit = 512;
         private const int CurrentChatContextTotalLengthLimit = 4096;
 
-        private const string GPT_Model = "gpt-4o-mini";
+        private string chatModel { get; set; }
+
+        public class DeepseekHttpClientFactory : IHttpClientFactory
+        {
+            public HttpClient CreateClient(string name)
+            {
+                var client = new HttpClient
+                {
+                    Timeout = TimeSpan.FromSeconds(300)
+                };
+
+                return client;
+            }
+        }
 
         public ChatService(IServiceProvider services, IOptions<AppSettings> appSettings)
         {
@@ -49,7 +64,17 @@ namespace MKOTHDiscordBot.Services
             officialGuild = appSettings.Value.Settings.ProductionGuild.Id;
             officialChat = appSettings.Value.Settings.ProductionGuild.Official;
 
-            openAIClient = new OpenAIAPI(services.GetScoppedSettings<Credentials>().OPENAI_API_KEY);
+            openAIClient = new OpenAIAPI(services.GetScoppedSettings<Credentials>().OPENAI_API_KEY)
+            {
+                ApiUrlFormat = "https://api.openai.com/{0}/{1}"
+            };
+            deepseekClient = new OpenAIAPI(services.GetScoppedSettings<Credentials>().DEEPSEEK_API_KEY)
+            {
+                ApiUrlFormat = "https://api.deepseek.com/{0}/{1}",
+                HttpClientFactory = new DeepseekHttpClientFactory()
+            };
+
+            chatModel = services.GetScoppedSettings<AppSettings>().Settings.ChatModel;
 
             ChatSystem = new Chat(appSettings.Value.ConnectionStrings.ChatHistory);
             ChatSystem.Log += HandleLog;
@@ -96,7 +121,8 @@ namespace MKOTHDiscordBot.Services
         {
             var delay = Task.Delay(500);
             var moderatedInput = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(message));
-
+            var moderation = openAIClient.Moderation as ModerationEndpoint;
+            var chatCompletion = openAIClient.Chat as ChatEndpoint;
             Logger.Debug(message, "[ChatMessage]");
 
             if (moderatedInput.Results[0].Flagged)
@@ -150,8 +176,8 @@ namespace MKOTHDiscordBot.Services
                         messageContent = messageContent.Replace("<@" + mentionId, "<@!" + mentionId);
                         messageContent = messageContent.Replace(mentionUser?.Mention ?? ("<@!" + mentionId + ">"), mentionDisplay);
                     }
-                        //messageContent = x.Author.Id == context.Client.CurrentUser.Id ? messageContent : messageContent.SliceBack(ChatContextMessageLengthLimit);
-                        return (id: x.Author.Id, name: displayName, message: messageContent);
+                    //messageContent = x.Author.Id == context.Client.CurrentUser.Id ? messageContent : messageContent.SliceBack(ChatContextMessageLengthLimit);
+                    return (id: x.Author.Id, name: displayName, message: messageContent);
                 })
                 .TakeWhile(x =>
                 {
@@ -203,51 +229,96 @@ namespace MKOTHDiscordBot.Services
             var chatMessages = new List<ChatMessage>();
             var chatUserMessages = new List<ChatMessageWithName>();
 
-            var systemInstruction = $"You are a Discord chat bot {context.Client.CurrentUser.Username}#{context.Client.CurrentUser.Discriminator} "
-                + $"enhanced with ChatGPT of a competitive gaming community for BTD Battles, "
+            var systemInstruction = $"You are a Discord chat bot {context.Client.CurrentUser.Username} "
+                + $"enhanced with LLM Model ({chatModel}) of a competitive gaming community for BTD Battles, "
                 + $"called MKOTH (Mobile King of the Hill). "
-                + $"You behave casually and use a Discord gamer tone. "
-                + $"Timestamp: {DateTime.Now}";
+                + $"You behave casually and use a Discord gamer tone. ";
+
             var referenceChatInstruction = $"With the style, tone, information and knowledge of the following context:\n\n{referenceChat}\n";
-            var replyChatInstruction = "Give your fun and goofy short response or quick live reaction, unless requested otherwise, to:";
+            var replyChatInstruction = $"Timestamp: {DateTime.Now} Give your fun and goofy short response or quick live reaction, unless requested otherwise, to:";
 
             chatMessages.Add(new ChatMessage(ChatMessageRole.System, systemInstruction));
-            chatMessages.Add(new ChatMessage(ChatMessageRole.User, referenceChatInstruction));
 
             foreach (var item in acceptableMessages)
             {
+                var lastChat = chatMessages.Last();
                 if (item.id == context.Client.CurrentUser.Id)
                 {
-                    chatMessages.Add(new ChatMessage(ChatMessageRole.Assistant, item.message));
+                    if (lastChat.Role == ChatMessageRole.Assistant)
+                    {
+                        lastChat.Content += "\n\n" + item.message;
+                    }
+                    else
+                    {
+                        chatMessages.Add(new ChatMessage(ChatMessageRole.Assistant, item.message));
+                    }
                 }
                 else
                 {
-                    var chatMessage = new ChatMessageWithName(ChatMessageRole.User, item.name, item.message);
-                    chatUserMessages.Add(chatMessage);
-                    chatMessages.Add(chatMessage);
+                    if (lastChat.Role == ChatMessageRole.User)
+                    {
+                        lastChat.Content += $"\n\n{item.name}: {item.message}";
+                    }
+                    else
+                    {
+                        var chatMessage = new ChatMessageWithName(ChatMessageRole.User, item.name, $"{item.name}: " + item.message);
+                        chatUserMessages.Add(chatMessage);
+                        chatMessages.Add(chatMessage);
+                    }
                 }
             }
-            chatMessages.Add(new ChatMessage(ChatMessageRole.User, replyChatInstruction));
 
             var lastUserDisplay = targetGuild.GetUser(context.Message.Author.Id)?.GetDisplayName() ?? context.Message.Author.Username;
-            var lastMessage = new ChatMessageWithName(ChatMessageRole.User, lastUserDisplay, message);
-            chatUserMessages.Add(lastMessage);
+            var lastMessage = new ChatMessageWithName(ChatMessageRole.User, lastUserDisplay, $"{referenceChatInstruction}\n{replyChatInstruction}\n{lastUserDisplay}: {message}");
 
-            chatMessages.Add(lastMessage);
+            var finalChat = chatMessages.Last();
 
+            if (finalChat.Role == ChatMessageRole.User)
+            {
+                finalChat.Content += "\n\n" + lastMessage.Content;
+            }
+            else
+            {
+                chatUserMessages.Add(lastMessage);
+                chatMessages.Add(lastMessage);
+            }
+            
             var chatMetricsLog = $"References: {acceptableReferences.Count}/{toModerateReferences.Length}/{refenceResults.Count() * 3} [{refenceResults.Max(x => x.Score):F2},{refenceResults.Min(x => x.Score):F2}] ({referenceChat.Length}) " +
                 $"UserChats: {chatUserMessages.Count} ({chatUserMessages.Sum(x => x.Content.Length)}) " +
                 $"PromptChats: {chatMessages.Count} ({chatMessages.Sum(x => x.Content.Length)})";
             Logger.Log(chatMetricsLog, LogType.TrashReply);
 
             chatTimer.Start();
-            var chatResult = await openAIClient.Chat.CreateChatCompletionAsync(new ChatRequest()
+
+            async Task<ChatResult> getChatResult()
             {
-                Model = GPT_Model,
-                Temperature = 1,
-                MaxTokens = 256,
-                Messages = chatMessages.ToArray()
-            });
+                return await deepseekClient.Chat.CreateChatCompletionAsync(new ChatRequest()
+                {
+                    Model = chatModel,
+                    Temperature = 1,
+                    MaxTokens = 1024,
+                    Messages = chatMessages.ToArray()
+                });
+            }
+
+            var chatResult = await getChatResult();
+
+            for (int i = 0; i < 3; i++)
+            {
+                if (chatResult != default)
+                {
+                    break;
+                }
+
+                Logger.Log($"Retrying getChatResult {i + 1}", LogType.TrashReply);
+                chatResult = await getChatResult();
+            }
+
+            if (chatResult == default)
+            {
+                throw new Exception("Unable to get chat response");
+            }
+
             chatTimer.Stop();
             Logger.Log($"[ChatGPT Time] {chatTimer.Elapsed}", LogType.TrashReply);
             chatTimer.Reset();
@@ -259,7 +330,8 @@ namespace MKOTHDiscordBot.Services
             {
                 reply = userChat.RevertName(reply);
             }
-            reply = reply.Replace("@", "`@`").SliceBack(2000);
+            reply = reply.Replace("@", "`@`");
+
 
             var chatLog = $"Prompt:\n" +
                 $"{chatMessages.Select((x, i) => $"{i}. [{x.Role}] {(x as ChatMessageWithName)?.Name ?? "N/A"}: {x.Content}\n").JoinLines(new string('-', 32) + "\n")}\n" +
@@ -280,7 +352,11 @@ namespace MKOTHDiscordBot.Services
             //}
 
             await delay;
-            await responseService.SendToContextAsync(context, reply);
+
+            for (int i = 0; i < reply.Length; i += 2000)
+            {
+                await responseService.SendToContextAsync(context, reply.Substring(i).SliceBack(2000, ""));
+            }
         }
 
         void HandleLog(string log)

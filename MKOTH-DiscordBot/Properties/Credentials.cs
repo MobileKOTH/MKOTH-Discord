@@ -11,6 +11,7 @@ namespace MKOTHDiscordBot.Properties
         public string AppsScriptAdminKey { get; set; }
         public string TranslationScriptId { get; set; }
         public string OPENAI_API_KEY { get; set; }
+        public string DEEPSEEK_API_KEY { get; set; }
 
         public override string ToString()
         {
