@@ -128,8 +128,8 @@ namespace MKOTHDiscordBot
             do
             {
                 Console.WriteLine("Is this a test mode? Y/N");
-                input = Console.ReadLine();
-                //input = "";
+                //input = Console.ReadLine();
+                input = "";
             }
             while (!input.StartsWithIgnoreCase("Y") && !input.StartsWithIgnoreCase("N") && input != "");
 

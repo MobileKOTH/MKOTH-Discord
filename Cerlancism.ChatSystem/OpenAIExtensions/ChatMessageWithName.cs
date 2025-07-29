@@ -22,6 +22,11 @@ namespace Cerlancism.ChatSystem.OpenAIExtensions
 
         public string RevertName(string input)
         {
+            if (string.IsNullOrWhiteSpace(Name))
+            {
+                return input;
+            }
+
             return input.Replace(Name, RawName);
         }
 

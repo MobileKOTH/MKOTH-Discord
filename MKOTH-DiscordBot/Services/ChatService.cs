@@ -22,6 +22,8 @@ using System.Threading.Tasks;
 
 using System.Diagnostics;
 using System.Net.Http;
+using System.Text;
+using Cerlancism.ChatSystem.Model;
 
 namespace MKOTHDiscordBot.Services
 {
@@ -42,6 +44,7 @@ namespace MKOTHDiscordBot.Services
         private const int CurrentChatContextTotalLengthLimit = 4096;
 
         private string chatModel { get; set; }
+        public const int InitialModerationDelay = 500;
 
         public class DeepseekHttpClientFactory : IHttpClientFactory
         {
@@ -119,125 +122,204 @@ namespace MKOTHDiscordBot.Services
 
         public async Task ReplyAsync(SocketCommandContext context, string message)
         {
-            var delay = Task.Delay(500);
-            var moderatedInput = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(message));
-            var moderation = openAIClient.Moderation as ModerationEndpoint;
-            var chatCompletion = openAIClient.Chat as ChatEndpoint;
+            var delayTask = Task.Delay(InitialModerationDelay);
+            var chatTimer = new Stopwatch();
             Logger.Debug(message, "[ChatMessage]");
-
-            if (moderatedInput.Results[0].Flagged)
+            // Step 1: Moderate Input
+            if (await IsInputFlaggedAsync(message))
             {
-                Logger.Log($"Flagged input: {moderatedInput.Results[0].MainContentFlag}\n{message}", LogType.TrashReply);
-                var embed = new EmbedBuilder()
-                    .WithDescription($"Input rejected by moderator")
-                    .Build();
-                await responseService.SendToChannelAsync(context.Channel as ITextChannel, null, embed); ;
+                await HandleFlaggedInputAsync(context);
                 return;
             }
-
+            // Step 2: Purge and Generate References
             var purgedMessage = Chat.PurgeMessage(message);
+            
             Logger.Debug(purgedMessage, "[PurgedMessage]");
-            var referenceGenerator = ChatSystem.GenerateResults(purgedMessage);
+            chatTimer.Start();
 
+            var referenceGenerator = ChatSystem.GenerateResults(purgedMessage);
+            // Step 3: Fetch and Filter Recent Messages
+            var filteredMessages = await FetchAndFilterMessagesAsync(context);
+            // Ensure there's at least one message
+            if (!filteredMessages.Any())
+            {
+                filteredMessages.Add((0, "test", "Test Message"));
+            }
+            // Step 4: Moderate Filtered Messages
+            var acceptableMessages = await ModerateMessagesAsync(filteredMessages);
+            // Step 5: Moderate References
+            var acceptableReferences = await ModerateReferencesAsync(referenceGenerator);
+
+            chatTimer.Stop();
+            Logger.Debug(chatTimer.Elapsed, $"[ModerateReferencesAsync Time]");
+
+            // Step 6: Build Chat Messages
+            var chatMessages = BuildChatMessages(context, acceptableMessages, acceptableReferences, message);
+            // Step 7: Get Chat Completion with Retries
+            var chatResult = await GetChatCompletionWithRetriesAsync(chatMessages);
+
+            if (chatResult == null)
+            {
+                throw new Exception("Unable to get chat response, please try again later.");
+            }
+
+            // Step 8: Process Chat Result
+            var reply = ProcessChatResult(chatResult, chatMessages, context);
+            // Step 9: Log Chat and Reply
+            LogChatResult(chatMessages, chatResult, reply);
+
+            // Optional: Moderate Output (Commented Out)
+            // if (await IsOutputFlaggedAsync(reply))
+            // {
+            //     await HandleFlaggedOutputAsync(context);
+            //     return;
+            // }
+
+            // Step 10: Send Reply
+            await delayTask;
+            await SendReplyAsync(context, reply);
+        }
+
+        #region Step 1: Input Moderation
+
+        private async Task<bool> IsInputFlaggedAsync(string message)
+        {
+            var moderationResponse = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(message));
+            return moderationResponse.Results.FirstOrDefault()?.Flagged ?? false;
+        }
+
+        private async Task HandleFlaggedInputAsync(SocketCommandContext context)
+        {
+            var flaggedResult = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(context.Message.Content));
+            Logger.Log($"Flagged input: {flaggedResult.Results[0].MainContentFlag}\n{context.Message.Content}", LogType.TrashReply);
+            var embed = new EmbedBuilder()
+                .WithDescription("Input rejected by moderator")
+                .Build();
+            await responseService.SendToChannelAsync(context.Channel as ITextChannel, null, embed);
+        }
+
+        #endregion
+
+        #region Step 3: Fetch and Filter Messages
+
+        private async Task<List<(ulong id, string name, string message)>> FetchAndFilterMessagesAsync(SocketCommandContext context)
+        {
             var targetGuild = context.Client.GetGuild(context.Guild.Id);
             var targetChannel = context.Channel;
             var lastMessages = await targetChannel.GetMessagesAsync().FlattenAsync();
-            var contextLength = 0;
-            var filteredMessage = lastMessages.Skip(1)
-                .Where(x =>
+            int contextLength = 0;
+
+            var filteredMessages = lastMessages.Skip(1)
+                .Where(x => MessageFilter(context, x))
+                .Select(message => ProcessMessage(message, targetGuild))
+                .TakeWhile(msg =>
                 {
-                    if (string.IsNullOrEmpty(x.Content))
-                    {
-                        return false;
-                    }
-                    if (x.Author.IsWebhook)
-                    {
-                        return true;
-                    }
-                    if (x.Author.IsBot && x.Author.Id != context.Client.CurrentUser.Id)
-                    {
-                        return false;
-                    }
-                    else if (x.Author.Id == context.Client.CurrentUser.Id && (string.IsNullOrEmpty(x.Content) || x.Embeds.Count > 0))
-                    {
-                        return false;
-                    }
-                    return true;
-                })
-                .Select(x =>
-                {
-                    var user = targetGuild.GetUser(x.Author.Id);
-                    var displayName = user?.GetDisplayName() ?? x.Author.Username;
-                    var messageContent = x.Content;
-                    foreach (var mentionId in x.MentionedUserIds)
-                    {
-                        var mentionUser = targetGuild.GetUser(mentionId);
-                        var mentionDisplay = mentionUser?.GetDisplayName() ?? mentionUser?.Username ?? "";
-                        messageContent = messageContent.Replace("<@" + mentionId, "<@!" + mentionId);
-                        messageContent = messageContent.Replace(mentionUser?.Mention ?? ("<@!" + mentionId + ">"), mentionDisplay);
-                    }
-                    //messageContent = x.Author.Id == context.Client.CurrentUser.Id ? messageContent : messageContent.SliceBack(ChatContextMessageLengthLimit);
-                    return (id: x.Author.Id, name: displayName, message: messageContent);
-                })
-                .TakeWhile(x =>
-                {
-                    if ((contextLength += x.message.Length) > CurrentChatContextTotalLengthLimit)
-                    {
-                        return false;
-                    }
-                    return true;
+                    contextLength += msg.message.Length;
+                    return contextLength <= CurrentChatContextTotalLengthLimit;
                 })
                 .Take(30)
                 .Reverse()
                 .ToList();
-            if (filteredMessage.Count == 0)
+
+            return filteredMessages;
+        }
+
+        private bool MessageFilter(SocketCommandContext context, IMessage x)
+        {
+            if (string.IsNullOrEmpty(x.Content))
+                return false;
+
+            if (x.Author.IsWebhook)
+                return true;
+
+            if (x.Author.IsBot && x.Author.Id != context.Client.CurrentUser.Id)
+                return false;
+
+            if (x.Author.Id == context.Client.CurrentUser.Id && (string.IsNullOrEmpty(x.Content) || x.Embeds.Count > 0))
+                return false;
+
+            return true;
+        }
+
+        private (ulong id, string name, string message) ProcessMessage(IMessage message, SocketGuild guild)
+        {
+            var user = guild.GetUser(message.Author.Id);
+            var displayName = user?.GetDisplayName() ?? message.Author.Username;
+            var messageContent = message.Content;
+
+            foreach (var mentionId in message.MentionedUserIds)
             {
-                filteredMessage.Add((0, "test", "Test Message"));
+                var mentionUser = guild.GetUser(mentionId);
+                var mentionDisplay = mentionUser?.GetDisplayName() ?? mentionUser?.Username ?? "";
+                messageContent = messageContent.Replace($"<@{mentionId}", $"<@!{mentionId}");
+                messageContent = messageContent.Replace(mentionUser?.Mention ?? $"<@!{mentionId}>", mentionDisplay);
             }
 
-            var toModerateMessages = filteredMessage.Select(x => x.message).ToArray();
+            return (message.Author.Id, displayName, messageContent);
+        }
 
-            var chatTimer = new Stopwatch();
-            chatTimer.Start();
-            var moderationResults = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(toModerateMessages));
-            chatTimer.Stop();
-            Logger.Debug(chatTimer.Elapsed, $"[ModerationChannel Time]");
-            chatTimer.Reset();
+        #endregion
 
-            var acceptableMessages = filteredMessage.Where((x, i) => !moderationResults.Results[i].Flagged).ToList();
+        #region Step 4: Moderate Messages
 
-            var (_, refenceResults) = await referenceGenerator;
-            var toModerateReferences = refenceResults.Take(ReferenceChatContextSizeLimit)
-                .Select(x => new[]
+        private async Task<List<(ulong id, string name, string message)>> ModerateMessagesAsync(List<(ulong id, string name, string message)> messages)
+        {
+            var messagesToModerate = messages.Select(x => x.message).ToArray();
+            var moderationResults = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(messagesToModerate));
+            var acceptableMessages = messages.Where((x, i) => !moderationResults.Results[i].Flagged).ToList();
+            return acceptableMessages;
+        }
+
+        #endregion
+
+        #region Step 5: Moderate References
+
+        private async Task<List<string>> ModerateReferencesAsync(Task<(int, IEnumerable<Analysis>)> referenceGenerator)
+        {
+            var (_, referenceResults) = await referenceGenerator;
+            var referencesToModerate = referenceResults
+                .Take(ReferenceChatContextSizeLimit)
+                .SelectMany(x => new[]
                 {
                     x.Trigger.Message.SliceBack(128),
                     x.Rephrase.Message.SliceBack(128),
                     x.Response.Message.SliceBack(128)
                 })
-                .SelectMany(x => x)
                 .ToArray();
 
-            chatTimer.Start();
-            var referenceModerationResults = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(toModerateReferences));
-            chatTimer.Stop();
-            Logger.Debug(chatTimer.Elapsed, $"[ModerationReference Time]");
-            chatTimer.Reset();
+            var referenceModerationResults = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(referencesToModerate));
+            var acceptableReferences = referencesToModerate
+                .Where((x, i) => !referenceModerationResults.Results[i].Flagged)
+                .ToList();
 
-            var acceptableReferences = toModerateReferences.Where((x, i) => !referenceModerationResults.Results[i].Flagged).ToList();
-            var referenceChat = acceptableReferences.JoinLines();
+            return acceptableReferences;
+        }
 
-            var chatMessages = new List<ChatMessage>();
-            var chatUserMessages = new List<ChatMessageWithName>();
+        #endregion
 
-            var systemInstruction = $"You are a Discord chat bot {context.Client.CurrentUser.Username} "
-                + $"enhanced with LLM Model ({chatModel}) of a competitive gaming community for BTD Battles, "
-                + $"called MKOTH (Mobile King of the Hill). "
-                + $"You behave casually and use a Discord gamer tone. ";
+        #region Step 6: Build Chat Messages
+
+        private List<ChatMessage> BuildChatMessages(
+            SocketCommandContext context,
+            List<(ulong id, string name, string message)> acceptableMessages,
+            List<string> acceptableReferences,
+            string originalMessage)
+        {
+            var referenceChat = string.Join("\n", acceptableReferences);
+            var systemInstruction = $"You are a Discord chat bot {context.Client.CurrentUser.Username} " +
+                $"enhanced with LLM Model ({chatModel}) of a competitive gaming community for BTD Battles, " +
+                $"called MKOTH (Mobile King of the Hill). " +
+                $"You behave casually and use a Discord gamer tone.";
 
             var referenceChatInstruction = $"With the style, tone, information and knowledge of the following context:\n\n{referenceChat}\n";
             var replyChatInstruction = $"Timestamp: {DateTime.Now} Give your fun and goofy short response or quick live reaction, unless requested otherwise, to:";
 
-            chatMessages.Add(new ChatMessage(ChatMessageRole.System, systemInstruction));
+            var chatMessages = new List<ChatMessage>
+            {
+                new ChatMessage(ChatMessageRole.System, systemInstruction)
+            };
+
+            var chatUserMessages = new List<ChatMessageWithName>();
 
             foreach (var item in acceptableMessages)
             {
@@ -261,103 +343,136 @@ namespace MKOTHDiscordBot.Services
                     }
                     else
                     {
-                        var chatMessage = new ChatMessageWithName(ChatMessageRole.User, item.name, $"{item.name}: " + item.message);
+                        var chatMessage = new ChatMessageWithName(ChatMessageRole.User, item.name, $"{item.name}: {item.message}");
                         chatUserMessages.Add(chatMessage);
                         chatMessages.Add(chatMessage);
                     }
                 }
             }
 
-            var lastUserDisplay = targetGuild.GetUser(context.Message.Author.Id)?.GetDisplayName() ?? context.Message.Author.Username;
-            var lastMessage = new ChatMessageWithName(ChatMessageRole.User, lastUserDisplay, $"{referenceChatInstruction}\n{replyChatInstruction}\n{lastUserDisplay}: {message}");
+            var lastUserDisplay = context.Guild.GetUser(context.Message.Author.Id)?.GetDisplayName() ?? context.Message.Author.Username;
+            var lastMessageContent = $"{referenceChatInstruction}\n{replyChatInstruction}\n{lastUserDisplay}: {originalMessage}";
+            var lastMessage = new ChatMessageWithName(ChatMessageRole.User, lastUserDisplay, lastMessageContent);
 
             var finalChat = chatMessages.Last();
-
             if (finalChat.Role == ChatMessageRole.User)
             {
                 finalChat.Content += "\n\n" + lastMessage.Content;
             }
             else
             {
-                chatUserMessages.Add(lastMessage);
                 chatMessages.Add(lastMessage);
             }
-            
-            var chatMetricsLog = $"References: {acceptableReferences.Count}/{toModerateReferences.Length}/{refenceResults.Count() * 3} [{refenceResults.Max(x => x.Score):F2},{refenceResults.Min(x => x.Score):F2}] ({referenceChat.Length}) " +
-                $"UserChats: {chatUserMessages.Count} ({chatUserMessages.Sum(x => x.Content.Length)}) " +
-                $"PromptChats: {chatMessages.Count} ({chatMessages.Sum(x => x.Content.Length)})";
-            Logger.Log(chatMetricsLog, LogType.TrashReply);
 
-            chatTimer.Start();
-
-            async Task<ChatResult> getChatResult()
+            if (chatMessages.ElementAt(1)?.Role == ChatMessageRole.Assistant)
             {
-                return await deepseekClient.Chat.CreateChatCompletionAsync(new ChatRequest()
-                {
-                    Model = chatModel,
-                    Temperature = 1,
-                    MaxTokens = 1024,
-                    Messages = chatMessages.ToArray()
-                });
+                chatMessages.Insert(1, new ChatMessage(ChatMessageRole.User, "-"));
             }
 
-            var chatResult = await getChatResult();
+            return chatMessages;
+        }
 
-            for (int i = 0; i < 3; i++)
+        #endregion
+
+        #region Step 7: Get Chat Completion with Retries
+
+        private async Task<ChatResult> GetChatCompletionWithRetriesAsync(List<ChatMessage> chatMessages, int maxRetries = 3)
+        {
+            var chatRequest = new ChatRequest
             {
-                if (chatResult != default)
+                Model = chatModel,
+                Temperature = 1,
+                MaxTokens = 1024,
+                Messages = chatMessages.ToArray()
+            };
+
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
                 {
-                    break;
+                    var chatResult = await deepseekClient.Chat.CreateChatCompletionAsync(chatRequest);
+                    if (chatResult != null || chatResult.Choices?.Count < 1)
+                    {
+                        return chatResult;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"Chat completion attempt {attempt} failed: {ex.Message}", LogType.TrashReply);
                 }
 
-                Logger.Log($"Retrying getChatResult {i + 1}", LogType.TrashReply);
-                chatResult = await getChatResult();
+                Logger.Log($"Retrying chat completion (Attempt {attempt})", LogType.TrashReply);
             }
 
-            if (chatResult == default)
-            {
-                throw new Exception("Unable to get chat response");
-            }
+            return null;
+        }
 
-            chatTimer.Stop();
-            Logger.Log($"[ChatGPT Time] {chatTimer.Elapsed}", LogType.TrashReply);
-            chatTimer.Reset();
+        #endregion
 
-            var rawreply = chatResult.Choices[0].Message.Content.Trim();
-            var reply = rawreply;
+        #region Step 8: Process Chat Result
 
-            foreach (var userChat in chatUserMessages.GroupBy(x => x.Name).Select(x => x.First()))
+        private string ProcessChatResult(ChatResult chatResult, List<ChatMessage> chatMessages, SocketCommandContext context)
+        {
+            var rawReply = chatResult.Choices[0].Message.Content.Trim();
+            var reply = rawReply;
+
+            // Revert user names in the reply
+            var userChats = chatMessages
+                .OfType<ChatMessageWithName>()
+                .GroupBy(x => x.Name)
+                .Select(g => g.First());
+
+            foreach (var userChat in userChats)
             {
                 reply = userChat.RevertName(reply);
             }
+
+            // Escape @ mentions
             reply = reply.Replace("@", "`@`");
 
+            return reply;
+        }
 
-            var chatLog = $"Prompt:\n" +
-                $"{chatMessages.Select((x, i) => $"{i}. [{x.Role}] {(x as ChatMessageWithName)?.Name ?? "N/A"}: {x.Content}\n").JoinLines(new string('-', 32) + "\n")}\n" +
-                $"[Reply Raw] {rawreply}\n--------\n" +
-                $"[Reply Out] {reply}\n--------";
-            Logger.Log(chatLog, LogType.TrashReply);
-            Logger.Log(chatResult.Usage, LogType.TrashReply);
+        #endregion
 
-            //var outputModeration = await openAIClient.Moderation.CallModerationAsync(new ModerationRequest(reply));
-            //if (outputModeration.Results[0].Flagged)
-            //{
-            //    Logger.Log($"Flagged output: {outputModeration.Results[0].MainContentFlag}\n", LogType.TrashReply);
-            //    var embed = new EmbedBuilder()
-            //        .WithDescription($"Output rejected by moderator")
-            //        .Build();
-            //    await responseService.SendToChannelAsync(context.Channel as ITextChannel, null, embed);
-            //    return;
-            //}
+        #region Step 9: Log Chat Result
 
-            await delay;
-
-            for (int i = 0; i < reply.Length; i += 2000)
+        private void LogChatResult(List<ChatMessage> chatMessages, ChatResult chatResult, string reply)
+        {
+            var chatLog = new StringBuilder();
+            chatLog.AppendLine("Prompt:");
+            for (int i = 0; i < chatMessages.Count; i++)
             {
-                await responseService.SendToContextAsync(context, reply.Substring(i).SliceBack(2000, ""));
+                var msg = chatMessages[i];
+                var name = msg is ChatMessageWithName msgWithName ? msgWithName.Name : "N/A";
+                chatLog.AppendLine($"{i}. [{msg.Role}] {name}: {msg.Content}");
+                chatLog.AppendLine(new string('-', 32));
+            }
+
+            chatLog.AppendLine($"[Reply Raw] {chatResult.Choices[0].Message.Content.Trim()}");
+            chatLog.AppendLine("--------");
+            chatLog.AppendLine($"[Reply Out] {reply}");
+            chatLog.AppendLine("--------");
+
+            Logger.Log(chatLog.ToString(), LogType.TrashReply);
+            Logger.Log(chatResult.Usage, LogType.TrashReply);
+        }
+
+        #endregion
+
+        #region Step 10: Send Reply
+
+        private async Task SendReplyAsync(SocketCommandContext context, string reply)
+        {
+            const int maxChunkSize = 2000;
+            for (int i = 0; i < reply.Length; i += maxChunkSize)
+            {
+                var chunk = reply.Substring(i, Math.Min(maxChunkSize, reply.Length - i));
+                await responseService.SendToContextAsync(context, chunk);
             }
         }
+
+        #endregion
 
         void HandleLog(string log)
         {
